@@ -1,0 +1,44 @@
+---
+import LetterInput from './LetterInput.astro';
+import DictionaryToggle from './DictionaryToggle.astro';
+import AdvancedOptions from './AdvancedOptions.astro';
+
+interface Props {
+  defaultDict?: string;
+  showAdvanced?: boolean;
+}
+
+const { defaultDict = 'twl', showAdvanced = true } = Astro.props;
+---
+
+<form id="word-finder-form" class="card space-y-5" aria-busy="false">
+  <!-- Letter Input -->
+  <LetterInput />
+
+  <!-- Dictionary Toggle -->
+  <DictionaryToggle defaultDict={defaultDict} />
+
+  <!-- Advanced Options -->
+  {showAdvanced && <AdvancedOptions />}
+
+  <!-- Submit Button -->
+  <button type="submit" id="find-words-btn" class="btn-primary w-full">
+    <!-- Default State -->
+    <span id="btn-default" class="flex items-center gap-2.5">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+      </svg>
+      Find Words
+    </span>
+    <!-- Loading State -->
+    <span id="btn-loading" class="hidden flex items-center gap-2.5">
+      <span class="spinner !w-5 !h-5 border-white/30 border-t-white"></span>
+      Searching...
+    </span>
+  </button>
+
+
+</form>

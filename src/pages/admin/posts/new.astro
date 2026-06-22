@@ -1,0 +1,1015 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SITE_URL } from '../../../lib/config';
+
+export const prerender = false;
+
+const defaultAuthor = 'Editorial Team';
+const todayStr = new Date().toISOString().split('T')[0];
+---
+
+<AdminLayout title="New Blog Post">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <a
+          href="/admin/posts"
+          class="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-light)] flex items-center gap-1"
+        >
+          &larr; Back to Posts
+        </a>
+        <h1
+          class="text-3xl font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif] mt-2"
+        >
+          Add New Post
+        </h1>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form id="new-post-form" class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
+      <!-- Left Main Column (Content & Editor) -->
+      <div class="space-y-6 min-w-0">
+        <!-- Main Details Card -->
+        <div
+          class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6"
+        >
+          <!-- Title -->
+          <div>
+            <label
+              for="title"
+              class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+            >
+              Title
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              required
+              placeholder="Enter title here"
+              class="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-lg font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600"
+            />
+          </div>
+
+          <!-- Slug -->
+          <div>
+            <label
+              for="slug"
+              class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1 uppercase tracking-wider"
+            >
+              Permalink Slug
+            </label>
+            <div class="flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
+              <span class="select-none">{SITE_URL}/blog/</span>
+              <input
+                type="text"
+                id="slug"
+                name="slug"
+                required
+                placeholder="post-slug"
+                class="flex-1 min-w-0 px-2 py-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] transition-all"
+              />
+            </div>
+          </div>
+
+          <!-- Description / Excerpt -->
+          <div>
+            <label
+              for="description"
+              class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+            >
+              Excerpt / Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows="3"
+              placeholder="Write a brief, catchy summary of this article..."
+              class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y text-sm"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Markdown Editor Card -->
+        <div
+          class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-4"
+        >
+          <div class="flex items-center justify-between">
+            <label for="content" class="text-sm font-semibold text-[var(--color-text-main)]">
+              Article Content (Markdown)
+            </label>
+            <!-- Tab controllers -->
+            <div
+              class="flex border border-[var(--color-border)] rounded-lg overflow-hidden bg-[var(--color-bg-alt)] text-xs font-semibold select-none"
+            >
+              <button
+                type="button"
+                id="tab-write"
+                class="px-3 py-1.5 bg-[var(--color-card)] text-[var(--color-primary)] border-r border-[var(--color-border)] cursor-pointer"
+                >Write</button
+              >
+              <button
+                type="button"
+                id="tab-preview"
+                class="px-3 py-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] cursor-pointer"
+                >Preview</button
+              >
+            </div>
+          </div>
+
+          <!-- Write Panel -->
+          <div id="write-panel" class="space-y-2">
+            <!-- Formatting Toolbar -->
+            <div
+              class="flex flex-wrap gap-1 bg-[var(--color-bg-alt)] border border-[var(--color-border)] p-1.5 rounded-t-xl select-none"
+            >
+              <button
+                type="button"
+                class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs font-bold cursor-pointer text-[var(--color-text-main)]"
+                data-md-tool="bold"
+                title="Bold">B</button
+              >
+              <button
+                type="button"
+                class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs italic cursor-pointer text-[var(--color-text-main)]"
+                data-md-tool="italic"
+                title="Italic">I</button
+              >
+              <button
+                type="button"
+                class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs font-mono cursor-pointer text-[var(--color-text-main)]"
+                data-md-tool="code"
+                title="Code">Code</button
+              >
+              <button
+                type="button"
+                class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs cursor-pointer text-[var(--color-text-main)]"
+                data-md-tool="link"
+                title="Insert Link">🔗 Link</button
+              >
+              <button
+                type="button"
+                class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs font-semibold cursor-pointer text-[var(--color-text-main)]"
+                data-md-tool="h1"
+                title="Heading 1">H1</button
+              >
+              <button
+                type="button"
+                class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs font-semibold cursor-pointer text-[var(--color-text-main)]"
+                data-md-tool="h2"
+                title="Heading 2">H2</button
+              >
+              <button
+                type="button"
+                class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs cursor-pointer text-[var(--color-text-main)]"
+                data-md-tool="quote"
+                title="Blockquote">” Quote</button
+              >
+              <button
+                type="button"
+                class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs cursor-pointer text-[var(--color-text-main)]"
+                data-md-tool="list"
+                title="List">📋 List</button
+              >
+              <button
+                type="button"
+                class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs cursor-pointer text-[var(--color-text-main)]"
+                data-md-tool="image"
+                title="Image Link">🖼️ Image</button
+              >
+            </div>
+            <textarea
+              id="content"
+              name="content"
+              rows="16"
+              placeholder="Write your article in Markdown..."
+              class="w-full px-4 py-3 rounded-b-xl border-x border-b border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all font-mono text-sm resize-y"
+            ></textarea>
+          </div>
+
+          <!-- Preview Panel -->
+          <div
+            id="preview-panel"
+            class="hidden p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] min-h-[350px] overflow-y-auto prose dark:prose-invert max-w-none text-[var(--color-text-main)]"
+          >
+            <div class="text-sm text-[var(--color-text-muted)] italic">
+              Preview content will load here...
+            </div>
+          </div>
+        </div>
+
+        <!-- SEO Live SERP Preview Card -->
+        <div
+          class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-4"
+        >
+          <h3 class="text-base font-bold text-[var(--color-text-main)] flex items-center gap-2">
+            <span>🔍</span> Google Search Result Preview
+          </h3>
+          <p class="text-xs text-[var(--color-text-muted)]">
+            This is how your post will appear in Google search results.
+          </p>
+
+          <div
+            class="p-4 border border-[var(--color-border)] bg-[var(--color-bg-alt)] rounded-xl space-y-1 max-w-lg"
+          >
+            <div
+              class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap"
+            >
+              <span>{SITE_URL}</span>
+              <span>›</span>
+              <span>blog</span>
+              <span>›</span>
+              <span id="preview-serp-slug" class="font-medium text-gray-700 dark:text-gray-300"
+                >post-slug</span
+              >
+            </div>
+            <a
+              href="#"
+              onclick="return false;"
+              id="preview-serp-title"
+              class="text-lg md:text-xl text-blue-800 dark:text-blue-400 font-medium hover:underline block leading-tight"
+            >
+              New Blog Post
+            </a>
+            <p
+              id="preview-serp-desc"
+              class="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed"
+            >
+              Please enter an excerpt or custom SEO description to preview the snippet.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar Column (Publishing & Meta Controls) -->
+      <div class="space-y-6">
+        <!-- Publish Action Card -->
+        <div
+          class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-4"
+        >
+          <h3
+            class="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2"
+          >
+            Publish Settings
+          </h3>
+
+          <!-- Status Indicator -->
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-[var(--color-text-muted)]">Status:</span>
+            <span
+              id="status-badge"
+              class="px-2 py-0.5 rounded font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+            >
+              Draft
+            </span>
+          </div>
+
+          <!-- Date Picker -->
+          <div>
+            <label
+              for="pubDate"
+              class="block text-xs font-semibold text-[var(--color-text-main)] mb-1"
+            >
+              Publish Date
+            </label>
+            <input
+              type="date"
+              id="pubDate"
+              name="pubDate"
+              value={todayStr}
+              required
+              class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+            />
+          </div>
+
+          <!-- Author -->
+          <div>
+            <label
+              for="author"
+              class="block text-xs font-semibold text-[var(--color-text-main)] mb-1"
+            >
+              Author
+            </label>
+            <input
+              type="text"
+              id="author"
+              name="author"
+              value={defaultAuthor}
+              required
+              class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+            />
+          </div>
+
+          <!-- Publish Checkbox -->
+          <div class="flex items-center gap-2 py-1">
+            <input
+              type="checkbox"
+              id="published"
+              name="published"
+              class="w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+            />
+            <label
+              for="published"
+              class="text-xs font-semibold text-[var(--color-text-main)] cursor-pointer"
+            >
+              Publish immediately
+            </label>
+          </div>
+
+
+
+          <!-- Submit Buttons -->
+          <div class="flex items-center gap-2 pt-2 border-t border-[var(--color-border)]">
+            <a
+              href="/admin/posts"
+              class="flex-1 text-center py-2 rounded-lg border border-[var(--color-border)] text-xs font-semibold hover:bg-[var(--color-bg-alt)] text-[var(--color-text-main)] transition-colors"
+            >
+              Cancel
+            </a>
+            <button
+              type="submit"
+              id="submit-btn"
+              class="flex-1 btn-primary py-2 rounded-lg text-xs font-semibold cursor-pointer"
+            >
+              Save Post
+            </button>
+          </div>
+        </div>
+
+        <!-- Featured Image Card -->
+        <div
+          class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-3"
+        >
+          <h3
+            class="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2"
+          >
+            Featured Image
+          </h3>
+
+          <div class="space-y-2">
+            <input
+              type="text"
+              id="image"
+              name="image"
+              placeholder="e.g. /images/blog/photo.png"
+              class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+            />
+
+            <label
+              class="w-full py-2 bg-[var(--color-bg-alt)] hover:bg-[var(--color-border)] border border-[var(--color-border)] text-xs font-semibold rounded-lg cursor-pointer flex items-center justify-center gap-1 text-[var(--color-text-main)] transition-colors select-none"
+            >
+              <span>📤</span>
+              <span>Upload Image</span>
+              <input type="file" id="image-upload" class="hidden" accept="image/*" />
+            </label>
+            <div id="upload-status" class="hidden text-[10px] font-semibold text-center"></div>
+          </div>
+
+          <!-- Thumbnail Image Preview -->
+          <div
+            id="image-preview-container"
+            class="hidden border border-[var(--color-border)] rounded-xl overflow-hidden aspect-[16/9] bg-black/5 dark:bg-white/5 relative"
+          >
+            <img id="image-preview" src="#" alt="Preview" class="w-full h-full object-cover" />
+            <button
+              type="button"
+              id="remove-image-btn"
+              class="absolute top-1.5 right-1.5 bg-black/70 hover:bg-black/90 text-white rounded-full p-1 leading-none text-xs w-5 h-5 flex items-center justify-center select-none"
+              title="Remove image">×</button
+            >
+          </div>
+        </div>
+
+        <!-- Tags Card -->
+        <div
+          class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-3"
+        >
+          <h3
+            class="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2"
+          >
+            Tags
+          </h3>
+
+          <div class="space-y-2">
+            <input
+              type="text"
+              id="tags"
+              name="tags"
+              placeholder="Comma-separated values"
+              class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+            />
+
+            <!-- Dynamic Tags Preview -->
+            <div id="tags-preview" class="flex flex-wrap gap-1 mt-1"></div>
+          </div>
+        </div>
+
+        <!-- Post Stats & Readability -->
+        <div
+          class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-3"
+        >
+          <h3
+            class="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2"
+          >
+            Content Analysis
+          </h3>
+
+          <div class="space-y-2.5 text-xs text-[var(--color-text-muted)]">
+            <div class="flex items-center justify-between">
+              <span>Words:</span>
+              <span id="word-count" class="font-bold text-[var(--color-text-main)]">0</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Characters:</span>
+              <span id="char-count" class="font-bold text-[var(--color-text-main)]">0</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Reading time:</span>
+              <span id="read-time" class="font-bold text-[var(--color-text-main)]">0 min</span>
+            </div>
+
+            <!-- Readability Index -->
+            <div class="border-t border-[var(--color-border)] pt-2.5 space-y-1">
+              <span class="text-[10px] font-semibold uppercase tracking-wider">Readability:</span>
+              <div
+                id="readability-badge"
+                class="p-2 rounded-lg border border-dashed text-center font-semibold text-xs transition-colors"
+              >
+                No content
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEO Overrides -->
+        <div
+          class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-3"
+        >
+          <h3
+            class="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2"
+          >
+            SEO Override Controls
+          </h3>
+
+          <div class="space-y-3">
+            <div>
+              <label
+                for="seoTitle"
+                class="block text-xs font-semibold text-[var(--color-text-main)] mb-1"
+              >
+                Custom Meta Title
+              </label>
+              <input
+                type="text"
+                id="seoTitle"
+                name="seoTitle"
+                placeholder="Leave blank for post title"
+                class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+              />
+            </div>
+
+            <div>
+              <label
+                for="seoDescription"
+                class="block text-xs font-semibold text-[var(--color-text-main)] mb-1"
+              >
+                Custom Meta Description
+              </label>
+              <textarea
+                id="seoDescription"
+                name="seoDescription"
+                rows="3"
+                placeholder="Leave blank for excerpt"
+                class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] resize-y"
+              ></textarea>
+            </div>
+
+            <div>
+              <label
+                for="canonicalUrl"
+                class="block text-xs font-semibold text-[var(--color-text-main)] mb-1"
+              >
+                Canonical URL Override
+              </label>
+              <input
+                type="text"
+                id="canonicalUrl"
+                name="canonicalUrl"
+                placeholder="e.g. https://another.com/post"
+                class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  import { showToast } from '../../../lib/toast';
+
+  const titleInput = document.getElementById('title') as HTMLInputElement;
+  const slugInput = document.getElementById('slug') as HTMLInputElement;
+  const descriptionInput = document.getElementById('description') as HTMLTextAreaElement;
+  const contentTextarea = document.getElementById('content') as HTMLTextAreaElement;
+  const pubDateInput = document.getElementById('pubDate') as HTMLInputElement;
+  const publishedCheckbox = document.getElementById('published') as HTMLInputElement;
+  const form = document.getElementById('new-post-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  const imageInput = document.getElementById('image') as HTMLInputElement;
+  const imageUploadInput = document.getElementById('image-upload') as HTMLInputElement;
+  const uploadStatus = document.getElementById('upload-status') as HTMLDivElement;
+  const imagePreviewContainer = document.getElementById(
+    'image-preview-container',
+  ) as HTMLDivElement;
+  const imagePreview = document.getElementById('image-preview') as HTMLImageElement;
+  const removeImageBtn = document.getElementById('remove-image-btn') as HTMLButtonElement;
+
+  const tagsInput = document.getElementById('tags') as HTMLInputElement;
+  const tagsPreview = document.getElementById('tags-preview') as HTMLDivElement;
+
+  const wordCountSpan = document.getElementById('word-count') as HTMLSpanElement;
+  const charCountSpan = document.getElementById('char-count') as HTMLSpanElement;
+  const readTimeSpan = document.getElementById('read-time') as HTMLSpanElement;
+  const readabilityBadge = document.getElementById('readability-badge') as HTMLDivElement;
+
+  const tabWrite = document.getElementById('tab-write') as HTMLButtonElement;
+  const tabPreview = document.getElementById('tab-preview') as HTMLButtonElement;
+  const writePanel = document.getElementById('write-panel') as HTMLDivElement;
+  const previewPanel = document.getElementById('preview-panel') as HTMLDivElement;
+
+  const statusBadge = document.getElementById('status-badge') as HTMLSpanElement;
+
+  const seoTitleInput = document.getElementById('seoTitle') as HTMLInputElement;
+  const seoDescriptionInput = document.getElementById('seoDescription') as HTMLTextAreaElement;
+
+  const serpSlug = document.getElementById('preview-serp-slug') as HTMLSpanElement;
+  const serpTitle = document.getElementById('preview-serp-title') as HTMLAnchorElement;
+  const serpDesc = document.getElementById('preview-serp-desc') as HTMLParagraphElement;
+
+  let manuallyEditedSlug = false;
+
+  // --- Auto-generate slug from title ---
+  titleInput?.addEventListener('input', () => {
+    if (!manuallyEditedSlug) {
+      const slugified = titleInput.value
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/[\s_]+/g, '-')
+        .replace(/-+/g, '-');
+      slugInput.value = slugified;
+      updateSerpPreview();
+    }
+    updateSerpPreview();
+  });
+
+  slugInput?.addEventListener('input', () => {
+    manuallyEditedSlug = !!slugInput.value;
+    updateSerpPreview();
+  });
+
+  // --- SERP Snippet Preview Updates ---
+  function updateSerpPreview() {
+    // Slug
+    const slugText = slugInput.value.trim() || 'post-slug';
+    if (serpSlug) serpSlug.textContent = slugText;
+
+    // Title
+    const titleVal = seoTitleInput.value.trim() || titleInput.value.trim() || 'New Blog Post';
+    if (serpTitle) serpTitle.textContent = titleVal;
+
+    // Description
+    const descVal =
+      seoDescriptionInput.value.trim() ||
+      descriptionInput.value.trim() ||
+      'Please enter an excerpt or custom SEO description to preview the snippet.';
+    if (serpDesc) serpDesc.textContent = descVal;
+  }
+
+  [titleInput, slugInput, descriptionInput, seoTitleInput, seoDescriptionInput].forEach((el) => {
+    el?.addEventListener('input', updateSerpPreview);
+  });
+
+  // --- Flesch-Kincaid Readability Analysis ---
+  function getReadability(text: string) {
+    if (!text || text.trim().length === 0) {
+      return {
+        score: 100,
+        grade: 0,
+        label: 'No content',
+        color: 'text-gray-400 bg-gray-50 dark:bg-gray-800/10 border-gray-200 dark:border-gray-800',
+      };
+    }
+
+    // Count sentences (. ! ?)
+    const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 0).length || 1;
+
+    // Count words
+    const wordsList = text
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
+    const words = wordsList.length || 1;
+
+    // Count syllables (approximate)
+    let syllables = 0;
+    wordsList.forEach((word) => {
+      word = word.toLowerCase().replace(/[^a-z]/g, '');
+      if (word.length <= 3) {
+        syllables += 1;
+        return;
+      }
+      if (word.endsWith('e')) word = word.slice(0, -1);
+      const matches = word.match(/[aeiouy]+/g);
+      syllables += matches ? matches.length : 1;
+    });
+
+    if (syllables === 0) syllables = 1;
+
+    const ease = 206.835 - 1.015 * (words / sentences) - 84.6 * (syllables / words);
+    const grade = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59;
+
+    let label = 'Standard';
+    let color =
+      'text-yellow-600 bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900/30';
+
+    if (ease >= 90) {
+      label = 'Very Easy (5th Grade)';
+      color =
+        'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30';
+    } else if (ease >= 80) {
+      label = 'Easy (6th Grade)';
+      color =
+        'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30';
+    } else if (ease >= 70) {
+      label = 'Fairly Easy (7th Grade)';
+      color =
+        'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30';
+    } else if (ease >= 60) {
+      label = 'Standard (8th-9th Grade)';
+      color =
+        'text-teal-600 bg-teal-50 dark:bg-teal-950/20 border-teal-200 dark:border-teal-900/30';
+    } else if (ease >= 50) {
+      label = 'Fairly Difficult (10th-12th Grade)';
+      color =
+        'text-orange-600 bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/30';
+    } else if (ease >= 30) {
+      label = 'Difficult (College)';
+      color =
+        'text-rose-600 bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/30';
+    } else {
+      label = 'Very Difficult (Graduate)';
+      color = 'text-red-700 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/30';
+    }
+
+    return {
+      ease: Math.round(ease * 10) / 10,
+      grade: Math.max(0, Math.round(grade * 10) / 10),
+      label,
+      color,
+    };
+  }
+
+  // --- Real-time Metrics and Readability updates ---
+  function updateMetrics() {
+    const text = contentTextarea.value || '';
+    if (charCountSpan) charCountSpan.textContent = String(text.length);
+
+    const words = text
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
+    const wordCount = words.length;
+    if (wordCountSpan) wordCountSpan.textContent = String(wordCount);
+
+    const readingTime = Math.ceil(wordCount / 200);
+    if (readTimeSpan) readTimeSpan.textContent = `${readingTime} min`;
+
+    const readability = getReadability(text);
+    if (readabilityBadge) {
+      readabilityBadge.textContent = readability.label;
+      readabilityBadge.className = `p-2 rounded-lg border border-dashed text-center font-semibold text-xs transition-colors ${readability.color}`;
+    }
+  }
+
+  contentTextarea?.addEventListener('input', updateMetrics);
+
+  // --- Status Badge dynamically updates ---
+  function updateStatusBadge() {
+    const dateStr = pubDateInput.value;
+    const isChecked = publishedCheckbox.checked;
+
+    if (!dateStr) {
+      statusBadge.textContent = 'Draft';
+      statusBadge.className =
+        'px-2 py-0.5 rounded font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+      return;
+    }
+
+    const inputDate = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (inputDate > today) {
+      statusBadge.textContent = 'Scheduled';
+      statusBadge.className =
+        'px-2 py-0.5 rounded font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border border-blue-200 dark:border-blue-900/30';
+    } else if (isChecked) {
+      statusBadge.textContent = 'Published';
+      statusBadge.className =
+        'px-2 py-0.5 rounded font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30';
+    } else {
+      statusBadge.textContent = 'Draft';
+      statusBadge.className =
+        'px-2 py-0.5 rounded font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+    }
+  }
+
+  pubDateInput?.addEventListener('change', updateStatusBadge);
+  publishedCheckbox?.addEventListener('change', updateStatusBadge);
+
+  // --- Image preview handlers ---
+  function updateImagePreview() {
+    const url = imageInput.value.trim();
+    if (url) {
+      imagePreview.src = url;
+      imagePreviewContainer.classList.remove('hidden');
+    } else {
+      imagePreviewContainer.classList.add('hidden');
+      imagePreview.src = '#';
+    }
+  }
+
+  imageInput?.addEventListener('input', updateImagePreview);
+
+  removeImageBtn?.addEventListener('click', () => {
+    imageInput.value = '';
+    updateImagePreview();
+  });
+
+  // --- Image file uploader ---
+  imageUploadInput?.addEventListener('change', async () => {
+    const file = imageUploadInput.files?.[0];
+    if (!file) return;
+
+    uploadStatus.innerText = 'Uploading...';
+    uploadStatus.className = 'text-[10px] mt-1 font-semibold text-[var(--color-primary)]';
+    uploadStatus.classList.remove('hidden');
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        imageInput.value = data.url;
+        updateImagePreview();
+        uploadStatus.innerText = 'Upload successful!';
+        uploadStatus.className =
+          'text-[10px] mt-1 font-semibold text-emerald-600 dark:text-emerald-400';
+      } else {
+        uploadStatus.innerText = data.error || 'Upload failed.';
+        uploadStatus.className = 'text-[10px] mt-1 font-semibold text-red-600 dark:text-red-400';
+      }
+    } catch (err) {
+      console.error(err);
+      uploadStatus.innerText = 'Upload error.';
+      uploadStatus.className = 'text-[10px] mt-1 font-semibold text-red-600 dark:text-red-400';
+    }
+  });
+
+  // --- Dynamic Tags Preview ---
+  function updateTagsPreview() {
+    tagsPreview.innerHTML = '';
+    const val = tagsInput.value.trim();
+    if (!val) return;
+
+    const arr = val
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+    arr.forEach((tag) => {
+      const pill = document.createElement('span');
+      pill.className =
+        'inline-flex items-center gap-1 rounded bg-[var(--color-primary)]/5 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-primary)] uppercase tracking-wider';
+      pill.textContent = tag;
+      tagsPreview.appendChild(pill);
+    });
+  }
+
+  tagsInput?.addEventListener('input', updateTagsPreview);
+
+  // --- Formatting Toolbar insert helper ---
+  const toolbarButtons = document.querySelectorAll('[data-md-tool]');
+  toolbarButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tool = btn.getAttribute('data-md-tool');
+      if (!tool) return;
+
+      let syntaxStart = '';
+      let syntaxEnd = '';
+
+      switch (tool) {
+        case 'bold':
+          syntaxStart = '**';
+          syntaxEnd = '**';
+          break;
+        case 'italic':
+          syntaxStart = '_';
+          syntaxEnd = '_';
+          break;
+        case 'code':
+          syntaxStart = '`';
+          syntaxEnd = '`';
+          break;
+        case 'link':
+          syntaxStart = '[';
+          syntaxEnd = '](url)';
+          break;
+        case 'h1':
+          syntaxStart = '# ';
+          break;
+        case 'h2':
+          syntaxStart = '## ';
+          break;
+        case 'quote':
+          syntaxStart = '> ';
+          break;
+        case 'list':
+          syntaxStart = '- ';
+          break;
+        case 'image':
+          syntaxStart = '![';
+          syntaxEnd = '](image-url)';
+          break;
+      }
+
+      insertMarkdown(syntaxStart, syntaxEnd);
+      updateMetrics();
+    });
+  });
+
+  function insertMarkdown(syntaxStart: string, syntaxEnd = '') {
+    const start = contentTextarea.selectionStart;
+    const end = contentTextarea.selectionEnd;
+    const text = contentTextarea.value;
+    const selected = text.substring(start, end);
+    const replacement = syntaxStart + selected + syntaxEnd;
+    contentTextarea.value = text.substring(0, start) + replacement + text.substring(end);
+    contentTextarea.focus();
+    contentTextarea.setSelectionRange(
+      start + syntaxStart.length,
+      start + syntaxStart.length + selected.length,
+    );
+  }
+
+  // --- Tab switching Write/Preview ---
+  tabWrite?.addEventListener('click', () => {
+    tabWrite.classList.add('bg-[var(--color-card)]', 'text-[var(--color-primary)]');
+    tabWrite.classList.remove('text-[var(--color-text-muted)]');
+    tabPreview.classList.remove('bg-[var(--color-card)]', 'text-[var(--color-primary)]');
+    tabPreview.classList.add('text-[var(--color-text-muted)]');
+
+    writePanel.classList.remove('hidden');
+    previewPanel.classList.add('hidden');
+  });
+
+  tabPreview?.addEventListener('click', () => {
+    tabPreview.classList.add('bg-[var(--color-card)]', 'text-[var(--color-primary)]');
+    tabPreview.classList.remove('text-[var(--color-text-muted)]');
+    tabWrite.classList.remove('bg-[var(--color-card)]', 'text-[var(--color-primary)]');
+    tabWrite.classList.add('text-[var(--color-text-muted)]');
+
+    writePanel.classList.add('hidden');
+    previewPanel.classList.remove('hidden');
+
+    renderPreview();
+  });
+
+  function renderPreview() {
+    const val = contentTextarea.value || '';
+    if (!val) {
+      previewPanel.innerHTML =
+        '<div class="text-sm text-[var(--color-text-muted)] italic">No content to preview yet...</div>';
+      return;
+    }
+
+    previewPanel.innerHTML =
+      '<div class="text-sm text-[var(--color-text-muted)] italic">Rendering preview...</div>';
+
+    if (!(window as any).marked || !(window as any).DOMPurify) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+      const dompurify = document.createElement('script');
+      dompurify.src = 'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js';
+      
+      script.onload = () => {
+        dompurify.onload = () => {
+          try {
+            const raw = (window as any).marked.parse(val);
+            previewPanel.innerHTML = (window as any).DOMPurify.sanitize(raw);
+          } catch {
+            previewPanel.innerHTML =
+              '<div class="text-sm text-red-600">Error rendering Markdown preview.</div>';
+          }
+        };
+        document.head.appendChild(dompurify);
+      };
+      document.head.appendChild(script);
+    } else {
+      try {
+        const raw = (window as any).marked.parse(val);
+        previewPanel.innerHTML = (window as any).DOMPurify.sanitize(raw);
+      } catch {
+        previewPanel.innerHTML =
+          '<div class="text-sm text-red-600">Error rendering Markdown preview.</div>';
+      }
+    }
+  }
+
+  // --- Form submission ---
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
+    const formData = new FormData(form);
+    const title = formData.get('title');
+    const slug = formData.get('slug');
+    const description = formData.get('description');
+    const content = formData.get('content');
+    const image = formData.get('image');
+    const tagsString = formData.get('tags') as string;
+    const author = formData.get('author');
+    const pubDate = formData.get('pubDate');
+    const published = formData.get('published') === 'on';
+
+    const seoTitle = formData.get('seoTitle');
+    const seoDescription = formData.get('seoDescription');
+    const canonicalUrl = formData.get('canonicalUrl');
+
+    const tags = tagsString
+      ? tagsString
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0)
+      : [];
+
+    try {
+      const res = await fetch('/api/admin/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          slug,
+          description,
+          content,
+          image,
+          tags,
+          author,
+          pubDate,
+          published,
+          seoTitle,
+          seoDescription,
+          canonicalUrl,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.status === 201) {
+        showToast('Post created successfully!', 'success');
+        setTimeout(() => {
+          window.location.href = '/admin/posts';
+        }, 1000);
+      } else {
+        showToast(data.error || 'Failed to create post.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Post';
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('A network error occurred. Please try again.', 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save Post';
+    }
+  });
+
+  // Run initial state setup
+  updateMetrics();
+  updateStatusBadge();
+  updateSerpPreview();
+  updateImagePreview();
+  updateTagsPreview();
+</script>

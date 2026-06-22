@@ -1,0 +1,60 @@
+---
+interface Props {
+  word: string;
+  score: number;
+  letterScores?: Record<string, number>;
+  blanksUsed?: string[];
+  href?: string;
+}
+
+import { TWL_SCORES } from '../../data/tileScores';
+
+const { word, score, letterScores = {}, blanksUsed = [], href } = Astro.props;
+
+const defaultScores = TWL_SCORES;
+
+const scores = { ...defaultScores, ...letterScores };
+const letters = word.toUpperCase().split('');
+const blanksSet = new Set(blanksUsed.map((b) => b.toUpperCase()));
+
+const Tag = href ? 'a' : 'div';
+---
+
+<Tag class="word-result-row group" {...href ? { href } : {}}>
+  <!-- Tiles -->
+  <div class="flex items-center gap-1 flex-wrap">
+    {
+      letters.map((letter, idx) => {
+        const isBlank =
+          blanksSet.has(letter) &&
+          blanksUsed.filter((b) => b.toUpperCase() === letter).length > idx;
+        const tileScore = isBlank ? 0 : (scores[letter] ?? 0);
+        return (
+          <span class:list={['tile', isBlank && 'blank']}>
+            {letter}
+            <sub>{tileScore}</sub>
+          </span>
+        );
+      })
+    }
+  </div>
+
+  <!-- Score Badge -->
+  <div class="flex items-center gap-2 shrink-0">
+    <span class="score-badge text-xs px-2 py-0.5">
+      {score} pts
+    </span>
+    {
+      href && (
+        <svg aria-hidden="true" focusable="false" class="h-4 w-4 text-gray-300 group-hover:text-[var(--color-primary)] transition-colors"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+        </svg>
+      )
+    }
+  </div>
+</Tag>

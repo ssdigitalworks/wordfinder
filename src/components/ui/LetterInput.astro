@@ -1,0 +1,169 @@
+---
+interface Props {
+  id?: string;
+  name?: string;
+  placeholder?: string;
+  maxLength?: number;
+  label?: string;
+  helpText?: string;
+}
+
+import { TWL_SCORES } from '../../data/tileScores';
+
+const {
+  id = 'letters-input',
+  name = 'letters',
+  placeholder = 'Enter your letters (e.g., AEIOU??)',
+  maxLength = 15,
+  label = 'Your Letters',
+  helpText = 'Use ? for blank tiles. Up to 15 letters.',
+} = Astro.props;
+---
+
+<div class="space-y-2">
+  <label for={id} class="block text-sm font-semibold text-[var(--color-text-main)]">
+    {label}
+  </label>
+  <div class="relative">
+    <input
+      type="text"
+      id={id}
+      name={name}
+      placeholder={placeholder}
+      maxlength={maxLength}
+      autocomplete="off"
+      autocapitalize="characters"
+      spellcheck="false"
+      aria-label={label}
+      aria-describedby={helpText ? `${id}-help` : undefined}
+      class="air-input pr-12 text-lg font-[var(--font-control)] uppercase tracking-widest transition-all duration-200"
+    />
+    <!-- Clear button -->
+    <button
+      type="button"
+      id={`${id}-clear`}
+      class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-8 w-8 rounded-xl text-[var(--color-text-muted)]/50 hover:text-[var(--color-text-main)] hover:bg-[var(--color-bg-alt)] transition-all duration-200 opacity-0 pointer-events-none"
+      aria-label="Clear input"
+    >
+      <svg aria-hidden="true" focusable="false" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Live 3D Tile Rack Preview -->
+  <div
+    id="rack-preview-container"
+    class="hidden mt-3 transition-all duration-300 transform scale-95 opacity-0 origin-top"
+  >
+    <div
+      class="text-xs font-semibold text-[var(--color-text-muted)] mb-1.5 uppercase tracking-wide flex justify-between"
+    >
+      <span>Live Rack Preview</span>
+      <span id="rack-count">0 / 15 tiles</span>
+    </div>
+    <!-- Physical Rack Tray style -->
+    <div
+      id="rack-preview"
+      class="flex flex-wrap gap-1.5 p-3 rounded-xl min-h-[3.75rem] items-center justify-center bg-gradient-to-b from-[#F2EAD4] to-[#E2D7BD] dark:from-[#222226] dark:to-[#18181C] border border-[#D8CEB9] dark:border-[#2E2E33] shadow-inner relative overflow-hidden"
+    >
+      <!-- Subtle wooden/felt texture highlights -->
+      <div class="absolute inset-x-0 bottom-0 h-1.5 bg-[#B8A682] dark:bg-[#121214]"></div>
+    </div>
+  </div>
+
+  {helpText && <p id={`${id}-help`} class="text-xs text-[var(--color-text-muted)]">{helpText}</p>}
+</div>
+
+<script is:inline define:vars={{ id, TILE_SCORES: TWL_SCORES }}>
+  const input = document.getElementById(id);
+  const clearBtn = document.getElementById(`${id}-clear`);
+  const rackContainer = document.getElementById('rack-preview-container');
+  const rackPreview = document.getElementById('rack-preview');
+  const rackCount = document.getElementById('rack-count');
+
+  if (input && clearBtn) {
+    function updateRackPreview() {
+      const val = input.value
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z?]/g, '');
+
+      // Update rack count
+      if (rackCount) {
+        rackCount.textContent = `${val.length} / 15 tiles`;
+      }
+
+      if (val.length > 0) {
+        // Show rack container
+        if (rackContainer) {
+          rackContainer.classList.remove('hidden');
+          // Force layout reflow
+          void rackContainer.offsetHeight;
+          rackContainer.classList.remove('scale-95', 'opacity-0');
+          rackContainer.classList.add('scale-100', 'opacity-100');
+        }
+
+        if (rackPreview) {
+          const trayWoodShelf =
+            '<div class="absolute inset-x-0 bottom-0 h-1.5 bg-[#B8A682] dark:bg-[#121214]"></div>';
+
+          let tilesHtml = '';
+          for (let i = 0; i < val.length; i++) {
+            const ch = val[i];
+            const isBlank = ch === '?';
+            const pts = isBlank ? 0 : TILE_SCORES[ch] || 0;
+
+            if (isBlank) {
+              tilesHtml += `<span class="tile blank animate-entrance duration-150" style="animation-duration: 0.2s; animation-delay: ${i * 40}ms;">?<sub>0</sub></span>`;
+            } else {
+              tilesHtml += `<span class="tile animate-entrance duration-150" style="animation-duration: 0.2s; animation-delay: ${i * 40}ms;">${ch}<sub>${pts}</sub></span>`;
+            }
+          }
+          rackPreview.innerHTML = trayWoodShelf + tilesHtml;
+        }
+      } else {
+        // Hide rack container
+        if (rackContainer) {
+          rackContainer.classList.add('scale-95', 'opacity-0');
+          rackContainer.classList.remove('scale-100', 'opacity-100');
+          setTimeout(() => {
+            if (input.value.trim().length === 0) {
+              rackContainer.classList.add('hidden');
+            }
+          }, 300);
+        }
+      }
+    }
+
+    function updateClearVisibility() {
+      if (input.value.length > 0) {
+        clearBtn.classList.remove('opacity-0', 'pointer-events-none');
+        clearBtn.classList.add('opacity-100', 'pointer-events-auto');
+      } else {
+        clearBtn.classList.add('opacity-0', 'pointer-events-none');
+        clearBtn.classList.remove('opacity-100', 'pointer-events-auto');
+      }
+    }
+
+    input.addEventListener('input', () => {
+      const cleanVal = input.value.replace(/[^A-Za-z?]/g, '');
+      if (input.value !== cleanVal) {
+        input.value = cleanVal;
+      }
+      updateClearVisibility();
+      updateRackPreview();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      updateClearVisibility();
+      updateRackPreview();
+      input.focus();
+    });
+
+    // Initial state
+    updateClearVisibility();
+    updateRackPreview();
+  }
+</script>

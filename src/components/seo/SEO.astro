@@ -1,0 +1,227 @@
+---
+import { SITE_URL } from '@lib/config';
+import { getSetting } from '../../lib/getSetting';
+
+interface PropFAQ {
+  question: string;
+  answer: string;
+}
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonical: string;
+  ogImage?: string;
+  noindex?: boolean;
+  type?: 'website' | 'article';
+  publishedDate?: string;
+  modifiedDate?: string;
+  schemaType?: 'WebApplication' | 'Article' | 'WebSite' | 'Word' | 'List';
+  faqs?: PropFAQ[];
+  appName?: string;
+  appDescription?: string;
+  wordName?: string;
+  listItems?: { name: string; url: string }[];
+  googleSiteVerification?: string;
+}
+
+const {
+  title: propTitle,
+  description: propDescription,
+  canonical,
+  ogImage = '/og-default.png',
+  noindex = false,
+  type = 'website',
+  publishedDate,
+  modifiedDate,
+  schemaType,
+  faqs,
+  appName,
+  appDescription,
+  wordName,
+  listItems,
+  googleSiteVerification: propGoogleSiteVerification,
+} = Astro.props;
+
+const dbTitle = await getSetting(
+  'default_seo_title',
+  'Scrabble Word Finder — Find Words Instantly',
+);
+const dbDescription = await getSetting(
+  'default_seo_description',
+  'Expert Scrabble tips, strategy guides, word lists, and game comparisons. Improve your Scrabble and Words with Friends game.',
+);
+const dbGoogleVerify = await getSetting('google_site_verification', '');
+
+const title = propTitle || dbTitle;
+const description = propDescription || dbDescription;
+const googleSiteVerification = propGoogleSiteVerification || dbGoogleVerify;
+
+const absoluteOgImage = ogImage.startsWith('http')
+  ? ogImage
+  : `${SITE_URL}${ogImage.startsWith('/') ? '' : '/'}${ogImage}`;
+
+// Standard Organization Schema
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': `${SITE_URL}/#organization`,
+  name: 'Scrabble Word Finder',
+  url: SITE_URL,
+  logo: {
+    '@type': 'ImageObject',
+    url: `${SITE_URL}/logo.png`,
+    width: 512,
+    height: 512,
+  },
+};
+
+// Standard WebSite & SearchAction Schema
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${SITE_URL}/#website`,
+  name: 'Scrabble Word Finder',
+  url: SITE_URL,
+  publisher: {
+    '@id': `${SITE_URL}/#organization`,
+  },
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${SITE_URL}/?letters={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
+};
+
+// Software Application Schema
+const softwareSchema =
+  schemaType === 'WebApplication'
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: appName || title,
+        url: canonical,
+        description: appDescription || description,
+        applicationCategory: 'GameApplication',
+        operatingSystem: 'Any',
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+        },
+        browserRequirements: 'Requires JavaScript',
+      }
+    : null;
+
+// FAQ Schema
+const faqSchema =
+  faqs && faqs.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((faq) => ({
+          '@type': 'Question',
+          name: faq.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.answer,
+          },
+        })),
+      }
+    : null;
+
+// DefinedTerm Schema for Word Detail Pages
+const wordSchema =
+  schemaType === 'Word'
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'DefinedTerm',
+        '@id': `${canonical}#definedterm`,
+        name: wordName || canonical.split('/').pop()?.toUpperCase() || '',
+        description: description,
+        inDefinedTermSet: {
+          '@type': 'DefinedTermSet',
+          name: 'Scrabble Word Finder Dictionary',
+          url: SITE_URL,
+        },
+      }
+    : null;
+
+// ItemList Schema for Category and List Pages
+const listSchema =
+  schemaType === 'List'
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: title,
+        description: description,
+        url: canonical,
+        numberOfItems: listItems ? listItems.length : 0,
+        itemListElement: listItems
+          ? listItems.map((item, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              name: item.name,
+              url: item.url.startsWith('http')
+                ? item.url
+                : `${SITE_URL}${item.url.startsWith('/') ? '' : '/'}${item.url}`,
+            }))
+          : [],
+      }
+    : null;
+
+const isRoot = canonical === SITE_URL || canonical === SITE_URL + '/';
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:type" content={type} />
+<meta property="og:image" content={absoluteOgImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={title} />
+<meta property="og:site_name" content="Scrabble Word Finder" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={absoluteOgImage} />
+<meta name="twitter:image:alt" content={title} />
+<meta name="twitter:domain" content="scrabblewordfinder.com" />
+{noindex && <meta name="robots" content="noindex,follow" />}
+{!noindex && <meta name="robots" content="index,follow" />}
+{
+  googleSiteVerification && (
+    <meta name="google-site-verification" content={googleSiteVerification} />
+  )
+}
+{publishedDate && <meta property="article:published_time" content={publishedDate} />}
+{modifiedDate && <meta property="article:modified_time" content={modifiedDate} />}
+
+{/* Conditional Global Schemas (Homepage Only) */}
+{
+  isRoot && (
+    <>
+      <script is:inline type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
+      <script is:inline type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
+    </>
+  )
+}
+
+{/* Conditional WebApplication Schema */}
+{softwareSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(softwareSchema)} />}
+
+{/* Conditional FAQ Schema */}
+{faqSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(faqSchema)} />}
+
+{/* Conditional DefinedTerm Schema */}
+{wordSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(wordSchema)} />}
+
+{/* Conditional ItemList Schema */}
+{listSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(listSchema)} />}

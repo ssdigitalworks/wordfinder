@@ -1,0 +1,223 @@
+---
+
+---
+
+<div
+  id="ai-coach-card"
+  class="card border border-indigo-200 dark:border-indigo-900 bg-gradient-to-br from-indigo-50/50 to-purple-50/30 dark:from-indigo-950/20 dark:to-purple-950/10 p-6 shadow-sm mb-6 animate-entrance"
+>
+  <div class="flex items-center gap-3 mb-4">
+    <div
+      class="w-10 h-10 rounded-xl bg-indigo-600 dark:bg-indigo-500 text-white flex items-center justify-center text-xl shadow-md shadow-indigo-200 dark:shadow-none"
+    >
+      🧠
+    </div>
+    <div>
+      <h3
+        class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] font-bold text-lg text-indigo-950 dark:text-indigo-200"
+      >
+        Smart Scrabble Coach & Strategy
+      </h3>
+      <p class="text-xs text-indigo-700/70 dark:text-indigo-400/70">
+        Real-time strategic analysis of your rack and potential plays
+      </p>
+    </div>
+  </div>
+
+  <!-- Teaser state: shown by default when no search has been performed -->
+  <div
+    id="ai-coach-teaser"
+    class="text-sm text-[var(--color-text-muted)] leading-relaxed border-t border-indigo-100 dark:border-indigo-900/30 pt-4 mt-2"
+  >
+    <p>
+      Enter your rack letters above to activate the Smart Coach. It will analyze your
+      vowel-consonant balance, compute Bingo probabilities, and suggest aggressive vs. defensive
+      strategies.
+    </p>
+  </div>
+
+  <!-- Detailed state: hidden by default, populated and shown by JS after search -->
+  <div
+    id="ai-coach-details"
+    class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-indigo-100 dark:border-indigo-900/30 mt-2 hidden"
+  >
+    <!-- Column 1: Rack Metrics -->
+    <div
+      class="bg-white/60 dark:bg-zinc-900/40 rounded-xl p-4 border border-indigo-100/50 dark:border-indigo-900/30 space-y-4"
+    >
+      <div>
+        <span
+          class="block text-xs uppercase tracking-wider text-indigo-700 dark:text-indigo-400 font-bold mb-1"
+          >Rack Balance</span
+        >
+        <div id="ai-coach-balance" class="text-lg font-bold text-[var(--color-text-main)]">--</div>
+        <p id="ai-coach-balance-desc" class="text-xs text-[var(--color-text-muted)] mt-0.5">
+          Vowels vs Consonants ratio
+        </p>
+      </div>
+      <div class="border-t border-indigo-100 dark:border-indigo-900/30 pt-3">
+        <span
+          class="block text-xs uppercase tracking-wider text-indigo-700 dark:text-indigo-400 font-bold mb-1"
+          >Bingo Probability</span
+        >
+        <div id="ai-coach-bingo" class="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+          --
+        </div>
+        <p class="text-xs text-[var(--color-text-muted)] mt-0.5">Chance of a 50-point bonus play</p>
+      </div>
+    </div>
+
+    <!-- Column 2: Play Strategies -->
+    <div
+      class="bg-white/60 dark:bg-zinc-900/40 rounded-xl p-4 border border-indigo-100/50 dark:border-indigo-900/30 space-y-4"
+    >
+      <div>
+        <span
+          class="block text-xs uppercase tracking-wider text-indigo-700 dark:text-indigo-400 font-bold mb-1"
+          >Aggressive Play (Max Points)</span
+        >
+        <div id="ai-coach-aggressive" class="text-base font-bold text-[var(--color-primary)]">
+          --
+        </div>
+        <p class="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+          Focuses entirely on maximizing point score
+        </p>
+      </div>
+      <div class="border-t border-indigo-100 dark:border-indigo-900/30 pt-3">
+        <span
+          class="block text-xs uppercase tracking-wider text-indigo-700 dark:text-indigo-400 font-bold mb-1"
+          >Defensive Play (Block Lanes)</span
+        >
+        <div id="ai-coach-defensive" class="text-base font-bold text-indigo-500">--</div>
+        <p class="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+          Saves critical tiles / limits board lanes
+        </p>
+      </div>
+    </div>
+
+    <!-- Column 3: Tactical Pro Tip -->
+    <div
+      class="bg-white/60 dark:bg-zinc-900/40 rounded-xl p-4 border border-indigo-100/50 dark:border-indigo-900/30"
+    >
+      <span
+        class="block text-xs uppercase tracking-wider text-indigo-700 dark:text-indigo-400 font-bold mb-1"
+        >Tactical Coach Breakdown</span
+      >
+      <div
+        id="ai-coach-tip"
+        class="text-xs font-medium text-[var(--color-text-main)] leading-relaxed mt-2 space-y-2"
+      >
+        --
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // @ts-expect-error - Attaching global function to window
+  (window as any).updateAICoach = function (
+    letters: string,
+    results: { word: string; score: number }[],
+  ) {
+    const teaser = document.getElementById('ai-coach-teaser');
+    const details = document.getElementById('ai-coach-details');
+
+    const balanceEl = document.getElementById('ai-coach-balance');
+    const balanceDescEl = document.getElementById('ai-coach-balance-desc');
+    const bingoEl = document.getElementById('ai-coach-bingo');
+    const aggressiveEl = document.getElementById('ai-coach-aggressive');
+    const defensiveEl = document.getElementById('ai-coach-defensive');
+    const tipEl = document.getElementById('ai-coach-tip');
+
+    if (
+      !teaser ||
+      !details ||
+      !balanceEl ||
+      !balanceDescEl ||
+      !bingoEl ||
+      !aggressiveEl ||
+      !defensiveEl ||
+      !tipEl
+    )
+      return;
+
+    if (!letters || !results || results.length === 0) {
+      teaser.classList.remove('hidden');
+      details.classList.add('hidden');
+      return;
+    }
+
+    teaser.classList.add('hidden');
+    details.classList.remove('hidden');
+
+    const cleanLetters = letters.toUpperCase().replace(/[^A-Z?]/g, '');
+    const vowels = cleanLetters.replace(/[^AEIOUY]/g, '').length;
+    const consonants = cleanLetters.replace(/[AEIOUY?]/g, '').length;
+    const blanks = cleanLetters.replace(/[^?]/g, '').length;
+
+    // 1. Balance Analysis
+    balanceEl.textContent = `${vowels}V / ${consonants}C`;
+    let balanceDesc = 'Balanced rack.';
+    if (vowels > consonants + 2) {
+      balanceDesc = 'Vowel heavy. Dump vowels on hooks.';
+    } else if (consonants > vowels + 2) {
+      balanceDesc = 'Consonant heavy. Look for consonant blends.';
+    }
+    if (blanks > 0) balanceDesc += ` (${blanks} blank)`;
+    balanceDescEl.textContent = balanceDesc;
+
+    // 2. Bingo Probability
+    let bingoProb = 0;
+    if (cleanLetters.length >= 7) {
+      bingoProb = 10;
+      const commonCount = cleanLetters.split('').filter((c) => 'EARIOTNSL'.includes(c)).length;
+      bingoProb += commonCount * 8;
+      bingoProb += blanks * 25;
+
+      const has7Or8 = results.some((r) => r.word.length >= 7);
+      if (has7Or8) {
+        bingoProb += 35;
+      }
+      bingoProb = Math.min(99, bingoProb);
+      if (!has7Or8 && blanks === 0) bingoProb = Math.min(15, bingoProb);
+    }
+    bingoEl.textContent = `${bingoProb}%`;
+
+    // 3. Aggressive vs Defensive SUGGESTIONS
+    const best = results[0];
+    aggressiveEl.textContent = `${best.word} (${best.score} pts)`;
+
+    // Defensive strategy: find a short play (2-4 letters) or fallback
+    const defPlay =
+      results.find((r) => r.word.length >= 2 && r.word.length <= 4) || results[results.length - 1];
+    defensiveEl.textContent = `${defPlay.word} (${defPlay.score} pts)`;
+
+    // 4. Tactical tips and leave strategy
+    let tipsHtml = '';
+
+    // Letters holding/leave advice
+    const bestLetters = best.word.split('');
+    let tempLetters = cleanLetters.split('');
+    bestLetters.forEach((ch) => {
+      const idx = tempLetters.indexOf(ch);
+      if (idx !== -1) tempLetters.splice(idx, 1);
+    });
+    const leaveStr = tempLetters.length > 0 ? tempLetters.join(', ') : 'None';
+
+    tipsHtml += `<p><strong>Leave:</strong> Keeping [${leaveStr}] on rack.</p>`;
+
+    if (best.word.length >= 7) {
+      tipsHtml += `<p>🎉 <strong>Bingo Alert!</strong> Play "${best.word}" to secure your +50 point bonus!</p>`;
+    } else if (cleanLetters.includes('Q') && !cleanLetters.includes('U')) {
+      tipsHtml += `<p>💡 <strong>Q No U Hook:</strong> Dump Q in short words like QI or QAT on multiplier squares.</p>`;
+    } else if (blanks > 0) {
+      tipsHtml += `<p>💡 <strong>Blank Strategy:</strong> Save your blank (?) tile to execute a 7-letter Bingo next turn.</p>`;
+    } else if (leaveStr.includes('S')) {
+      tipsHtml += `<p>💡 <strong>Hold S:</strong> Keep S on your rack unless playing it yields a Triple Word Score.</p>`;
+    } else {
+      tipsHtml += `<p>💡 <strong>Board Tip:</strong> Place high scoring tiles (Z, J, X, K) on double/triple letter slots.</p>`;
+    }
+
+    tipEl.innerHTML = tipsHtml;
+  };
+</script>

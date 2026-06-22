@@ -1,0 +1,1142 @@
+---
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { db } from '../../../../db/client';
+import { posts } from '../../../../db/schema';
+import { eq } from 'drizzle-orm';
+import { SITE_URL } from '../../../../lib/config';
+
+export const prerender = false;
+
+const { id: idParam } = Astro.params;
+const id = Number(idParam);
+
+let post: typeof posts.$inferSelect | null = null;
+let dbError = '';
+let parsedTags = '';
+
+if (db) {
+  try {
+    post = (await db.select().from(posts).where(eq(posts.id, id)).get()) || null;
+    if (!post) {
+      dbError = 'Post not found';
+    } else if (post.tags) {
+      try {
+        const arr = JSON.parse(post.tags);
+        if (Array.isArray(arr)) {
+          parsedTags = arr.join(', ');
+        }
+      } catch {
+        parsedTags = post.tags;
+      }
+    }
+  } catch (e: unknown) {
+    dbError = e instanceof Error ? e.message : String(e) || 'Database error occurred';
+    console.error('Error fetching post:', e);
+  }
+} else {
+  dbError = 'Database not configured';
+}
+---
+
+<AdminLayout title={post ? `Edit: ${post.title}` : 'Edit Post'}>
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <a
+          href="/admin/posts"
+          class="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-light)] flex items-center gap-1"
+        >
+          &larr; Back to Posts
+        </a>
+        <h1
+          class="text-3xl font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif] mt-2"
+        >
+          {post ? `Edit Post: ${post.title}` : 'Edit Post'}
+        </h1>
+      </div>
+    </div>
+
+    <!-- Error/Not Found State -->
+    {
+      dbError && (
+        <div class="p-6 text-center card border border-red-200 dark:border-red-900/30 bg-[var(--color-card)] rounded-2xl">
+          <p class="text-lg font-medium text-red-600 dark:text-red-400">{dbError}</p>
+          <a href="/admin/posts" class="btn-primary mt-4 inline-block">
+            Return to list
+          </a>
+        </div>
+      )
+    }
+
+    <!-- Form -->
+    {
+      !dbError && post && (
+        <form id="edit-post-form" class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
+          <input type="hidden" id="post-id" value={post.id} />
+
+          {/* Left Main Column (Content & Editor) */}
+          <div class="space-y-6 min-w-0">
+            {/* Main Details Card */}
+            <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6">
+              {/* Title */}
+              <div>
+                <label
+                  for="title"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Title
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  required
+                  value={post.title}
+                  placeholder="Enter title here"
+                  class="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-lg font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600"
+                />
+              </div>
+
+              {/* Slug */}
+              <div>
+                <label
+                  for="slug"
+                  class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1 uppercase tracking-wider"
+                >
+                  Permalink Slug
+                </label>
+                <div class="flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
+                  <span class="select-none">{SITE_URL}/blog/</span>
+                  <input
+                    type="text"
+                    id="slug"
+                    name="slug"
+                    required
+                    value={post.slug}
+                    placeholder="post-slug"
+                    class="flex-1 min-w-0 px-2 py-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Description / Excerpt */}
+              <div>
+                <label
+                  for="description"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Excerpt / Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows="3"
+                  placeholder="Write a brief, catchy summary of this article..."
+                  class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y text-sm"
+                >
+                  {post.description}
+                </textarea>
+              </div>
+            </div>
+
+            {/* Markdown Editor Card */}
+            <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-4">
+              <div class="flex items-center justify-between">
+                <label for="content" class="text-sm font-semibold text-[var(--color-text-main)]">
+                  Article Content (Markdown)
+                </label>
+                {/* Tab controllers */}
+                <div class="flex border border-[var(--color-border)] rounded-lg overflow-hidden bg-[var(--color-bg-alt)] text-xs font-semibold select-none">
+                  <button
+                    type="button"
+                    id="tab-write"
+                    class="px-3 py-1.5 bg-[var(--color-card)] text-[var(--color-primary)] border-r border-[var(--color-border)] cursor-pointer"
+                  >
+                    Write
+                  </button>
+                  <button
+                    type="button"
+                    id="tab-preview"
+                    class="px-3 py-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] cursor-pointer"
+                  >
+                    Preview
+                  </button>
+                </div>
+              </div>
+
+              {/* Write Panel */}
+              <div id="write-panel" class="space-y-2">
+                {/* Formatting Toolbar */}
+                <div class="flex flex-wrap gap-1 bg-[var(--color-bg-alt)] border border-[var(--color-border)] p-1.5 rounded-t-xl select-none">
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs font-bold cursor-pointer text-[var(--color-text-main)]"
+                    data-md-tool="bold"
+                    title="Bold"
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs italic cursor-pointer text-[var(--color-text-main)]"
+                    data-md-tool="italic"
+                    title="Italic"
+                  >
+                    I
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs font-mono cursor-pointer text-[var(--color-text-main)]"
+                    data-md-tool="code"
+                    title="Code"
+                  >
+                    Code
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs cursor-pointer text-[var(--color-text-main)]"
+                    data-md-tool="link"
+                    title="Insert Link"
+                  >
+                    🔗 Link
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs font-semibold cursor-pointer text-[var(--color-text-main)]"
+                    data-md-tool="h1"
+                    title="Heading 1"
+                  >
+                    H1
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs font-semibold cursor-pointer text-[var(--color-text-main)]"
+                    data-md-tool="h2"
+                    title="Heading 2"
+                  >
+                    H2
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs cursor-pointer text-[var(--color-text-main)]"
+                    data-md-tool="quote"
+                    title="Blockquote"
+                  >
+                    ” Quote
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs cursor-pointer text-[var(--color-text-main)]"
+                    data-md-tool="list"
+                    title="List"
+                  >
+                    📋 List
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 hover:bg-[var(--color-border)] rounded text-xs cursor-pointer text-[var(--color-text-main)]"
+                    data-md-tool="image"
+                    title="Image Link"
+                  >
+                    🖼️ Image
+                  </button>
+                </div>
+                <textarea
+                  id="content"
+                  name="content"
+                  rows="16"
+                  placeholder="Write your article in Markdown..."
+                  class="w-full px-4 py-3 rounded-b-xl border-x border-b border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all font-mono text-sm resize-y"
+                >
+                  {post.content}
+                </textarea>
+              </div>
+
+              {/* Preview Panel */}
+              <div
+                id="preview-panel"
+                class="hidden p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] min-h-[350px] overflow-y-auto prose dark:prose-invert max-w-none text-[var(--color-text-main)]"
+              >
+                <div class="text-sm text-[var(--color-text-muted)] italic">
+                  Preview content will load here...
+                </div>
+              </div>
+            </div>
+
+            {/* SEO Live SERP Preview Card */}
+            <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-4">
+              <h3 class="text-base font-bold text-[var(--color-text-main)] flex items-center gap-2">
+                <span>🔍</span> Google Search Result Preview
+              </h3>
+              <p class="text-xs text-[var(--color-text-muted)]">
+                This is how your post will appear in Google search results.
+              </p>
+
+              <div class="p-4 border border-[var(--color-border)] bg-[var(--color-bg-alt)] rounded-xl space-y-1 max-w-lg">
+                <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
+                  <span>{SITE_URL}</span>
+                  <span>›</span>
+                  <span>blog</span>
+                  <span>›</span>
+                  <span id="preview-serp-slug" class="font-medium text-gray-700 dark:text-gray-300">
+                    post-slug
+                  </span>
+                </div>
+                <a
+                  href="#"
+                  onclick="return false;"
+                  id="preview-serp-title"
+                  class="text-lg md:text-xl text-blue-800 dark:text-blue-400 font-medium hover:underline block leading-tight"
+                >
+                  New Blog Post
+                </a>
+                <p
+                  id="preview-serp-desc"
+                  class="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed"
+                >
+                  Please enter an excerpt or custom SEO description to preview the snippet.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar Column (Publishing & Meta Controls) */}
+          <div class="space-y-6">
+            {/* Publish Action Card */}
+            <div class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-4">
+              <h3 class="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2">
+                Publish Settings
+              </h3>
+
+              {/* Status Indicator */}
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-[var(--color-text-muted)]">Status:</span>
+                <span
+                  id="status-badge"
+                  class="px-2 py-0.5 rounded font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                >
+                  Draft
+                </span>
+              </div>
+
+              {/* Date Picker */}
+              <div>
+                <label
+                  for="pubDate"
+                  class="block text-xs font-semibold text-[var(--color-text-main)] mb-1"
+                >
+                  Publish Date
+                </label>
+                <input
+                  type="date"
+                  id="pubDate"
+                  name="pubDate"
+                  value={post.pubDate ? post.pubDate.split('T')[0] : ''}
+                  required
+                  class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                />
+              </div>
+
+              {/* Author */}
+              <div>
+                <label
+                  for="author"
+                  class="block text-xs font-semibold text-[var(--color-text-main)] mb-1"
+                >
+                  Author
+                </label>
+                <input
+                  type="text"
+                  id="author"
+                  name="author"
+                  value={post.author}
+                  required
+                  class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                />
+              </div>
+
+              {/* Publish Checkbox */}
+              <div class="flex items-center gap-2 py-1">
+                <input
+                  type="checkbox"
+                  id="published"
+                  name="published"
+                  checked={post.published}
+                  class="w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                />
+                <label
+                  for="published"
+                  class="text-xs font-semibold text-[var(--color-text-main)] cursor-pointer"
+                >
+                  Publish immediately
+                </label>
+              </div>
+
+
+
+              {/* Submit Buttons */}
+              <div class="flex flex-col gap-2 pt-2 border-t border-[var(--color-border)]">
+                <div class="flex items-center gap-2">
+                  <a
+                    href="/admin/posts"
+                    class="flex-1 text-center py-2 rounded-lg border border-[var(--color-border)] text-xs font-semibold hover:bg-[var(--color-bg-alt)] text-[var(--color-text-main)] transition-colors"
+                  >
+                    Cancel
+                  </a>
+                  <button
+                    type="submit"
+                    id="submit-btn"
+                    class="flex-1 btn-primary py-2 rounded-lg text-xs font-semibold cursor-pointer"
+                  >
+                    Update Post
+                  </button>
+                </div>
+
+                {/* Quick Delete Action */}
+                <button
+                  type="button"
+                  id="delete-btn"
+                  class="w-full text-center py-2 rounded-lg border border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900/30 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 text-xs font-semibold transition-colors mt-1 cursor-pointer"
+                >
+                  Delete Post
+                </button>
+              </div>
+            </div>
+
+            {/* Featured Image Card */}
+            <div class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-3">
+              <h3 class="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2">
+                Featured Image
+              </h3>
+
+              <div class="space-y-2">
+                <input
+                  type="text"
+                  id="image"
+                  name="image"
+                  value={post.image || ''}
+                  placeholder="e.g. /images/blog/photo.png"
+                  class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                />
+
+                <label class="w-full py-2 bg-[var(--color-bg-alt)] hover:bg-[var(--color-border)] border border-[var(--color-border)] text-xs font-semibold rounded-lg cursor-pointer flex items-center justify-center gap-1 text-[var(--color-text-main)] transition-colors select-none">
+                  <span>📤</span>
+                  <span>Upload Image</span>
+                  <input type="file" id="image-upload" class="hidden" accept="image/*" />
+                </label>
+                <div id="upload-status" class="hidden text-[10px] font-semibold text-center" />
+              </div>
+
+              {/* Thumbnail Image Preview */}
+              <div
+                id="image-preview-container"
+                class="hidden border border-[var(--color-border)] rounded-xl overflow-hidden aspect-[16/9] bg-black/5 dark:bg-white/5 relative"
+              >
+                <img id="image-preview" src="#" alt="Preview" class="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  id="remove-image-btn"
+                  class="absolute top-1.5 right-1.5 bg-black/70 hover:bg-black/90 text-white rounded-full p-1 leading-none text-xs w-5 h-5 flex items-center justify-center select-none"
+                  title="Remove image"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Tags Card */}
+            <div class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-3">
+              <h3 class="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2">
+                Tags
+              </h3>
+
+              <div class="space-y-2">
+                <input
+                  type="text"
+                  id="tags"
+                  name="tags"
+                  value={parsedTags}
+                  placeholder="Comma-separated values"
+                  class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                />
+
+                {/* Dynamic Tags Preview */}
+                <div id="tags-preview" class="flex flex-wrap gap-1 mt-1" />
+              </div>
+            </div>
+
+            {/* Post Stats & Readability */}
+            <div class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-3">
+              <h3 class="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2">
+                Content Analysis
+              </h3>
+
+              <div class="space-y-2.5 text-xs text-[var(--color-text-muted)]">
+                <div class="flex items-center justify-between">
+                  <span>Words:</span>
+                  <span id="word-count" class="font-bold text-[var(--color-text-main)]">
+                    0
+                  </span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span>Characters:</span>
+                  <span id="char-count" class="font-bold text-[var(--color-text-main)]">
+                    0
+                  </span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span>Reading time:</span>
+                  <span id="read-time" class="font-bold text-[var(--color-text-main)]">
+                    0 min
+                  </span>
+                </div>
+
+                {/* Readability Index */}
+                <div class="border-t border-[var(--color-border)] pt-2.5 space-y-1">
+                  <span class="text-[10px] font-semibold uppercase tracking-wider">
+                    Readability:
+                  </span>
+                  <div
+                    id="readability-badge"
+                    class="p-2 rounded-lg border border-dashed text-center font-semibold text-xs transition-colors"
+                  >
+                    No content
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SEO Overrides */}
+            <div class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-3">
+              <h3 class="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2">
+                SEO Override Controls
+              </h3>
+
+              <div class="space-y-3">
+                <div>
+                  <label
+                    for="seoTitle"
+                    class="block text-xs font-semibold text-[var(--color-text-main)] mb-1"
+                  >
+                    Custom Meta Title
+                  </label>
+                  <input
+                    type="text"
+                    id="seoTitle"
+                    name="seoTitle"
+                    value={post.seoTitle || ''}
+                    placeholder="Leave blank for post title"
+                    class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    for="seoDescription"
+                    class="block text-xs font-semibold text-[var(--color-text-main)] mb-1"
+                  >
+                    Custom Meta Description
+                  </label>
+                  <textarea
+                    id="seoDescription"
+                    name="seoDescription"
+                    rows="3"
+                    placeholder="Leave blank for excerpt"
+                    class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] resize-y"
+                  >
+                    {post.seoDescription || ''}
+                  </textarea>
+                </div>
+
+                <div>
+                  <label
+                    for="canonicalUrl"
+                    class="block text-xs font-semibold text-[var(--color-text-main)] mb-1"
+                  >
+                    Canonical URL Override
+                  </label>
+                  <input
+                    type="text"
+                    id="canonicalUrl"
+                    name="canonicalUrl"
+                    value={post.canonicalUrl || ''}
+                    placeholder="e.g. https://another.com/post"
+                    class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      )
+    }
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div
+    id="delete-modal"
+    class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-hidden="true"
+  >
+    <div
+      class="card p-6 max-w-sm w-full border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-xl space-y-4"
+    >
+      <h4
+        class="text-lg font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+      >
+        Delete Post?
+      </h4>
+      <p class="text-sm text-[var(--color-text-muted)] leading-relaxed">
+        Are you sure you want to delete this post? This action is permanent and cannot be undone.
+      </p>
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button
+          type="button"
+          id="delete-cancel"
+          class="px-4 py-2 rounded-xl border border-[var(--color-border)] text-xs font-semibold hover:bg-[var(--color-bg-alt)] text-[var(--color-text-main)] cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          id="delete-confirm"
+          class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold cursor-pointer"
+        >
+          Delete Permanently
+        </button>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { showToast } from '../../../../lib/toast';
+
+  const titleInput = document.getElementById('title') as HTMLInputElement;
+  const slugInput = document.getElementById('slug') as HTMLInputElement;
+  const descriptionInput = document.getElementById('description') as HTMLTextAreaElement;
+  const contentTextarea = document.getElementById('content') as HTMLTextAreaElement;
+  const pubDateInput = document.getElementById('pubDate') as HTMLInputElement;
+  const publishedCheckbox = document.getElementById('published') as HTMLInputElement;
+  const form = document.getElementById('edit-post-form') as HTMLFormElement;
+  const postIdInput = document.getElementById('post-id') as HTMLInputElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  const imageInput = document.getElementById('image') as HTMLInputElement;
+  const imageUploadInput = document.getElementById('image-upload') as HTMLInputElement;
+  const uploadStatus = document.getElementById('upload-status') as HTMLDivElement;
+  const imagePreviewContainer = document.getElementById(
+    'image-preview-container',
+  ) as HTMLDivElement;
+  const imagePreview = document.getElementById('image-preview') as HTMLImageElement;
+  const removeImageBtn = document.getElementById('remove-image-btn') as HTMLButtonElement;
+
+  const tagsInput = document.getElementById('tags') as HTMLInputElement;
+  const tagsPreview = document.getElementById('tags-preview') as HTMLDivElement;
+
+  const wordCountSpan = document.getElementById('word-count') as HTMLSpanElement;
+  const charCountSpan = document.getElementById('char-count') as HTMLSpanElement;
+  const readTimeSpan = document.getElementById('read-time') as HTMLSpanElement;
+  const readabilityBadge = document.getElementById('readability-badge') as HTMLDivElement;
+
+  const tabWrite = document.getElementById('tab-write') as HTMLButtonElement;
+  const tabPreview = document.getElementById('tab-preview') as HTMLButtonElement;
+  const writePanel = document.getElementById('write-panel') as HTMLDivElement;
+  const previewPanel = document.getElementById('preview-panel') as HTMLDivElement;
+
+  const statusBadge = document.getElementById('status-badge') as HTMLSpanElement;
+
+  const seoTitleInput = document.getElementById('seoTitle') as HTMLInputElement;
+  const seoDescriptionInput = document.getElementById('seoDescription') as HTMLTextAreaElement;
+
+  const serpSlug = document.getElementById('preview-serp-slug') as HTMLSpanElement;
+  const serpTitle = document.getElementById('preview-serp-title') as HTMLAnchorElement;
+  const serpDesc = document.getElementById('preview-serp-desc') as HTMLParagraphElement;
+
+  const deleteBtn = document.getElementById('delete-btn') as HTMLButtonElement;
+  const deleteModal = document.getElementById('delete-modal') as HTMLDivElement;
+  const deleteCancel = document.getElementById('delete-cancel') as HTMLButtonElement;
+  const deleteConfirm = document.getElementById('delete-confirm') as HTMLButtonElement;
+
+  // --- SERP Snippet Preview Updates ---
+  function updateSerpPreview() {
+    const slugText = slugInput ? slugInput.value.trim() || 'post-slug' : 'post-slug';
+    if (serpSlug) serpSlug.textContent = slugText;
+
+    const titleVal = seoTitleInput?.value.trim() || titleInput?.value.trim() || 'Edit Blog Post';
+    if (serpTitle) serpTitle.textContent = titleVal;
+
+    const descVal =
+      seoDescriptionInput?.value.trim() ||
+      descriptionInput?.value.trim() ||
+      'Please enter an excerpt or custom SEO description to preview the snippet.';
+    if (serpDesc) serpDesc.textContent = descVal;
+  }
+
+  if (form) {
+    [titleInput, slugInput, descriptionInput, seoTitleInput, seoDescriptionInput].forEach((el) => {
+      el?.addEventListener('input', updateSerpPreview);
+    });
+  }
+
+  // --- Flesch-Kincaid Readability Analysis ---
+  function getReadability(text: string) {
+    if (!text || text.trim().length === 0) {
+      return {
+        score: 100,
+        grade: 0,
+        label: 'No content',
+        color: 'text-gray-400 bg-gray-50 dark:bg-gray-800/10 border-gray-200 dark:border-gray-800',
+      };
+    }
+
+    const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 0).length || 1;
+    const wordsList = text
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
+    const words = wordsList.length || 1;
+
+    let syllables = 0;
+    wordsList.forEach((word) => {
+      word = word.toLowerCase().replace(/[^a-z]/g, '');
+      if (word.length <= 3) {
+        syllables += 1;
+        return;
+      }
+      if (word.endsWith('e')) word = word.slice(0, -1);
+      const matches = word.match(/[aeiouy]+/g);
+      syllables += matches ? matches.length : 1;
+    });
+
+    if (syllables === 0) syllables = 1;
+
+    const ease = 206.835 - 1.015 * (words / sentences) - 84.6 * (syllables / words);
+    const grade = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59;
+
+    let label = 'Standard';
+    let color =
+      'text-yellow-600 bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900/30';
+
+    if (ease >= 90) {
+      label = 'Very Easy (5th Grade)';
+      color =
+        'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30';
+    } else if (ease >= 80) {
+      label = 'Easy (6th Grade)';
+      color =
+        'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30';
+    } else if (ease >= 70) {
+      label = 'Fairly Easy (7th Grade)';
+      color =
+        'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30';
+    } else if (ease >= 60) {
+      label = 'Standard (8th-9th Grade)';
+      color =
+        'text-teal-600 bg-teal-50 dark:bg-teal-950/20 border-teal-200 dark:border-teal-900/30';
+    } else if (ease >= 50) {
+      label = 'Fairly Difficult (10th-12th Grade)';
+      color =
+        'text-orange-600 bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/30';
+    } else if (ease >= 30) {
+      label = 'Difficult (College)';
+      color =
+        'text-rose-600 bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/30';
+    } else {
+      label = 'Very Difficult (Graduate)';
+      color = 'text-red-700 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/30';
+    }
+
+    return {
+      ease: Math.round(ease * 10) / 10,
+      grade: Math.max(0, Math.round(grade * 10) / 10),
+      label,
+      color,
+    };
+  }
+
+  // --- Real-time Metrics and Readability updates ---
+  function updateMetrics() {
+    const text = contentTextarea?.value || '';
+    if (charCountSpan) charCountSpan.textContent = String(text.length);
+
+    const words = text
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
+    const wordCount = words.length;
+    if (wordCountSpan) wordCountSpan.textContent = String(wordCount);
+
+    const readingTime = Math.ceil(wordCount / 200);
+    if (readTimeSpan) readTimeSpan.textContent = `${readingTime} min`;
+
+    const readability = getReadability(text);
+    if (readabilityBadge) {
+      readabilityBadge.textContent = readability.label;
+      readabilityBadge.className = `p-2 rounded-lg border border-dashed text-center font-semibold text-xs transition-colors ${readability.color}`;
+    }
+  }
+
+  contentTextarea?.addEventListener('input', updateMetrics);
+
+  // --- Status Badge dynamically updates ---
+  function updateStatusBadge() {
+    if (!pubDateInput) return;
+    const dateStr = pubDateInput.value;
+    const isChecked = publishedCheckbox.checked;
+
+    const inputDate = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (inputDate > today) {
+      statusBadge.textContent = 'Scheduled';
+      statusBadge.className = 'px-2 py-0.5 rounded font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+    } else if (isChecked) {
+      statusBadge.textContent = 'Published';
+      statusBadge.className = 'px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300';
+    } else {
+      statusBadge.textContent = 'Draft';
+      statusBadge.className = 'px-2 py-0.5 rounded font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+    }
+  }
+
+  pubDateInput?.addEventListener('input', updateStatusBadge);
+  publishedCheckbox?.addEventListener('change', updateStatusBadge);
+
+  // --- Tags logic ---
+  function updateTagsPreview() {
+    if (!tagsInput || !tagsPreview) return;
+    const raw = tagsInput.value;
+    const items = raw
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    if (items.length === 0) {
+      tagsPreview.innerHTML = '<span class="text-xs text-[var(--color-text-muted)] italic">No tags</span>';
+      return;
+    }
+
+    tagsPreview.innerHTML = items
+      .map(
+        (t) =>
+          `<span class="px-2 py-1 rounded-md bg-[var(--color-bg-alt)] border border-[var(--color-border)] text-[var(--color-text-main)] text-[10px] font-semibold tracking-wide">${t}</span>`,
+      )
+      .join('');
+  }
+
+  tagsInput?.addEventListener('input', updateTagsPreview);
+
+  // --- Image Upload logic ---
+  function updateImagePreview() {
+    if (!imageInput || !imagePreviewContainer || !imagePreview) return;
+    const url = imageInput.value.trim();
+    if (url) {
+      imagePreview.src = url;
+      imagePreviewContainer.classList.remove('hidden');
+    } else {
+      imagePreviewContainer.classList.add('hidden');
+    }
+  }
+
+  imageInput?.addEventListener('input', updateImagePreview);
+
+  removeImageBtn?.addEventListener('click', () => {
+    if (imageInput) imageInput.value = '';
+    updateImagePreview();
+  });
+
+  imageUploadInput?.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file.', 'error');
+      return;
+    }
+
+    uploadStatus.textContent = 'Uploading...';
+    uploadStatus.classList.remove('hidden');
+    uploadStatus.className = 'text-[10px] font-semibold text-center text-blue-600 dark:text-blue-400 block mt-1';
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        uploadStatus.textContent = 'Upload successful!';
+        uploadStatus.className = 'text-[10px] font-semibold text-center text-emerald-600 dark:text-emerald-400 block mt-1';
+        if (imageInput) {
+          imageInput.value = data.url;
+          updateImagePreview();
+        }
+        setTimeout(() => {
+          uploadStatus.classList.add('hidden');
+        }, 3000);
+      } else {
+        uploadStatus.textContent = data.error || 'Upload failed.';
+        uploadStatus.className = 'text-[10px] font-semibold text-center text-red-600 dark:text-red-400 block mt-1';
+      }
+    } catch (err) {
+      console.error(err);
+      uploadStatus.textContent = 'Network error during upload.';
+      uploadStatus.className = 'text-[10px] font-semibold text-center text-red-600 dark:text-red-400 block mt-1';
+    }
+  });
+
+  // --- Markdown Toolbar ---
+  const tools = document.querySelectorAll('[data-md-tool]');
+  tools.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (!contentTextarea) return;
+      const tool = btn.getAttribute('data-md-tool');
+      const start = contentTextarea.selectionStart;
+      const end = contentTextarea.selectionEnd;
+      const text = contentTextarea.value;
+      const selected = text.substring(start, end);
+
+      let replacement = selected;
+      let cursorOffset = 0;
+
+      switch (tool) {
+        case 'bold':
+          replacement = `**${selected || 'bold text'}**`;
+          cursorOffset = selected ? 0 : -2;
+          break;
+        case 'italic':
+          replacement = `_${selected || 'italic text'}_`;
+          cursorOffset = selected ? 0 : -1;
+          break;
+        case 'code':
+          replacement = `\`${selected || 'code'}\``;
+          cursorOffset = selected ? 0 : -1;
+          break;
+        case 'link':
+          replacement = `[${selected || 'link text'}](https://)`;
+          cursorOffset = -1;
+          break;
+        case 'h1':
+          replacement = `\n# ${selected || 'Heading 1'}\n`;
+          cursorOffset = selected ? 0 : -1;
+          break;
+        case 'h2':
+          replacement = `\n## ${selected || 'Heading 2'}\n`;
+          cursorOffset = selected ? 0 : -1;
+          break;
+        case 'quote':
+          replacement = `\n> ${selected || 'quote'}\n`;
+          cursorOffset = selected ? 0 : -1;
+          break;
+        case 'list':
+          replacement = `\n- ${selected || 'list item'}\n`;
+          cursorOffset = selected ? 0 : -1;
+          break;
+        case 'image':
+          replacement = `![${selected || 'alt text'}](/images/blog/...)`;
+          cursorOffset = -1;
+          break;
+      }
+
+      contentTextarea.value = text.substring(0, start) + replacement + text.substring(end);
+      contentTextarea.focus();
+      
+      const newPos = start + replacement.length + cursorOffset;
+      contentTextarea.setSelectionRange(
+        selected ? start + replacement.length : newPos,
+        selected ? start + replacement.length : newPos
+      );
+
+      updateMetrics();
+    });
+  });
+
+  // --- Preview Tab toggle ---
+  tabWrite?.addEventListener('click', () => {
+    writePanel.classList.remove('hidden');
+    previewPanel.classList.add('hidden');
+    tabWrite.classList.add('bg-[var(--color-card)]', 'text-[var(--color-primary)]');
+    tabWrite.classList.remove('text-[var(--color-text-muted)]');
+    tabPreview.classList.remove('bg-[var(--color-card)]', 'text-[var(--color-primary)]');
+    tabPreview.classList.add('text-[var(--color-text-muted)]');
+  });
+
+  tabPreview?.addEventListener('click', () => {
+    writePanel.classList.add('hidden');
+    previewPanel.classList.remove('hidden');
+    tabPreview.classList.add('bg-[var(--color-card)]', 'text-[var(--color-primary)]');
+    tabPreview.classList.remove('text-[var(--color-text-muted)]');
+    tabWrite.classList.remove('bg-[var(--color-card)]', 'text-[var(--color-primary)]');
+    tabWrite.classList.add('text-[var(--color-text-muted)]');
+
+    renderPreview();
+  });
+
+  function renderPreview() {
+    if (!previewPanel || !contentTextarea) return;
+    const val = contentTextarea.value;
+    if (!val.trim()) {
+      previewPanel.innerHTML = '<div class="text-sm text-[var(--color-text-muted)] italic">Nothing to preview.</div>';
+      return;
+    }
+
+    if (!(window as any).marked) {
+      previewPanel.innerHTML = '<div class="text-sm text-[var(--color-text-muted)] italic">Loading Markdown parser...</div>';
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+      script.onload = () => {
+        const dompurify = document.createElement('script');
+        dompurify.src = 'https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js';
+        dompurify.onload = () => {
+          try {
+            const raw = (window as any).marked.parse(val);
+            previewPanel.innerHTML = (window as any).DOMPurify.sanitize(raw);
+          } catch {
+            previewPanel.innerHTML = '<div class="text-sm text-red-600">Error rendering Markdown preview.</div>';
+          }
+        };
+        document.head.appendChild(dompurify);
+      };
+      document.head.appendChild(script);
+    } else {
+      try {
+        const raw = (window as any).marked.parse(val);
+        previewPanel.innerHTML = (window as any).DOMPurify.sanitize(raw);
+      } catch {
+        previewPanel.innerHTML = '<div class="text-sm text-red-600">Error rendering Markdown preview.</div>';
+      }
+    }
+  }
+
+  let prevDeleteFocus: HTMLElement | null = null;
+
+  // --- Delete confirmation modal handlers ---
+  deleteBtn?.addEventListener('click', () => {
+    prevDeleteFocus = document.activeElement as HTMLElement | null;
+    deleteModal.classList.remove('hidden');
+    deleteModal.setAttribute('aria-hidden', 'false');
+    deleteCancel?.focus();
+  });
+
+  deleteCancel?.addEventListener('click', () => {
+    deleteModal.classList.add('hidden');
+    deleteModal.setAttribute('aria-hidden', 'true');
+    if (prevDeleteFocus) prevDeleteFocus.focus();
+  });
+
+  deleteConfirm?.addEventListener('click', async () => {
+    const id = postIdInput.value;
+    deleteConfirm.disabled = true;
+    deleteConfirm.textContent = 'Deleting...';
+
+    try {
+      const res = await fetch(`/api/admin/posts/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        window.location.href = '/admin/posts';
+      } else {
+        showToast('Failed to delete post.', 'error');
+        deleteConfirm.disabled = false;
+        deleteConfirm.textContent = 'Delete Permanently';
+        deleteModal.classList.add('hidden');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('A network error occurred.', 'error');
+      deleteConfirm.disabled = false;
+      deleteConfirm.textContent = 'Delete Permanently';
+      deleteModal.classList.add('hidden');
+    }
+  });
+
+  // --- Form submission ---
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Updating...';
+
+    const id = postIdInput.value;
+    const formData = new FormData(form);
+    const title = formData.get('title');
+    const slug = formData.get('slug');
+    const description = formData.get('description');
+    const content = formData.get('content');
+    const image = formData.get('image');
+    const tagsString = formData.get('tags') as string;
+    const author = formData.get('author');
+    const pubDate = formData.get('pubDate');
+    const published = formData.get('published') === 'on';
+
+    const seoTitle = formData.get('seoTitle');
+    const seoDescription = formData.get('seoDescription');
+    const canonicalUrl = formData.get('canonicalUrl');
+
+    const tags = tagsString
+      ? tagsString
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0)
+      : [];
+
+    try {
+      const res = await fetch(`/api/admin/posts/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          slug,
+          description,
+          content,
+          image,
+          tags,
+          author,
+          pubDate,
+          published,
+          seoTitle,
+          seoDescription,
+          canonicalUrl,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        showToast('Post updated successfully!', 'success');
+        setTimeout(() => {
+          window.location.href = '/admin/posts';
+        }, 1000);
+      } else {
+        showToast(data.error || 'Failed to update post.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Update Post';
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('A network error occurred. Please try again.', 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Update Post';
+    }
+  });
+
+  // Run initial state setup
+  if (form) {
+    updateMetrics();
+    updateStatusBadge();
+    updateSerpPreview();
+    updateImagePreview();
+    updateTagsPreview();
+  }
+</script>

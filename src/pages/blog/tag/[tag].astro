@@ -1,0 +1,186 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = false;
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEO from '../../../components/seo/SEO.astro';
+import { db } from '@db/client';
+import { posts } from '@db/schema';
+import { eq, desc } from 'drizzle-orm';
+
+const { tag: tagParam } = Astro.params;
+
+if (!db) {
+  return Astro.redirect('/404');
+}
+
+let tagPosts: (typeof posts.$inferSelect)[] = [];
+let dbError = '';
+let originalTag = tagParam || '';
+
+try {
+  const allPublished = await db
+    .select()
+    .from(posts)
+    .where(eq(posts.published, true))
+    .orderBy(desc(posts.pubDate))
+    .all();
+
+  tagPosts = allPublished.filter((post) => {
+    try {
+      if (new Date(post.pubDate) > new Date()) return false;
+      const tags = JSON.parse(post.tags || '[]');
+      return (
+        Array.isArray(tags) &&
+        tags.map((t: string) => t.toLowerCase().replace(/\s+/g, '-')).includes(tagParam || '')
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  // Find the original casing of the tag from the posts
+  for (const post of tagPosts) {
+    try {
+      const tags = JSON.parse(post.tags || '[]');
+      const found = tags.find((t: string) => t.toLowerCase().replace(/\s+/g, '-') === tagParam);
+      if (found) {
+        originalTag = found;
+        break;
+      }
+    } catch {}
+  }
+} catch (e: unknown) {
+  dbError = e instanceof Error ? e.message : String(e) || 'Error loading posts';
+  console.error('Error fetching tag posts:', e);
+}
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={`Articles tagged with "${originalTag}" — Scrabble Word Finder`}
+    description={`Browse all our articles, tips, and strategy guides tagged with "${originalTag}". Improve your gameplay.`}
+    canonical={`${SITE_URL}/blog/tag/${tagParam}`}
+  />
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Breadcrumbs -->
+    <nav class="flex text-sm text-[var(--color-text-muted)] mb-8" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+          <a href="/" class="hover:text-[var(--color-primary)] transition-colors">Home</a>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <span class="mx-2">/</span>
+            <a href="/blog" class="hover:text-[var(--color-primary)] transition-colors">Blog</a>
+          </div>
+        </li>
+        <li aria-current="page">
+          <div class="flex items-center">
+            <span class="mx-2">/</span>
+            <span class="text-[var(--color-text-main)] font-medium">Tag: {originalTag}</span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+
+    <div class="text-center mb-12">
+      <h1 class="text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-4">
+        Articles Tagged: {originalTag}
+      </h1>
+      <p class="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto">
+        Showing {tagPosts.length}
+        {tagPosts.length === 1 ? 'article' : 'articles'} about {originalTag}.
+      </p>
+    </div>
+
+    {
+      dbError && (
+        <div class="p-6 text-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-muted)]">
+          <p class="text-lg font-medium">Unable to load posts</p>
+          <p class="text-sm mt-1">{dbError}</p>
+        </div>
+      )
+    }
+
+    {
+      !dbError && tagPosts.length === 0 && (
+        <div class="p-12 text-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-muted)]">
+          <p class="text-lg font-medium">No articles found</p>
+          <p class="text-sm mt-1">There are no published articles matching this tag.</p>
+        </div>
+      )
+    }
+
+    {
+      !dbError && tagPosts.length > 0 && (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tagPosts.map((post) => {
+            let tags: string[] = [];
+            try {
+              tags = JSON.parse(post.tags || '[]');
+            } catch {
+              tags = [];
+            }
+
+            let formattedDate = '';
+            try {
+              formattedDate = new Date(post.pubDate).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              });
+            } catch {
+              formattedDate = post.pubDate;
+            }
+
+            return (
+              <a href={`/blog/${post.slug}`} class="group block">
+                <article class="bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)] overflow-hidden shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 h-full flex flex-col">
+                  {post.image ? (
+                    <div class="h-48 overflow-hidden relative">
+                      <img
+                        src={post.image}
+                        alt={post.title}
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                        decoding="async"
+                        width="400"
+                        height="192"
+                      />
+                    </div>
+                  ) : (
+                    <div class="h-48 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] flex items-center justify-center">
+                      <span class="text-5xl">🎯</span>
+                    </div>
+                  )}
+                  <div class="p-6 flex flex-col flex-1">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                      {tags.slice(0, 3).map((t: string) => (
+                        <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <h2 class="text-lg font-bold text-[var(--color-text-main)] mb-2 group-hover:text-[var(--color-primary)] transition-colors line-clamp-2">
+                      {post.title}
+                    </h2>
+                    <p class="text-sm text-[var(--color-text-muted)] mb-4 line-clamp-3 flex-1">
+                      {post.description}
+                    </p>
+                    <div class="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+                      <time datetime={post.pubDate}>{formattedDate}</time>
+                      <span>{post.author}</span>
+                    </div>
+                  </div>
+                </article>
+              </a>
+            );
+          })}
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

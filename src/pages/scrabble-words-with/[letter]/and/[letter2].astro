@@ -1,0 +1,150 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import SEO from '../../../../components/seo/SEO.astro';
+import Breadcrumb from '../../../../components/layout/Breadcrumb.astro';
+import { loadDictionary } from '../../../../lib/dictionaryLoader';
+import { calculateWordScore } from '../../../../lib/scoreCalculator';
+
+export async function getStaticPaths() {
+  const highValue = ['q', 'z', 'x', 'j', 'k'];
+  const allLetters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  const pairs: { params: Record<string, string>; props: Record<string, unknown> }[] = [];
+  for (const l1 of highValue) {
+    for (const l2 of allLetters) {
+      if (l1 !== l2) {
+        pairs.push({
+          params: { letter: l1, letter2: l2 },
+          props: { letter1: l1.toUpperCase(), letter2: l2.toUpperCase() },
+        });
+      }
+    }
+  }
+  return pairs;
+}
+
+interface Props {
+  letter1: string;
+  letter2: string;
+}
+const { letter1, letter2 } = Astro.props as Props;
+const dict = await loadDictionary('TWL');
+const words = [...dict]
+  .filter((w) => w.includes(letter1) && w.includes(letter2))
+  .map((w) => ({ word: w, score: calculateWordScore(w, 'TWL'), length: w.length }))
+  .sort((a, b) => b.score - a.score);
+
+const title = `Scrabble Words With ${letter1} and ${letter2} — Word List`;
+const description = `All Scrabble words containing both ${letter1} and ${letter2}. ${words.length} valid words sorted by score.`;
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical={new URL(
+      `/scrabble-words-with/${letter1.toLowerCase()}/and/${letter2.toLowerCase()}`,
+      SITE_URL,
+    ).href}
+  />
+
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <Breadcrumb
+      items={[
+        { label: 'Word Lists', href: '/word-list' },
+        { label: `Words With ${letter1} and ${letter2}` },
+      ]}
+    />
+
+    <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-text-main)] mb-2">
+      Scrabble Words With {letter1} and {letter2}
+    </h1>
+    <p class="text-[var(--color-text-muted)] mb-6">
+      Found <strong class="text-[var(--color-primary)]">{words.length}</strong> words containing both
+      {letter1} and {letter2}.
+    </p>
+
+    {
+      words.length > 0 ? (
+        <div class="bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)] shadow-sm p-4">
+          <div class="space-y-1">
+            {words.slice(0, 100).map(({ word, score }) => (
+              <a
+                href={`/word/${word.toLowerCase()}`}
+                class="word-result-row hover:bg-[var(--color-bg-alt)] transition-all flex items-center justify-between"
+                style="text-decoration: none;"
+              >
+                <div class="flex items-center gap-0.5">
+                  {word.split('').map((ch) => (
+                    <span
+                      class={`tile ${ch === letter1 || ch === letter2 ? 'ring-2 ring-[var(--color-primary)]' : ''}`}
+                    >
+                      {ch}
+                      <sub>
+                        {{
+                          A: 1,
+                          B: 3,
+                          C: 3,
+                          D: 2,
+                          E: 1,
+                          F: 4,
+                          G: 2,
+                          H: 4,
+                          I: 1,
+                          J: 8,
+                          K: 5,
+                          L: 1,
+                          M: 3,
+                          N: 1,
+                          O: 1,
+                          P: 3,
+                          Q: 10,
+                          R: 1,
+                          S: 1,
+                          T: 1,
+                          U: 1,
+                          V: 4,
+                          W: 4,
+                          X: 8,
+                          Y: 4,
+                          Z: 10,
+                        }[ch] || 0}
+                      </sub>
+                    </span>
+                  ))}
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-[var(--color-text-muted)]">{word.length}L</span>
+                  <span class="score-badge">{score} pts</span>
+                </div>
+              </a>
+            ))}
+          </div>
+          {words.length > 100 && (
+            <p class="text-center text-sm text-[var(--color-text-muted)] mt-4">
+              Showing top 100 of {words.length} words
+            </p>
+          )}
+        </div>
+      ) : (
+        <div class="text-center py-12 bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)]">
+          <p class="text-[var(--color-text-muted)] text-lg">
+            No words containing both {letter1} and {letter2} found.
+          </p>
+        </div>
+      )
+    }
+
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold mb-4">About Words With {letter1} and {letter2}</h2>
+      <p class="text-[var(--color-text-muted)] leading-relaxed">
+        Finding words that contain specific letter combinations is crucial for advanced Scrabble
+        strategy. Words containing both {letter1} and {letter2} are highlighted above with the key letters
+        marked. All words are verified against the TWL Scrabble dictionary.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

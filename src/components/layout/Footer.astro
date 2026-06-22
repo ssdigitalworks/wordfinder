@@ -1,0 +1,221 @@
+---
+import { getSetting } from '../../lib/getSetting';
+
+const defaultAboutText =
+  'The fastest way to find valid Scrabble words. Enter your letters and discover high-scoring words instantly. Works with TWL, SOWPODS, and ENABLE dictionaries.';
+
+const defaultDisclaimerText =
+  'SCRABBLE ® is a registered trademark. All intellectual property rights in and to the game are owned in the U.S.A. by Hasbro, Inc., in Canada by Hasbro Canada, Inc., and throughout the rest of the world, by J.W. Spear & Sons, PLC of Enfield, Middlesex, England, a subsidiary of Mattel Inc. Mattel & Spear are not affiliated with Hasbro or Hasbro Canada. Words With Friends™ is a trademark of Zynga Inc. This website is not affiliated with, endorsed by, or sponsored by Hasbro, Mattel, Zynga, or any of their partners.';
+
+const footerAboutText = await getSetting('footer_about_text', defaultAboutText);
+const footerDisclaimerText = await getSetting('footer_disclaimer_text', defaultDisclaimerText);
+
+const siteName = await getSetting('site_name', 'Scrabble Word Finder');
+const socialTwitter = await getSetting('social_twitter', '');
+const socialFacebook = await getSetting('social_facebook', '');
+const socialYoutube = await getSetting('social_youtube', '');
+
+const currentYear = new Date().getFullYear();
+
+const toolLinks = [
+  { label: 'Scrabble Word Finder', href: '/' },
+  { label: 'Dictionary Checker', href: '/dictionary-checker' },
+  { label: 'Word Checker', href: '/word-checker' },
+  { label: 'Word Generator', href: '/word-generator' },
+  { label: 'Words With Friends Cheat', href: '/words-with-friends-cheat' },
+  { label: 'Anagram Solver', href: '/anagram-solver' },
+  { label: 'Unscramble Words', href: '/unscramble-words' },
+  { label: 'Crossword Solver', href: '/crossword-solver' },
+  { label: 'Wordle Solver', href: '/wordle-solver' },
+];
+
+const wordListLinks = [
+  { label: 'Two Letter Words', href: '/two-letter-scrabble-words' },
+  { label: '3-Letter Words', href: '/3-letter-words' },
+  { label: 'Most Common 5-Letter Words', href: '/most-common-5-letter-words' },
+  { label: 'Most Common 6-Letter Words', href: '/most-common-6-letter-words' },
+  { label: 'Words with Q', href: '/words-containing-q' },
+  { label: 'Words with Z', href: '/words-containing-z' },
+  { label: 'Words with X', href: '/words-containing-x' },
+  { label: 'Words with J', href: '/words-containing-j' },
+];
+
+const resourceLinks = [
+  { label: 'Blog', href: '/blog' },
+  { label: 'Strategy Tips', href: '/blog/tips-to-win-at-scrabble' },
+  { label: 'Word Statistics', href: '/word-statistics' },
+  { label: 'Sitemap', href: '/sitemap' },
+  { label: 'Contact', href: '/contact' },
+  { label: 'About', href: '/about' },
+];
+---
+
+<footer
+  class="bg-transparent mt-auto text-[var(--color-text-muted)] border-t border-[var(--color-border)]"
+>
+  <!-- Main Footer Content -->
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+      <!-- About Column -->
+      <div class="sm:col-span-2 lg:col-span-1">
+        <a href="/" class="flex items-center mb-4 group">
+          <span
+            class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-xl font-bold text-[var(--color-text-main)] group-hover:text-[var(--color-primary)] transition-colors"
+          >
+            {siteName}
+          </span>
+        </a>
+        <p class="text-sm leading-relaxed text-[var(--color-text-muted)] mb-6">
+          {footerAboutText}
+        </p>
+        {
+          (socialTwitter || socialFacebook || socialYoutube) && (
+            <div class="flex items-center gap-3 mt-4">
+              {socialTwitter && (
+                <a
+                  href={socialTwitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
+                  aria-label="Twitter"
+                >
+                  <svg aria-hidden="true" focusable="false" class="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                </a>
+              )}
+              {socialFacebook && (
+                <a
+                  href={socialFacebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
+                  aria-label="Facebook"
+                >
+                  <svg aria-hidden="true" focusable="false" class="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" />
+                  </svg>
+                </a>
+              )}
+              {socialYoutube && (
+                <a
+                  href={socialYoutube}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
+                  aria-label="YouTube"
+                >
+                  <svg aria-hidden="true" focusable="false" class="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.108C19.516 3.52 12 3.52 12 3.52s-7.516 0-9.388.535a3.003 3.003 0 0 0-2.11 2.107C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.108C4.484 20.48 12 20.48 12 20.48s7.516 0 9.388-.535a3.003 3.003 0 0 0 2.11-2.107C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                </a>
+              )}
+            </div>
+          )
+        }
+      </div>
+
+      <!-- Tools Column -->
+      <div>
+        <h3
+          class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-xs font-bold text-[var(--color-text-main)] uppercase tracking-wider mb-4"
+        >
+          Tools
+        </h3>
+        <ul class="space-y-2.5">
+          {
+            toolLinks.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors duration-200"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <!-- Word Lists Column -->
+      <div>
+        <h3
+          class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-xs font-bold text-[var(--color-text-main)] uppercase tracking-wider mb-4"
+        >
+          Word Lists
+        </h3>
+        <ul class="space-y-2.5">
+          {
+            wordListLinks.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors duration-200"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <!-- Resources Column -->
+      <div>
+        <h3
+          class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-xs font-bold text-[var(--color-text-main)] uppercase tracking-wider mb-4"
+        >
+          Resources
+        </h3>
+        <ul class="space-y-2.5">
+          {
+            resourceLinks.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors duration-200"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="border-t border-[var(--color-border)]">
+    <div
+      class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 flex flex-col items-center justify-center gap-4 text-center"
+    >
+      <p class="text-xs text-gray-400 max-w-4xl leading-relaxed">
+        {footerDisclaimerText}
+      </p>
+      <p class="text-xs text-[var(--color-text-muted)]">
+        &copy; {currentYear}
+        {siteName}. All rights reserved.
+        <span class="mx-2">|</span>
+        <a href="/privacy-policy" class="hover:text-[var(--color-primary)] transition-colors"
+          >Privacy Policy</a
+        >
+        <span class="mx-2">|</span>
+        <a href="/terms" class="hover:text-[var(--color-primary)] transition-colors"
+          >Terms of Service</a
+        >
+        <span class="mx-2">|</span>
+        <a href="/disclaimer" class="hover:text-[var(--color-primary)] transition-colors"
+          >Disclaimer</a
+        >
+        <span class="mx-2">|</span>
+        <button
+          id="open-cookie-settings"
+          class="hover:text-[var(--color-primary)] transition-colors cursor-pointer bg-transparent border-none p-0 text-xs text-[var(--color-text-muted)] font-inherit"
+          >Cookie Settings</button
+        >
+      </p>
+    </div>
+  </div>
+</footer>

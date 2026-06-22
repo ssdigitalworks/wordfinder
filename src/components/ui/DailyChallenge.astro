@@ -1,0 +1,261 @@
+---
+// Solutions verified against public/data/*.txt (ENABLE, TWL, SOWPODS)
+const CHALLENGES = [
+  {
+    letters: 'RETAINS',
+    solutions: ['RETAINS', 'RETINAS', 'STAINER', 'NASTIER', 'ANTSIER'],
+    hint: 'A very common 7-letter bingo. Starts with R or S or N.',
+  },
+  {
+    letters: 'AEIPRST',
+    solutions: ['PARTIES', 'PASTIER', 'PIRATES', 'TRAIPSE'],
+    hint: 'Related to high seas adventurers or celebrations.',
+  },
+  {
+    letters: 'AEGINRT',
+    solutions: ['INGRATE', 'TANGIER', 'TEARING', 'GRANITE'],
+    hint: 'One of the anagrams describes ripping paper or crying.',
+  },
+  {
+    letters: 'AEILNRT',
+    solutions: ['ENTRAIL', 'LATRINE', 'RATLINE', 'RELIANT', 'RETINAL'],
+    hint: 'Think of someone who is dependable, or an eye structure.',
+  },
+  {
+    letters: 'EINOSTT',
+    solutions: ['TONIEST'],
+    hint: 'Describes the most stylish or high-class social tone.',
+  },
+];
+
+// Server fallback computed for initial paint to avoid CLS
+const twelveHourIndex = Math.floor(Date.now() / (12 * 60 * 60 * 1000));
+const challenge = CHALLENGES[twelveHourIndex % CHALLENGES.length];
+---
+
+<div
+  class="card relative overflow-hidden flex flex-col justify-between h-full bg-[var(--color-card)] border border-[var(--color-border)] transition-all duration-300 hover:shadow-lg"
+>
+  <!-- Dynamic blur aura backdrop -->
+  <div
+    class="absolute -left-12 -bottom-12 w-28 h-28 rounded-full bg-[var(--color-primary)]/10 blur-xl pointer-events-none"
+  >
+  </div>
+
+  <div>
+    <div class="flex items-center justify-between mb-4">
+      <span
+        class="text-xs font-bold text-[var(--color-primary)] uppercase tracking-widest flex items-center gap-1.5"
+      >
+        🎯 Daily Word Challenge
+      </span>
+      <span class="text-xs text-[var(--color-text-muted)] font-medium">Unscramble &amp; Solve</span>
+    </div>
+
+    <p class="text-sm text-[var(--color-text-muted)] mb-4 leading-relaxed">
+      Can you unscramble these letters to find a valid 7-letter word? <span
+        class="text-xs opacity-85 block mt-1"
+        >(Note: Daily Challenge solutions are validated against the ENABLE dictionary).</span
+      >
+    </p>
+
+    <!-- Challenge Rack -->
+    <div
+      id="challenge-rack"
+      class="flex flex-wrap gap-1.5 mb-5 justify-center py-2 bg-[var(--color-bg-alt)]/50 rounded-xl border border-[var(--color-border)]/50"
+    >
+      {
+        challenge.letters
+          .split('')
+          .map((ch) => <span class="tile !w-9 !h-9 !text-base shadow-sm">{ch}</span>)
+      }
+    </div>
+
+    <!-- Interactive Solve Area -->
+    <div class="space-y-3">
+      <div class="relative">
+        <input
+          type="text"
+          id="challenge-input"
+          placeholder="Enter your word..."
+          maxlength="7"
+          autocomplete="off"
+          autocapitalize="characters"
+          class="air-input uppercase tracking-wider text-center text-sm font-semibold !py-2.5"
+        />
+      </div>
+
+      <div class="flex gap-2">
+        <button type="button" id="challenge-check-btn" class="btn-primary flex-1 !py-2 text-sm">
+          Check Answer
+        </button>
+        <button
+          type="button"
+          id="challenge-hint-btn"
+          class="btn-ghost !px-3.5 !py-2 text-sm"
+          title="Get a hint"
+        >
+          Hint
+        </button>
+      </div>
+
+      <!-- Feedback Area -->
+      <div
+        id="challenge-feedback"
+        class="hidden rounded-xl p-3 text-xs leading-relaxed transition-all duration-200"
+      >
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-5 pt-3 border-t border-[var(--color-border)] flex items-center justify-between">
+    <button
+      type="button"
+      id="challenge-reveal-btn"
+      class="text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors"
+    >
+      Reveal Solutions
+    </button>
+    <a
+      href={`/unscramble?letters=${challenge.letters.toLowerCase()}`}
+      id="challenge-solve-link"
+      class="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+    >
+      Solve with Letters →
+    </a>
+  </div>
+</div>
+
+<div id="challenge-data" data-challenges={JSON.stringify(CHALLENGES)} class="hidden"></div>
+<script>
+  import confetti from 'canvas-confetti';
+
+  (function () {
+    const dataEl = document.getElementById('challenge-data');
+    if (!dataEl) return;
+    const CHALLENGES = JSON.parse(dataEl.dataset.challenges || '[]');
+    const twelveHourIndex = Math.floor(Date.now() / (12 * 60 * 60 * 1000));
+    const challenge = CHALLENGES[twelveHourIndex % CHALLENGES.length];
+
+    const rackEl = document.getElementById('challenge-rack');
+    const solveLink = document.getElementById('challenge-solve-link');
+
+    if (rackEl) {
+      rackEl.innerHTML = challenge.letters
+        .split('')
+        .map((ch: string) => {
+          return `<span class="tile !w-9 !h-9 !text-base shadow-sm">${ch}</span>`;
+        })
+        .join('');
+    }
+
+    if (solveLink && solveLink instanceof HTMLAnchorElement) {
+      solveLink.href = `/unscramble?letters=${challenge.letters.toLowerCase()}`;
+    }
+
+    const input = document.getElementById('challenge-input') as HTMLInputElement | null;
+    const checkBtn = document.getElementById('challenge-check-btn');
+    const hintBtn = document.getElementById('challenge-hint-btn');
+    const revealBtn = document.getElementById('challenge-reveal-btn');
+    const feedback = document.getElementById('challenge-feedback');
+
+    if (!input || !checkBtn || !hintBtn || !revealBtn || !feedback) return;
+
+    const solutionsSet = new Set(challenge.solutions.map((s: string) => s.toUpperCase()));
+
+    function showFeedback(text: string, type: 'success' | 'error' | 'info') {
+      if (!feedback) return;
+      feedback.className = 'rounded-xl p-3 text-xs leading-relaxed transition-all duration-200';
+      feedback.classList.remove('hidden');
+
+      if (type === 'success') {
+        feedback.classList.add('alert-success');
+      } else if (type === 'error') {
+        feedback.classList.add('alert-danger');
+      } else {
+        feedback.classList.add('alert-info');
+      }
+      feedback.innerHTML = text;
+    }
+
+    checkBtn.addEventListener('click', () => {
+      const userVal = input.value.trim().toUpperCase();
+      if (userVal.length < 3) {
+        showFeedback('Please enter a word with at least 3 letters.', 'error');
+        return;
+      }
+
+      if (solutionsSet.has(userVal)) {
+        showFeedback(
+          `🎉 <strong>Excellent!</strong> "${userVal}" is a valid solution! You successfully unscrambled the challenge.`,
+          'success',
+        );
+
+        const rect = checkBtn.getBoundingClientRect();
+        const x = (rect.left + rect.width / 2) / window.innerWidth;
+        const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { x, y },
+          colors: ['#4f46e5', '#818cf8', '#34d399', '#f87171', '#fbbf24']
+        });
+
+        // Dispatch streak increment if not already solved today
+        const prevSolvedDate = localStorage.getItem('scrabble_challenge_solved_date');
+        const todayStr = new Date().toDateString();
+        if (prevSolvedDate !== todayStr) {
+          localStorage.setItem('scrabble_challenge_solved_date', todayStr);
+          window.dispatchEvent(
+            new CustomEvent('scrabble_challenge_solved', { detail: { prevSolvedDate } }),
+          );
+        }
+      } else {
+        const rackLetters = challenge.letters.toUpperCase().split('');
+        const userLetters = userVal.split('');
+        let subsetValid = true;
+
+        for (const ch of userLetters) {
+          const idx = rackLetters.indexOf(ch);
+          if (idx === -1) {
+            subsetValid = false;
+            break;
+          } else {
+            rackLetters.splice(idx, 1);
+          }
+        }
+
+        if (!subsetValid) {
+          showFeedback(
+            `❌ <strong>Oops!</strong> "${userVal}" uses letters that are not on the rack tray.`,
+            'error',
+          );
+        } else {
+          showFeedback(
+            `❌ "${userVal}" is not one of the target 7-letter anagrams. Keep trying!`,
+            'error',
+          );
+        }
+      }
+    });
+
+    hintBtn.addEventListener('click', () => {
+      showFeedback(`💡 <strong>Hint:</strong> ${challenge.hint}`, 'info');
+    });
+
+    revealBtn.addEventListener('click', () => {
+      const formatted = challenge.solutions
+        .map((s: string) => `<strong class="uppercase">${s}</strong>`)
+        .join(', ');
+      showFeedback(`🔑 <strong>Solutions:</strong> The target words are: ${formatted}.`, 'info');
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        checkBtn.click();
+      }
+    });
+  })();
+</script>

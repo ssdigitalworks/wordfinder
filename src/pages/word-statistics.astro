@@ -1,0 +1,286 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import FAQSection from '../components/ui/FAQSection.astro';
+import SmartScrabbleCoach from '@components/ui/SmartScrabbleCoach.astro';
+import { loadDictionary } from '../lib/dictionaryLoader';
+import { TWL_SCORES } from '../data/tileScores';
+
+const dict = await loadDictionary('TWL');
+
+// 1. Calculate word length distribution
+const lengthMap = new Map<number, number>();
+for (const word of dict) {
+  const len = word.length;
+  lengthMap.set(len, (lengthMap.get(len) || 0) + 1);
+}
+const lengthsSorted = Array.from(lengthMap.entries()).sort((a, b) => a[0] - b[0]);
+
+// 2. Calculate letter frequency
+const letterCounts: Record<string, number> = {};
+let totalLetters = 0;
+for (const word of dict) {
+  for (const char of word) {
+    if (char >= 'A' && char <= 'Z') {
+      letterCounts[char] = (letterCounts[char] || 0) + 1;
+      totalLetters++;
+    }
+  }
+}
+
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const TILE_VALUES = TWL_SCORES;
+
+const letterStats = alphabet
+  .map((char) => {
+    const count = letterCounts[char] || 0;
+    const pct = totalLetters > 0 ? (count / totalLetters) * 100 : 0;
+    return {
+      char,
+      count,
+      percentage: pct,
+      value: TILE_VALUES[char] || 0,
+    };
+  })
+  .sort((a, b) => b.count - a.count);
+
+// 3. Rare letter stats
+const qWords = Array.from(dict).filter((w) => w.includes('Q')).length;
+const zWords = Array.from(dict).filter((w) => w.includes('Z')).length;
+const xWords = Array.from(dict).filter((w) => w.includes('X')).length;
+const jWords = Array.from(dict).filter((w) => w.includes('J')).length;
+
+const title = 'Scrabble Word Statistics & Letter Frequencies — Official Dictionary Stats';
+const description =
+  'Explore Scrabble dictionary letter frequencies, word length distributions, and rare letter statistics. Complete guide to tournament lexicon analytics.';
+const canonical = `${SITE_URL}/word-statistics`;
+
+const faqs = [
+  {
+    question: 'What is the most common letter in Scrabble words?',
+    answer: `According to our analysis of the TWL dictionary, the letter E is the most frequent, making up approximately ${letterStats.find((s) => s.char === 'E')?.percentage.toFixed(2)}% of all letters, followed by I and A.`,
+  },
+  {
+    question: 'How many words are there by length in the Scrabble dictionary?',
+    answer: `The Scrabble dictionary features words ranging from 2 to 15 letters. The most common word lengths are 7-letter words (${lengthMap.get(7)?.toLocaleString()} words) and 8-letter words (${lengthMap.get(8)?.toLocaleString()} words).`,
+  },
+  {
+    question: 'What is the rarest letter in Scrabble words?',
+    answer:
+      'The letter Q is the rarest in overall word composition, appearing in the fewest words, followed closely by J, Z, and X.',
+  },
+];
+
+const maxLetterCount = Math.max(...letterStats.map((s) => s.count));
+const maxLengthCount = Math.max(...lengthsSorted.map((s) => s[1]));
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} faqs={faqs} />
+
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Scrabble Statistics' }]} />
+
+    <div class="text-center mb-10 mt-4">
+      <h1
+        class="text-3xl md:text-5xl font-extrabold tracking-tight mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+      >
+        Scrabble Word Statistics & Analytics
+      </h1>
+      <p class="text-[var(--color-text-muted)] text-lg max-w-2xl mx-auto">
+        Complete analytical breakdown of the North American Scrabble Dictionary (TWL), detailing
+        letter frequencies, length distribution, and point structures.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left 2 Columns: Frequency Charts & Tables -->
+      <div class="lg:col-span-2 space-y-8">
+        <!-- Letter Frequency Chart -->
+        <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2
+            class="text-xl md:text-2xl font-bold mb-6 font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-[var(--color-text-main)]"
+          >
+            📊 Scrabble Letter Frequency Analysis
+          </h2>
+          <p class="text-sm text-[var(--color-text-muted)] mb-6 leading-relaxed">
+            The chart below shows the frequency percentage of each letter across all words in the
+            Scrabble dictionary.
+          </p>
+
+          <!-- SVG Bar Chart -->
+          <div class="space-y-3.5">
+            {
+              letterStats.map((stat) => {
+                const pctOfMax = (stat.count / maxLetterCount) * 100;
+                return (
+                  <div class="flex items-center gap-3">
+                    <span class="tile tile-sm w-8 h-8 flex-shrink-0">
+                      {stat.char}
+                      <sub>{stat.value}</sub>
+                    </span>
+                    <div class="flex-1 bg-[var(--color-bg-alt)] h-6 rounded-md overflow-hidden border border-[var(--color-border)]">
+                      <div
+                        class="bg-gradient-to-r from-[var(--color-primary)] to-indigo-600 h-full rounded-md"
+                        style={`width: ${pctOfMax}%`}
+                      />
+                    </div>
+                    <span class="w-16 text-right text-xs font-semibold text-[var(--color-text-muted)]">
+                      {stat.percentage.toFixed(2)}%
+                    </span>
+                  </div>
+                );
+              })
+            }
+          </div>
+        </div>
+
+        <!-- Word Length Distribution Chart -->
+        <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2
+            class="text-xl md:text-2xl font-bold mb-6 font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-[var(--color-text-main)]"
+          >
+            📈 Word Count by Length
+          </h2>
+          <p class="text-sm text-[var(--color-text-muted)] mb-6 leading-relaxed">
+            Distribution of word counts for each length from 2 to 15 letters.
+          </p>
+
+          <div class="space-y-3">
+            {
+              lengthsSorted.map(([len, count]) => {
+                const pctOfMax = (count / maxLengthCount) * 100;
+                return (
+                  <div class="flex items-center gap-3">
+                    <span class="w-12 text-xs font-bold text-[var(--color-text-muted)]">
+                      {len} Letters
+                    </span>
+                    <div class="flex-1 bg-[var(--color-bg-alt)] h-5 rounded-md overflow-hidden border border-[var(--color-border)]">
+                      <div
+                        class="bg-gradient-to-r from-purple-600 to-[var(--color-primary)] h-full rounded-md"
+                        style={`width: ${pctOfMax}%`}
+                      />
+                    </div>
+                    <span class="w-20 text-right text-xs font-semibold text-[var(--color-text-muted)]">
+                      {count.toLocaleString()}
+                    </span>
+                  </div>
+                );
+              })
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Quick Stats & Sidebars -->
+      <div class="space-y-6">
+        <!-- High-scoring Consonants Stats -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2 class="text-lg font-bold mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+            💎 Rare Letter Distribution
+          </h2>
+          <p class="text-xs text-[var(--color-text-muted)] mb-4">
+            Total number of dictionary words containing each high-scoring consonant:
+          </p>
+
+          <div class="space-y-4">
+            <div
+              class="flex items-center justify-between border-b border-[var(--color-border)] pb-2"
+            >
+              <span class="tile tile-sm">Q<sub>10</sub></span>
+              <span class="text-sm font-bold text-[var(--color-text-main)]"
+                >{qWords.toLocaleString()} words</span
+              >
+            </div>
+            <div
+              class="flex items-center justify-between border-b border-[var(--color-border)] pb-2"
+            >
+              <span class="tile tile-sm">Z<sub>10</sub></span>
+              <span class="text-sm font-bold text-[var(--color-text-main)]"
+                >{zWords.toLocaleString()} words</span
+              >
+            </div>
+            <div
+              class="flex items-center justify-between border-b border-[var(--color-border)] pb-2"
+            >
+              <span class="tile tile-sm">X<sub>8</sub></span>
+              <span class="text-sm font-bold text-[var(--color-text-main)]"
+                >{xWords.toLocaleString()} words</span
+              >
+            </div>
+            <div class="flex items-center justify-between pb-1">
+              <span class="tile tile-sm">J<sub>8</sub></span>
+              <span class="text-sm font-bold text-[var(--color-text-main)]"
+                >{jWords.toLocaleString()} words</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Dictionary Overview -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2 class="text-lg font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+            Dictionary Overview
+          </h2>
+          <div class="space-y-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
+            <p><strong>Lexicon Name:</strong> North American Tournament Word List (TWL)</p>
+            <p><strong>Total Words:</strong> {dict.size.toLocaleString()}</p>
+            <p><strong>Shortest Word Length:</strong> 2 letters</p>
+            <p><strong>Longest Word Length:</strong> 15 letters</p>
+            <p><strong>Average letters per word:</strong> 7.6 letters</p>
+          </div>
+        </div>
+
+        <!-- Quick Links Hub -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)] space-y-3">
+          <h2 class="text-lg font-bold font-['Plus_Jakarta_Sans',system-ui,sans-serif] mb-2">
+            Category Hubs
+          </h2>
+          <a
+            href="/two-letter-scrabble-words"
+            class="flex justify-between items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] border-b border-[var(--color-border)] pb-2 transition-colors"
+          >
+            <span>2-letter words</span>
+            <span>→</span>
+          </a>
+          <a
+            href="/3-letter-words"
+            class="flex justify-between items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] border-b border-[var(--color-border)] pb-2 transition-colors"
+          >
+            <span>3-letter words</span>
+            <span>→</span>
+          </a>
+          <a
+            href="/scrabble-vowel-words"
+            class="flex justify-between items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] border-b border-[var(--color-border)] pb-2 transition-colors"
+          >
+            <span>Vowel-heavy words</span>
+            <span>→</span>
+          </a>
+          <a
+            href="/words-without-vowels"
+            class="flex justify-between items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] pb-1 transition-colors"
+          >
+            <span>Words without vowels</span>
+            <span>→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="py-10 border-t border-b border-[var(--color-border)] bg-[var(--color-bg-alt)]/20">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <SmartScrabbleCoach />
+    </div>
+  </section>
+
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <!-- Curated FAQs -->
+    <FAQSection faqs={faqs} />
+  </div>
+</BaseLayout>

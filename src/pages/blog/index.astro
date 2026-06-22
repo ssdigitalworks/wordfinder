@@ -1,0 +1,174 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEO from '../../components/seo/SEO.astro';
+import { db } from '@db/client';
+import { posts } from '@db/schema';
+import { desc, eq } from 'drizzle-orm';
+import { parseTags, type BlogPost } from '../../lib/blog';
+
+let blogPosts: BlogPost[] = [];
+let dbError = '';
+
+if (db) {
+  try {
+    const allPublished = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.published, true))
+      .orderBy(desc(posts.pubDate))
+      .all();
+    const now = new Date();
+    blogPosts = allPublished.filter((p) => new Date(p.pubDate) <= now);
+  } catch (e: unknown) {
+    dbError = e instanceof Error ? e.message : String(e) || 'Error fetching posts';
+    console.error('Error fetching blog posts from DB:', e);
+  }
+} else {
+  dbError = 'Database not configured';
+}
+
+
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title="Scrabble Blog — Tips, Strategy & Word Lists"
+    description="Expert Scrabble tips, strategy guides, word lists, and game comparisons. Improve your Scrabble and Words with Friends game."
+    canonical=`${SITE_URL}/blog`
+  />
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="text-center mb-12">
+      <h1 class="text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-4">
+        Scrabble Blog
+      </h1>
+      <p class="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto">
+        Tips, strategies, word lists, and guides to help you become a better Scrabble player.
+      </p>
+    </div>
+
+    {
+      dbError && (
+        <div class="p-6 text-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-muted)]">
+          <p class="text-lg font-medium">Unable to load blog posts</p>
+          <p class="text-sm mt-1">{dbError}</p>
+        </div>
+      )
+    }
+
+    {
+      !dbError && blogPosts.length === 0 && (
+        <div class="p-12 text-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-muted)]">
+          <p class="text-lg font-medium">No articles published yet</p>
+          <p class="text-sm mt-1">Check back later for new content!</p>
+        </div>
+      )
+    }
+
+    {
+      blogPosts.length > 0 ? (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {blogPosts.map((post) => {
+            const tags = parseTags(post.tags);
+
+            let formattedDate = '';
+            try {
+              formattedDate = new Date(post.pubDate).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              });
+            } catch {
+              formattedDate = post.pubDate;
+            }
+
+            return (
+              <a href={`/blog/${post.slug}`} class="group block">
+                <article class="bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)] overflow-hidden shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 h-full flex flex-col">
+                  {post.image ? (
+                    <div class="h-48 overflow-hidden relative">
+                      <img
+                        src={post.image}
+                        alt={post.title}
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                        decoding="async"
+                        width="400"
+                        height="192"
+                      />
+                    </div>
+                  ) : (
+                    <div class="h-48 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] flex items-center justify-center">
+                      <span class="text-5xl">🎯</span>
+                    </div>
+                  )}
+                  <div class="p-6 flex flex-col flex-1">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                      {tags.slice(0, 3).map((tag) => (
+                        <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <h2 class="text-lg font-bold text-[var(--color-text-main)] mb-2 group-hover:text-[var(--color-primary)] transition-colors line-clamp-2">
+                      {post.title}
+                    </h2>
+                    <p class="text-sm text-[var(--color-text-muted)] mb-4 line-clamp-3 flex-1">
+                      {post.description}
+                    </p>
+                    <div class="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+                      <time datetime={post.pubDate}>{formattedDate}</time>
+                      <span>{post.author}</span>
+                    </div>
+                  </div>
+                </article>
+              </a>
+            );
+          })}
+        </div>
+      ) : null
+    }
+
+    <div class="mt-16 text-center">
+      <div class="tool-panel inline-block">
+        <h2 class="text-xl font-bold mb-2">Need help finding words?</h2>
+        <p class="text-[var(--color-text-muted)] mb-4">Try our free Scrabble Word Finder tool.</p>
+        <a
+          href="/"
+          class="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-[var(--color-primary)] text-white rounded-2xl font-extrabold text-lg shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_40px_rgba(168,85,247,0.7)] hover:-translate-y-2 hover:scale-105 transition-all duration-300 overflow-hidden"
+        >
+          <!-- Moving shine sweep effect -->
+          <span
+            class="absolute top-0 -left-[100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] group-hover:left-[200%] transition-all duration-700 ease-out"
+          ></span>
+
+          <!-- Emoji animation -->
+          <span
+            class="relative z-10 text-2xl group-hover:-rotate-12 group-hover:scale-125 transition-transform duration-300"
+            >🔤</span
+          >
+
+          <!-- Text content -->
+          <span class="relative z-10 tracking-wide">Find Words Now</span>
+
+          <!-- Inner animated border -->
+          <span
+            class="absolute inset-0 rounded-2xl border-2 border-white/10 group-hover:border-white/50 group-hover:scale-105 transition-all duration-300 opacity-0 group-hover:opacity-100"
+          ></span>
+
+          <!-- Ping dots -->
+          <span class="absolute -top-1 -right-1 w-3 h-3 flex">
+            <span
+              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"
+            ></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
+          </span>
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

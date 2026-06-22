@@ -1,0 +1,200 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '@layouts/BaseLayout.astro';
+import SEO from '@components/seo/SEO.astro';
+import Breadcrumb from '@components/layout/Breadcrumb.astro';
+
+const title = 'About Us — Scrabble Word Finder';
+const description =
+  'Learn about Scrabble Word Finder — our mission, how our tool works, and why we built the best free word finder for Scrabble, Words With Friends, and other word games.';
+const canonical = new URL(Astro.url.pathname, SITE_URL).href;
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} />
+
+  <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'About Us' }]} />
+
+  <section class="max-w-4xl mx-auto px-4 py-12">
+    <!-- Page Header -->
+    <div class="text-center mb-12">
+      <h1
+        class="text-4xl md:text-5xl font-extrabold text-[var(--color-text-main)] mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif] animate-entrance"
+      >
+        About Scrabble Word Finder
+      </h1>
+      <p
+        class="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto leading-relaxed animate-entrance delay-1"
+      >
+        A free, fast, and comprehensive word-finding tool built for Scrabble players, Words With
+        Friends enthusiasts, and word game lovers everywhere.
+      </p>
+    </div>
+
+    <!-- Mission Section -->
+    <div class="card p-8 md:p-10 mb-8 animate-entrance delay-2">
+      <h2
+        class="text-2xl font-bold text-[var(--color-text-main)] mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+      >
+        Our Mission
+      </h2>
+      <p class="text-[var(--color-text-muted)] leading-relaxed mb-4">
+        We believe everyone deserves access to a powerful, easy-to-use word finder — without
+        paywalls, intrusive ads, or cluttered interfaces. Our mission is to help you play better
+        word games by providing instant access to valid words, definitions, and scoring information.
+      </p>
+      <p class="text-[var(--color-text-muted)] leading-relaxed">
+        Whether you're a casual player looking up a tricky letter combination, a competitive
+        tournament player verifying a word, or a student expanding your vocabulary, Scrabble Word
+        Finder is designed with you in mind.
+      </p>
+    </div>
+
+    <!-- How It Works Section -->
+    <div class="card p-8 md:p-10 mb-8 animate-entrance delay-3">
+      <h2
+        class="text-2xl font-bold text-[var(--color-text-main)] mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+      >
+        How It Works
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+        <div class="text-center p-4">
+          <div
+            class="w-14 h-14 bg-[var(--color-primary-light)] text-[var(--color-primary)] rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold"
+          >
+            1
+          </div>
+          <h3
+            class="font-bold text-[var(--color-text-main)] mb-2 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+          >
+            Enter Your Letters
+          </h3>
+          <p class="text-sm text-[var(--color-text-muted)]">
+            Type up to 15 letters from your rack. Use <code
+              class="bg-[var(--color-bg-alt)] px-1.5 py-0.5 rounded text-xs">?</code
+            > as a wildcard for blank tiles.
+          </p>
+        </div>
+        <div class="text-center p-4">
+          <div
+            class="w-14 h-14 bg-[var(--color-primary-light)] text-[var(--color-primary)] rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold"
+          >
+            2
+          </div>
+          <h3
+            class="font-bold text-[var(--color-text-main)] mb-2 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+          >
+            Apply Filters
+          </h3>
+          <p class="text-sm text-[var(--color-text-muted)]">
+            Narrow results by word length, prefix, suffix, or contained letters to find exactly the
+            word you need.
+          </p>
+        </div>
+        <div class="text-center p-4">
+          <div
+            class="w-14 h-14 bg-[var(--color-primary-light)] text-[var(--color-primary)] rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold"
+          >
+            3
+          </div>
+          <h3
+            class="font-bold text-[var(--color-text-main)] mb-2 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+          >
+            Find Your Word
+          </h3>
+          <p class="text-sm text-[var(--color-text-muted)]">
+            Browse results sorted by score or length. Each word shows its point value and
+            definition.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="card p-8 md:p-10 mb-8 animate-entrance delay-4">
+      <h2
+        class="text-2xl font-bold text-[var(--color-text-main)] mb-6 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+      >
+        What Sets Us Apart
+      </h2>
+      <ul class="space-y-4">
+        <li class="flex items-start gap-3">
+          <span class="text-[var(--color-primary)] mt-1 text-lg font-bold">✓</span>
+          <div>
+            <strong class="text-[var(--color-text-main)]">Lightning-Fast Results</strong>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Our optimized search engine returns results in milliseconds, even for complex queries
+              with wildcards and filters.
+            </p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-[var(--color-primary)] mt-1 text-lg font-bold">✓</span>
+          <div>
+            <strong class="text-[var(--color-text-main)]">Multiple Dictionaries</strong>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Search against TWL (Tournament Word List), SOWPODS, and ENABLE dictionaries to match
+              whichever game you're playing.
+            </p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-[var(--color-primary)] mt-1 text-lg font-bold">✓</span>
+          <div>
+            <strong class="text-[var(--color-text-main)]">Accurate Scoring</strong>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              See the exact Scrabble point value for every word, calculated using official tile
+              values.
+            </p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-[var(--color-primary)] mt-1 text-lg font-bold">✓</span>
+          <div>
+            <strong class="text-[var(--color-text-main)]">Advanced Filtering</strong>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Filter by word length, starting letters, ending letters, or letters the word must
+              contain — perfect for board-specific searches.
+            </p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-[var(--color-primary)] mt-1 text-lg font-bold">✓</span>
+          <div>
+            <strong class="text-[var(--color-text-main)]">100% Free, No Account Required</strong>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              No sign-up, no subscription, no hidden features behind a paywall. Every feature is
+              available to everyone, always.
+            </p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Disclaimer Section -->
+    <div
+      class="card p-8 md:p-10 border-amber-300 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20"
+    >
+      <h2
+        class="text-2xl font-bold text-amber-800 dark:text-amber-500 mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+      >
+        Disclaimer
+      </h2>
+      <p class="text-amber-700/80 dark:text-amber-600 leading-relaxed mb-3 text-sm">
+        SCRABBLE ® is a registered trademark. All intellectual property rights in and to the game
+        are owned in the U.S.A. by Hasbro, Inc., in Canada by Hasbro Canada, Inc., and throughout
+        the rest of the world, by J.W. Spear & Sons, PLC of Enfield, Middlesex, England, a
+        subsidiary of Mattel Inc. Mattel & Spear are not affiliated with Hasbro or Hasbro Canada.
+        Words With Friends™ is a trademark of Zynga Inc. This website is not affiliated with,
+        endorsed by, or sponsored by Hasbro, Mattel, or Zynga.
+      </p>
+      <p class="text-amber-700/80 dark:text-amber-600 leading-relaxed text-sm">
+        This tool is intended for entertainment and educational purposes. We encourage fair play —
+        please use this tool to learn and improve your vocabulary, not to cheat during active games
+        against unsuspecting opponents.
+      </p>
+    </div>
+  </section>
+</BaseLayout>

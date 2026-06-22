@@ -1,0 +1,214 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { db } from '@db/client';
+import { posts, messages } from '@db/schema';
+
+export const prerender = false;
+
+let publishedCount = 0;
+let draftCount = 0;
+let unreadCount = 0;
+let recentPosts: (typeof posts.$inferSelect)[] = [];
+
+if (db) {
+  try {
+    const allPosts = await db.select().from(posts).all();
+    publishedCount = allPosts.filter((p) => p.published).length;
+    draftCount = allPosts.filter((p) => !p.published).length;
+    recentPosts = allPosts
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+
+    const allMessages = await db.select().from(messages).all();
+    unreadCount = allMessages.filter((m) => !m.read).length;
+  } catch (e) {
+    console.error('Dashboard DB error:', e);
+  }
+}
+---
+
+<AdminLayout title="Dashboard">
+  <div class="space-y-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1
+          class="text-3xl font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+        >
+          Dashboard
+        </h1>
+        <p class="text-[var(--color-text-muted)] mt-1">Welcome to your admin panel.</p>
+      </div>
+      <a href="/admin/posts/new" class="btn-primary inline-flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+        </svg>
+        New Post
+      </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <a
+        href="/admin/posts"
+        class="card p-6 hover:border-[var(--color-primary)] transition-colors group"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            class="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-xl font-bold"
+          >
+            {publishedCount}
+          </div>
+          <div>
+            <p class="text-sm text-[var(--color-text-muted)]">Published Posts</p>
+            <p
+              class="text-2xl font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+            >
+              {publishedCount}
+            </p>
+          </div>
+        </div>
+      </a>
+
+      <a
+        href="/admin/posts"
+        class="card p-6 hover:border-[var(--color-primary)] transition-colors group"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 text-xl font-bold"
+          >
+            {draftCount}
+          </div>
+          <div>
+            <p class="text-sm text-[var(--color-text-muted)]">Drafts</p>
+            <p
+              class="text-2xl font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+            >
+              {draftCount}
+            </p>
+          </div>
+        </div>
+      </a>
+
+      <a
+        href="/admin/messages"
+        class="card p-6 hover:border-[var(--color-primary)] transition-colors group"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            class={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold ${unreadCount > 0 ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}
+          >
+            {unreadCount}
+          </div>
+          <div>
+            <p class="text-sm text-[var(--color-text-muted)]">Unread Messages</p>
+            <p
+              class="text-2xl font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+            >
+              {unreadCount}
+            </p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="card p-6">
+        <h2
+          class="text-lg font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif] mb-4"
+        >
+          Quick Actions
+        </h2>
+        <div class="space-y-3">
+          <a
+            href="/admin/posts/new"
+            class="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--color-bg-alt)] transition-colors"
+          >
+            <span
+              class="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]"
+              >✏️</span
+            >
+            <span class="text-sm font-medium text-[var(--color-text-main)]"
+              >Write a new blog post</span
+            >
+          </a>
+          <a
+            href="/admin/settings"
+            class="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--color-bg-alt)] transition-colors"
+          >
+            <span
+              class="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]"
+              >⚙️</span
+            >
+            <span class="text-sm font-medium text-[var(--color-text-main)]">Edit site settings</span
+            >
+          </a>
+          <a
+            href="/admin/messages"
+            class="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--color-bg-alt)] transition-colors"
+          >
+            <span
+              class="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]"
+              >📬</span
+            >
+            <span class="text-sm font-medium text-[var(--color-text-main)]"
+              >View contact messages</span
+            >
+          </a>
+        </div>
+      </div>
+
+      <!-- Recent Posts -->
+      <div class="card p-6">
+        <h2
+          class="text-lg font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif] mb-4"
+        >
+          Recent Posts
+        </h2>
+        {
+          recentPosts.length === 0 ? (
+            <p class="text-sm text-[var(--color-text-muted)]">
+              No posts yet. Create your first post!
+            </p>
+          ) : (
+            <div class="space-y-3">
+              {recentPosts.map((post) => (
+                <a
+                  href={`/admin/posts/${post.id}/edit`}
+                  class="flex items-center justify-between p-3 rounded-xl hover:bg-[var(--color-bg-alt)] transition-colors"
+                >
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-[var(--color-text-main)] truncate">
+                      {post.title}
+                    </p>
+                    <p class="text-xs text-[var(--color-text-muted)]">
+                      {new Date(post.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {() => {
+                    const isScheduled = post.published && new Date(post.pubDate) > new Date();
+                    if (isScheduled) {
+                      return (
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ml-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                          Scheduled
+                        </span>
+                      );
+                    }
+                    return (
+                      <span
+                        class={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ml-2 ${post.published ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}
+                      >
+                        {post.published ? 'Published' : 'Draft'}
+                      </span>
+                    );
+                  }}
+                </a>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</AdminLayout>

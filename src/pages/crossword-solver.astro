@@ -1,0 +1,307 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import AdPlaceholder from '../components/ui/AdPlaceholder.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import FAQSection from '../components/ui/FAQSection.astro';
+import SmartScrabbleCoach from '@components/ui/SmartScrabbleCoach.astro';
+
+const title = 'Crossword Solver — Find Missing Letters Instantly';
+const description =
+  'Free interactive crossword solver. Enter your pattern with wildcards (. or ?) and find all matching words from TWL, SOWPODS, and ENABLE dictionaries.';
+const canonical = `${SITE_URL}/crossword-solver`;
+
+const faqs = [
+  {
+    question: 'How do you use the crossword solver?',
+    answer:
+      "Enter your letters and use periods (.) or question marks (?) as wildcards for missing letters. For example, if you are looking for a 5-letter word starting with 'C' and ending with 'T', enter 'c..t.' or 'c??t?' and click search.",
+  },
+  {
+    question: 'What is a wildcard in a crossword solver?',
+    answer:
+      'A wildcard represents an unknown letter. In our solver, you can use either a dot (.) or a question mark (?) for each empty space in your crossword puzzle.',
+  },
+  {
+    question: 'Which dictionaries can I search?',
+    answer:
+      'You can search the TWL (US/Canada Scrabble), SOWPODS (International Scrabble), and ENABLE (Words With Friends) word lists.',
+  },
+];
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonical}
+    schemaType="WebApplication"
+    appName="Crossword Solver"
+    appDescription={description}
+    faqs={faqs}
+  />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'Crossword Solver',
+      url: canonical,
+      description: description,
+      applicationCategory: 'GameApplication',
+      operatingSystem: 'Any',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    }}
+  />
+
+  <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Crossword Solver' }]} />
+
+  <!-- Premium Blur Background Accent -->
+  <div
+    class="absolute top-0 left-0 w-full h-[650px] pointer-events-none overflow-hidden -z-10 opacity-75"
+  >
+    <div
+      class="absolute top-[-12%] left-[10%] w-[40%] h-[55%] rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] blur-[100px] opacity-10 dark:opacity-[0.2] animate-pulse"
+      style="animation-duration: 8s;"
+    >
+    </div>
+  </div>
+
+  <section class="py-10 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="text-center mb-10">
+        <h1
+          class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-3xl md:text-5xl font-extrabold tracking-tight mb-3 leading-tight animate-entrance bg-gradient-to-r from-[var(--color-primary)] via-indigo-600 to-purple-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent"
+        >
+          Crossword Solver
+        </h1>
+        <p class="text-[var(--color-text-muted)] text-base md:text-lg max-w-2xl mx-auto animate-entrance delay-1">
+          Enter letters you know and use dots (<code
+            class="bg-[var(--color-bg-alt)] border px-1 rounded font-mono text-sm">.</code
+          >) or question marks (<code
+            class="bg-[var(--color-bg-alt)] border px-1 rounded font-mono text-sm">?</code
+          >) for unknown blanks.
+        </p>
+      </div>
+
+      <!-- Input Form Card -->
+      <div
+        class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg mb-8 animate-entrance delay-2"
+      >
+        <form id="crossword-form" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- Pattern Input -->
+            <div class="sm:col-span-2">
+              <label
+                for="pattern-input"
+                class="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold mb-1.5"
+                >Word Pattern</label
+              >
+              <input
+                type="text"
+                id="pattern-input"
+                placeholder="e.g. C..T. or H??P?E"
+                maxlength="15"
+                autocomplete="off"
+                autocapitalize="characters"
+                class="air-input uppercase font-mono tracking-widest font-semibold"
+              />
+            </div>
+
+            <!-- Dictionary Selector -->
+            <div>
+              <label
+                for="dict-select"
+                class="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold mb-1.5"
+                >Lexicon</label
+              >
+              <select
+                id="dict-select"
+                class="w-full text-sm font-semibold border border-[var(--color-border)] rounded-xl px-4 py-3 bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-all"
+              >
+                <option value="TWL">TWL (US)</option>
+                <option value="SOWPODS">SOWPODS (UK)</option>
+                <option value="ENABLE">ENABLE (WWF)</option>
+              </select>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="btn-primary w-full py-3.5 font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[var(--color-primary)]/10"
+          >
+            🔍 Find Matching Words
+          </button>
+        </form>
+      </div>
+
+      <AdPlaceholder slot_id="crossword-above-results" />
+
+      <!-- Results Section -->
+      <div id="crossword-results" class="min-h-[120px] mt-8">
+        <!-- Empty state on load -->
+        <div class="text-center py-16 text-[var(--color-text-muted)]" id="crossword-empty-state">
+          <svg
+            class="w-16 h-16 mx-auto mb-4 opacity-40"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+            ></path></svg
+          >
+          <p class="text-lg font-medium">Enter your crossword pattern above</p>
+          <p class="text-sm mt-1">
+            We will scan the selected dictionary for exact character matches
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-10 border-t border-b border-[var(--color-border)] bg-[var(--color-bg-alt)]/20">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <SmartScrabbleCoach />
+    </div>
+  </section>
+
+  <section class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl prose prose-lg">
+      <FAQSection faqs={faqs} />
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  (function () {
+    const form = document.getElementById('crossword-form');
+    const input = document.getElementById('pattern-input') as HTMLInputElement | null;
+    const dict = document.getElementById('dict-select') as HTMLSelectElement | null;
+    const resultsContainer = document.getElementById('crossword-results');
+
+    if (!form || !input || !dict || !resultsContainer) return;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pattern = input.value.trim().replace(/[^A-Za-z.?]/g, '');
+      if (pattern.length < 2) {
+        resultsContainer.innerHTML = `<div class="text-center py-12 text-red-500 font-medium">Pattern must be at least 2 characters.</div>`;
+        return;
+      }
+
+      resultsContainer.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-16">
+          <div class="w-10 h-10 border-4 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin"></div>
+          <p class="mt-4 text-[var(--color-text-muted)] text-sm">Scanning dictionaries…</p>
+        </div>`;
+
+      try {
+        const res = await fetch('/api/crossword', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pattern, dictionary: dict.value }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const words = data.results || [];
+
+        if (words.length === 0) {
+          resultsContainer.innerHTML = `
+            <div class="text-center py-16 text-[var(--color-text-muted)]">
+              <svg class="w-16 h-16 mx-auto mb-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg>
+              <p class="text-lg font-medium">No matches found</p>
+              <p class="text-sm mt-1">Try another letter combination</p>
+            </div>`;
+          return;
+        }
+
+        // Render results
+        let html = `
+          <div class="mb-4">
+            <p class="text-sm text-[var(--color-text-muted)]">Found <strong class="text-[var(--color-text-main)]">${words.length}</strong> matching words:</p>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">`;
+
+        const favorites: string[] = JSON.parse(localStorage.getItem('scrabble_favorites') || '[]');
+
+        words.forEach((w: { word: string; score?: number }) => {
+          const isFav = favorites.includes(w.word.toUpperCase());
+          const favIcon = isFav
+            ? `<svg class="h-4 w-4 text-red-500 fill-red-500" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>`
+            : `<svg class="h-4 w-4 text-[var(--color-text-muted)] hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>`;
+
+          html += `
+            <div class="relative group">
+              <a
+                href="/word/${w.word.toLowerCase()}"
+                class="word-card bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] hover:border-[var(--color-primary)] p-3.5 text-center hover:shadow-md transition-all flex flex-col items-center justify-between h-full"
+              >
+                <span class="font-bold text-sm uppercase tracking-wider text-[var(--color-text-main)] mb-1">${w.word}</span>
+                <span class="score-badge text-[10px]">${w.score} pts</span>
+              </a>
+              <button class="absolute top-1 right-1 p-1 rounded-lg hover:bg-[var(--color-bg-alt)] transition-colors fav-word-btn flex items-center justify-center cursor-pointer" data-fav-word="${w.word.toUpperCase()}" title="${isFav ? 'Remove from Favorites' : 'Add to Favorites'}">
+                ${favIcon}
+              </button>
+            </div>`;
+        });
+        html += `</div>`;
+        resultsContainer.innerHTML = html;
+
+        // Attach favorite button listeners
+        resultsContainer.querySelectorAll('.fav-word-btn').forEach((btn) => {
+          const word = (btn as HTMLElement).dataset.favWord;
+          if (!word) return;
+
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const currentFavs: string[] = JSON.parse(localStorage.getItem('scrabble_favorites') || '[]');
+            const idx = currentFavs.indexOf(word);
+            if (idx !== -1) {
+              currentFavs.splice(idx, 1);
+              btn.innerHTML = `<svg class="h-4 w-4 text-[var(--color-text-muted)] hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>`;
+              btn.setAttribute('title', 'Add to Favorites');
+            } else {
+              currentFavs.push(word);
+              btn.innerHTML = `<svg class="h-4 w-4 text-red-500 fill-red-500" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>`;
+              btn.setAttribute('title', 'Remove from Favorites');
+
+              if (typeof (window as any).animateFavoriteHeart === 'function') {
+                (window as any).animateFavoriteHeart(btn);
+              }
+            }
+            localStorage.setItem('scrabble_favorites', JSON.stringify(currentFavs));
+
+            btn.classList.remove('animate-heart-pop');
+            void (btn as HTMLElement).offsetWidth;
+            btn.classList.add('animate-heart-pop');
+            window.dispatchEvent(new CustomEvent('scrabble_favorites_changed'));
+          });
+          
+          btn.addEventListener('animationend', () => {
+            btn.classList.remove('animate-heart-pop');
+          });
+        });
+      } catch (err: unknown) {
+        resultsContainer.innerHTML = `
+          <div class="text-center py-12 text-red-500 font-medium">
+            <p>Error finding words</p>
+            <p class="text-xs mt-1 text-[var(--color-text-muted)]">${(err as Error).message}</p>
+          </div>`;
+      }
+    });
+  })();
+</script>

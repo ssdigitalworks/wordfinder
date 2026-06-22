@@ -1,0 +1,72 @@
+---
+import BlogCard from './BlogCard.astro';
+
+interface BlogPost {
+  title: string;
+  slug: string;
+  date: string;
+  excerpt: string;
+  tags?: string[];
+  readingTime?: string;
+  image?: string;
+}
+
+interface Props {
+  posts: BlogPost[];
+  title?: string;
+  subtitle?: string;
+  columns?: 2 | 3;
+}
+
+const { posts, title, subtitle, columns = 3 } = Astro.props;
+
+const gridCols =
+  columns === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+---
+
+<section>
+  {
+    (title || subtitle) && (
+      <div class="mb-8">
+        {title && (
+          <h2 class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-2xl sm:text-3xl font-bold text-[var(--color-text-main)]">
+            {title}
+          </h2>
+        )}
+        {subtitle && (
+          <p class="mt-2 text-[var(--color-text-muted)] text-sm sm:text-base max-w-2xl">
+            {subtitle}
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  {
+    posts.length > 0 ? (
+      <div class={`grid ${gridCols} gap-6`}>
+        {posts.map((post) => (
+          <BlogCard
+            title={post.title}
+            slug={post.slug}
+            date={post.date}
+            excerpt={post.excerpt}
+            tags={post.tags}
+            readingTime={post.readingTime}
+            image={post.image}
+          />
+        ))}
+      </div>
+    ) : (
+      <div class="text-center py-12">
+        <div class="text-4xl mb-3">📭</div>
+        <h3 class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-lg font-bold text-[var(--color-text-main)] mb-1">
+          No posts yet
+        </h3>
+        <p class="text-sm text-[var(--color-text-muted)]">
+          Check back soon for articles about Scrabble strategy, word lists, and tips!
+        </p>
+      </div>
+    )
+  }
+</section>

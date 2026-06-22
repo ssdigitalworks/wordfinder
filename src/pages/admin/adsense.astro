@@ -1,0 +1,1051 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { db } from '@db/client';
+import { settings } from '@db/schema';
+
+export const prerender = false;
+
+let dbError = '';
+let settingsMap: Record<string, string> = {
+  adsense_client_id: '',
+  adsense_enabled: '',
+  adsense_auto_ads_enabled: '',
+  adsense_sandbox_mode: '',
+  adsense_publisher_account_id: '',
+  adsense_header_ad_slot: '',
+  adsense_header_ad_enabled: '',
+  adsense_header_ad_type: '',
+  adsense_header_ad_html: '',
+  adsense_sidebar_ad_slot: '',
+  adsense_sidebar_ad_enabled: '',
+  adsense_sidebar_ad_type: '',
+  adsense_sidebar_ad_html: '',
+  adsense_footer_ad_slot: '',
+  adsense_footer_ad_enabled: '',
+  adsense_footer_ad_type: '',
+  adsense_footer_ad_html: '',
+  adsense_in_content_ad_slot: '',
+  adsense_in_content_ad_enabled: '',
+  adsense_in_content_ad_type: '',
+  adsense_in_content_ad_html: '',
+  adsense_in_content_paragraphs: '',
+  adsense_excluded_paths: '',
+};
+
+if (db) {
+  try {
+    const rows = await db.select().from(settings).all();
+    for (const row of rows) {
+      settingsMap[row.key] = row.value;
+    }
+  } catch (e) {
+    dbError = (e as Error).message || 'Database error occurred';
+    console.error('Error fetching adsense settings:', e);
+  }
+} else {
+  dbError = 'Database not configured';
+}
+
+// Fallback values
+const adsenseClientIdVal = settingsMap.adsense_client_id || '';
+const adsenseEnabledVal = settingsMap.adsense_enabled === 'true';
+const adsenseAutoAdsEnabledVal = settingsMap.adsense_auto_ads_enabled === 'true';
+const adsenseSandboxModeVal = settingsMap.adsense_sandbox_mode !== 'false'; // default to true for safety
+const adsensePublisherAccountIdVal = settingsMap.adsense_publisher_account_id || '';
+
+const headerAdSlotVal = settingsMap.adsense_header_ad_slot || '';
+const headerAdEnabledVal = settingsMap.adsense_header_ad_enabled === 'true';
+const headerAdTypeVal = settingsMap.adsense_header_ad_type || 'adsense';
+const headerAdHtmlVal = settingsMap.adsense_header_ad_html || '';
+
+const sidebarAdSlotVal = settingsMap.adsense_sidebar_ad_slot || '';
+const sidebarAdEnabledVal = settingsMap.adsense_sidebar_ad_enabled === 'true';
+const sidebarAdTypeVal = settingsMap.adsense_sidebar_ad_type || 'adsense';
+const sidebarAdHtmlVal = settingsMap.adsense_sidebar_ad_html || '';
+
+const footerAdSlotVal = settingsMap.adsense_footer_ad_slot || '';
+const footerAdEnabledVal = settingsMap.adsense_footer_ad_enabled === 'true';
+const footerAdTypeVal = settingsMap.adsense_footer_ad_type || 'adsense';
+const footerAdHtmlVal = settingsMap.adsense_footer_ad_html || '';
+
+const inContentAdSlotVal = settingsMap.adsense_in_content_ad_slot || '';
+const inContentAdEnabledVal = settingsMap.adsense_in_content_ad_enabled === 'true';
+const inContentAdTypeVal = settingsMap.adsense_in_content_ad_type || 'adsense';
+const inContentAdHtmlVal = settingsMap.adsense_in_content_ad_html || '';
+const inContentParagraphsVal = settingsMap.adsense_in_content_paragraphs || '3';
+
+const excludedPathsVal = settingsMap.adsense_excluded_paths || '/admin/*, /login, /404';
+---
+
+<AdminLayout title="AdSense Settings">
+  <div class="max-w-5xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1
+          class="text-3xl font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+        >
+          AdSense Monetization
+        </h1>
+        <p class="text-[var(--color-text-muted)] mt-1">
+          Configure your Google AdSense integration, placement units, and policy compliance
+          settings.
+        </p>
+      </div>
+
+      <div
+        class="flex items-center gap-3 bg-[var(--color-card)] border border-[var(--color-border)] px-4 py-2 rounded-xl shrink-0"
+      >
+        <div class="flex items-center gap-2">
+          <span class="relative flex h-3 w-3">
+            <span
+              class={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${adsenseEnabledVal ? 'bg-emerald-400' : 'bg-amber-400'}`}
+            ></span>
+            <span
+              class={`relative inline-flex rounded-full h-3 w-3 ${adsenseEnabledVal ? 'bg-emerald-500' : 'bg-amber-500'}`}
+            ></span>
+          </span>
+          <span class="text-xs font-bold text-[var(--color-text-main)] uppercase tracking-wider">
+            {adsenseEnabledVal ? 'Monetization Active' : 'Monetization Inactive'}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    {
+      dbError && (
+        <div class="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm font-semibold">
+          {dbError}
+        </div>
+      )
+    }
+
+    {
+      !dbError && (
+        <form id="adsense-form" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left 2 columns: Forms & Settings */}
+          <div class="lg:col-span-2 space-y-6">
+            {/* Core Integration Card */}
+            <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6">
+              <h2 class="text-xl font-bold text-[var(--color-text-main)] border-b border-[var(--color-border)] pb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2">
+                <svg
+                  class="w-5 h-5 text-[var(--color-primary)]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="2.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-.105-8.243-.298m16.086 0A12.022 12.022 0 0118 13.5c0 .54-.039 1.07-.114 1.593m-15.772-1.593a12.022 12.022 0 003.886 3.093m0 0a11.95 11.95 0 005.772 1.5m0 0a11.95 11.95 0 005.772-1.5M12 10.5c1.86 0 3.606-.05 5.21-.143m-10.42 0c1.604.093 3.35.143 5.21.143"
+                  />
+                </svg>
+                Google AdSense Core Settings
+              </h2>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2 flex flex-wrap gap-4 items-center justify-between bg-[var(--color-bg-alt)] p-4 rounded-xl border border-[var(--color-border)]">
+                  <div>
+                    <h3 class="text-sm font-bold text-[var(--color-text-main)]">
+                      Global Ad Delivery
+                    </h3>
+                    <p class="text-xs text-[var(--color-text-muted)] mt-0.5">
+                      Toggle all advertisements across the website on or off.
+                    </p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      id="adsense_enabled"
+                      name="adsense_enabled"
+                      checked={adsenseEnabledVal}
+                      class="sr-only peer"
+                    />
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-primary)]" />
+                  </label>
+                </div>
+
+                <div>
+                  <label
+                    for="adsense_client_id"
+                    class="block text-sm font-semibold text-[var(--color-text-main)] mb-1"
+                  >
+                    AdSense Client ID (Publisher ID)
+                  </label>
+                  <input
+                    type="text"
+                    id="adsense_client_id"
+                    name="adsense_client_id"
+                    value={adsenseClientIdVal}
+                    placeholder="e.g. ca-pub-1234567890123456"
+                    required={adsenseEnabledVal}
+                    class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all font-mono text-sm"
+                  />
+                  <span id="client-id-error" class="text-xs text-red-500 font-semibold mt-1 hidden">
+                    Invalid format. Must begin with ca-pub-
+                  </span>
+                </div>
+
+                <div>
+                  <label
+                    for="adsense_publisher_account_id"
+                    class="block text-sm font-semibold text-[var(--color-text-main)] mb-1"
+                  >
+                    AdSense Account Verification ID
+                  </label>
+                  <input
+                    type="text"
+                    id="adsense_publisher_account_id"
+                    name="adsense_publisher_account_id"
+                    value={adsensePublisherAccountIdVal}
+                    placeholder="e.g. pub-1234567890123456"
+                    class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all font-mono text-sm"
+                  />
+                  <p class="text-[10px] text-[var(--color-text-muted)] mt-1">
+                    Placed in the meta verification tag for ownership verification.
+                  </p>
+                </div>
+
+                <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-[var(--color-border)] border-dashed">
+                  <div class="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="adsense_auto_ads_enabled"
+                      name="adsense_auto_ads_enabled"
+                      checked={adsenseAutoAdsEnabledVal}
+                      class="mt-1 w-5 h-5 rounded border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                    />
+                    <div>
+                      <label
+                        for="adsense_auto_ads_enabled"
+                        class="text-sm font-bold text-[var(--color-text-main)] cursor-pointer"
+                      >
+                        Enable Auto Ads
+                      </label>
+                      <p class="text-xs text-[var(--color-text-muted)] mt-0.5">
+                        Let Google decide where to place ads automatically on your website.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="adsense_sandbox_mode"
+                      name="adsense_sandbox_mode"
+                      checked={adsenseSandboxModeVal}
+                      class="mt-1 w-5 h-5 rounded border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                    />
+                    <div>
+                      <label
+                        for="adsense_sandbox_mode"
+                        class="text-sm font-bold text-[var(--color-text-main)] cursor-pointer"
+                      >
+                        Sandbox / Dev Mode Placeholder
+                      </label>
+                      <p class="text-xs text-[var(--color-text-muted)] mt-0.5">
+                        Renders bright custom layouts with slot sizes in dev environment instead of
+                        calling real script blocks to avoid policy violations.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Placement Configuration Card */}
+            <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6">
+              <h2 class="text-xl font-bold text-[var(--color-text-main)] border-b border-[var(--color-border)] pb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2">
+                <svg
+                  class="w-5 h-5 text-[var(--color-primary)]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="2.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5"
+                  />
+                </svg>
+                Ad Placement Units
+              </h2>
+
+              <div class="space-y-6">
+                {/* Header Placement */}
+                <div class="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] space-y-4">
+                  <label class="flex items-center justify-between cursor-pointer select-none">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-blue-500" />
+                      <span class="text-sm font-bold text-[var(--color-text-main)]">
+                        Header Banner Ad
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      id="adsense_header_ad_enabled"
+                      name="adsense_header_ad_enabled"
+                      checked={headerAdEnabledVal}
+                      class="w-4 h-4 text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                    />
+                  </label>
+                  <div
+                    class={`space-y-4 ${headerAdEnabledVal ? '' : 'opacity-50 pointer-events-none'}`}
+                    id="header-ad-inputs"
+                  >
+                    <div class="flex gap-4 items-center border-t border-[var(--color-border)] border-dashed pt-3">
+                      <span class="text-xs font-semibold text-[var(--color-text-muted)]">
+                        Ad Format:
+                      </span>
+                      <label class="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-main)] cursor-pointer">
+                        <input
+                          type="radio"
+                          name="adsense_header_ad_type"
+                          value="adsense"
+                          checked={headerAdTypeVal === 'adsense'}
+                          class="accent-[var(--color-primary)]"
+                        />
+                        AdSense Unit
+                      </label>
+                      <label class="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-main)] cursor-pointer">
+                        <input
+                          type="radio"
+                          name="adsense_header_ad_type"
+                          value="html"
+                          checked={headerAdTypeVal === 'html'}
+                          class="accent-[var(--color-primary)]"
+                        />
+                        Custom HTML Code
+                      </label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div
+                        id="header-adsense-field"
+                        class={headerAdTypeVal === 'adsense' ? '' : 'hidden'}
+                      >
+                        <label
+                          for="adsense_header_ad_slot"
+                          class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1"
+                        >
+                          Header Ad Slot ID
+                        </label>
+                        <input
+                          type="text"
+                          id="adsense_header_ad_slot"
+                          name="adsense_header_ad_slot"
+                          value={headerAdSlotVal}
+                          placeholder="e.g. 9876543210"
+                          class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] text-sm font-mono"
+                        />
+                      </div>
+                      <div
+                        id="header-html-field"
+                        class={`col-span-2 ${headerAdTypeVal === 'html' ? '' : 'hidden'}`}
+                      >
+                        <label
+                          for="adsense_header_ad_html"
+                          class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1"
+                        >
+                          Custom HTML / JS Code Block
+                        </label>
+                        <textarea
+                          id="adsense_header_ad_html"
+                          name="adsense_header_ad_html"
+                          rows="3"
+                          placeholder="Enter custom HTML or JS code here"
+                          class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] text-sm font-mono resize-y"
+                        >
+                          {headerAdHtmlVal}
+                        </textarea>
+                      </div>
+                      <div class="flex items-center text-xs text-[var(--color-text-muted)]">
+                        Recommended: Leaderboard or Responsive Ad Unit (top of layout).
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sidebar Placement */}
+                <div class="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] space-y-4">
+                  <label class="flex items-center justify-between cursor-pointer select-none">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-purple-500" />
+                      <span class="text-sm font-bold text-[var(--color-text-main)]">
+                        Sidebar Sticky Ad
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      id="adsense_sidebar_ad_enabled"
+                      name="adsense_sidebar_ad_enabled"
+                      checked={sidebarAdEnabledVal}
+                      class="w-4 h-4 text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                    />
+                  </label>
+                  <div
+                    class={`space-y-4 ${sidebarAdEnabledVal ? '' : 'opacity-50 pointer-events-none'}`}
+                    id="sidebar-ad-inputs"
+                  >
+                    <div class="flex gap-4 items-center border-t border-[var(--color-border)] border-dashed pt-3">
+                      <span class="text-xs font-semibold text-[var(--color-text-muted)]">
+                        Ad Format:
+                      </span>
+                      <label class="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-main)] cursor-pointer">
+                        <input
+                          type="radio"
+                          name="adsense_sidebar_ad_type"
+                          value="adsense"
+                          checked={sidebarAdTypeVal === 'adsense'}
+                          class="accent-[var(--color-primary)]"
+                        />
+                        AdSense Unit
+                      </label>
+                      <label class="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-main)] cursor-pointer">
+                        <input
+                          type="radio"
+                          name="adsense_sidebar_ad_type"
+                          value="html"
+                          checked={sidebarAdTypeVal === 'html'}
+                          class="accent-[var(--color-primary)]"
+                        />
+                        Custom HTML Code
+                      </label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div
+                        id="sidebar-adsense-field"
+                        class={sidebarAdTypeVal === 'adsense' ? '' : 'hidden'}
+                      >
+                        <label
+                          for="adsense_sidebar_ad_slot"
+                          class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1"
+                        >
+                          Sidebar Ad Slot ID
+                        </label>
+                        <input
+                          type="text"
+                          id="adsense_sidebar_ad_slot"
+                          name="adsense_sidebar_ad_slot"
+                          value={sidebarAdSlotVal}
+                          placeholder="e.g. 8765432109"
+                          class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] text-sm font-mono"
+                        />
+                      </div>
+                      <div
+                        id="sidebar-html-field"
+                        class={`col-span-2 ${sidebarAdTypeVal === 'html' ? '' : 'hidden'}`}
+                      >
+                        <label
+                          for="adsense_sidebar_ad_html"
+                          class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1"
+                        >
+                          Custom HTML / JS Code Block
+                        </label>
+                        <textarea
+                          id="adsense_sidebar_ad_html"
+                          name="adsense_sidebar_ad_html"
+                          rows="3"
+                          placeholder="Enter custom HTML or JS code here"
+                          class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] text-sm font-mono resize-y"
+                        >
+                          {sidebarAdHtmlVal}
+                        </textarea>
+                      </div>
+                      <div class="flex items-center text-xs text-[var(--color-text-muted)]">
+                        Recommended: Vertical / Skyscraper or Responsive unit.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* In-Content Placement */}
+                <div class="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] space-y-4">
+                  <label class="flex items-center justify-between cursor-pointer select-none">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span class="text-sm font-bold text-[var(--color-text-main)]">
+                        In-Content Blog Post Ad
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      id="adsense_in_content_ad_enabled"
+                      name="adsense_in_content_ad_enabled"
+                      checked={inContentAdEnabledVal}
+                      class="w-4 h-4 text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                    />
+                  </label>
+                  <div
+                    class={`space-y-4 ${inContentAdEnabledVal ? '' : 'opacity-50 pointer-events-none'}`}
+                    id="in_content-ad-inputs"
+                  >
+                    <div class="flex gap-4 items-center border-t border-[var(--color-border)] border-dashed pt-3">
+                      <span class="text-xs font-semibold text-[var(--color-text-muted)]">
+                        Ad Format:
+                      </span>
+                      <label class="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-main)] cursor-pointer">
+                        <input
+                          type="radio"
+                          name="adsense_in_content_ad_type"
+                          value="adsense"
+                          checked={inContentAdTypeVal === 'adsense'}
+                          class="accent-[var(--color-primary)]"
+                        />
+                        AdSense Unit
+                      </label>
+                      <label class="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-main)] cursor-pointer">
+                        <input
+                          type="radio"
+                          name="adsense_in_content_ad_type"
+                          value="html"
+                          checked={inContentAdTypeVal === 'html'}
+                          class="accent-[var(--color-primary)]"
+                        />
+                        Custom HTML Code
+                      </label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div
+                        id="in_content-adsense-field"
+                        class={inContentAdTypeVal === 'adsense' ? '' : 'hidden'}
+                      >
+                        <label
+                          for="adsense_in_content_ad_slot"
+                          class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1"
+                        >
+                          In-Content Ad Slot ID
+                        </label>
+                        <input
+                          type="text"
+                          id="adsense_in_content_ad_slot"
+                          name="adsense_in_content_ad_slot"
+                          value={inContentAdSlotVal}
+                          placeholder="e.g. 7654321098"
+                          class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] text-sm font-mono"
+                        />
+                      </div>
+                      <div
+                        id="in_content-html-field"
+                        class={`col-span-2 ${inContentAdTypeVal === 'html' ? '' : 'hidden'}`}
+                      >
+                        <label
+                          for="adsense_in_content_ad_html"
+                          class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1"
+                        >
+                          Custom HTML / JS Code Block
+                        </label>
+                        <textarea
+                          id="adsense_in_content_ad_html"
+                          name="adsense_in_content_ad_html"
+                          rows="3"
+                          placeholder="Enter custom HTML or JS code here"
+                          class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] text-sm font-mono resize-y"
+                        >
+                          {inContentAdHtmlVal}
+                        </textarea>
+                      </div>
+                      <div>
+                        <label
+                          for="adsense_in_content_paragraphs"
+                          class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1"
+                        >
+                          Insert After Paragraph Count
+                        </label>
+                        <input
+                          type="number"
+                          id="adsense_in_content_paragraphs"
+                          name="adsense_in_content_paragraphs"
+                          value={inContentParagraphsVal}
+                          min="1"
+                          max="15"
+                          class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] text-sm"
+                        />
+                      </div>
+                      <div class="flex items-center text-xs text-[var(--color-text-muted)] md:col-span-3">
+                        Ad unit dynamically inserted within blog post contents.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Placement */}
+                <div class="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] space-y-4">
+                  <label class="flex items-center justify-between cursor-pointer select-none">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-amber-500" />
+                      <span class="text-sm font-bold text-[var(--color-text-main)]">
+                        Footer Banner Ad
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      id="adsense_footer_ad_enabled"
+                      name="adsense_footer_ad_enabled"
+                      checked={footerAdEnabledVal}
+                      class="w-4 h-4 text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                    />
+                  </label>
+                  <div
+                    class={`space-y-4 ${footerAdEnabledVal ? '' : 'opacity-50 pointer-events-none'}`}
+                    id="footer-ad-inputs"
+                  >
+                    <div class="flex gap-4 items-center border-t border-[var(--color-border)] border-dashed pt-3">
+                      <span class="text-xs font-semibold text-[var(--color-text-muted)]">
+                        Ad Format:
+                      </span>
+                      <label class="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-main)] cursor-pointer">
+                        <input
+                          type="radio"
+                          name="adsense_footer_ad_type"
+                          value="adsense"
+                          checked={footerAdTypeVal === 'adsense'}
+                          class="accent-[var(--color-primary)]"
+                        />
+                        AdSense Unit
+                      </label>
+                      <label class="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-main)] cursor-pointer">
+                        <input
+                          type="radio"
+                          name="adsense_footer_ad_type"
+                          value="html"
+                          checked={footerAdTypeVal === 'html'}
+                          class="accent-[var(--color-primary)]"
+                        />
+                        Custom HTML Code
+                      </label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div
+                        id="footer-adsense-field"
+                        class={footerAdTypeVal === 'adsense' ? '' : 'hidden'}
+                      >
+                        <label
+                          for="adsense_footer_ad_slot"
+                          class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1"
+                        >
+                          Footer Ad Slot ID
+                        </label>
+                        <input
+                          type="text"
+                          id="adsense_footer_ad_slot"
+                          name="adsense_footer_ad_slot"
+                          value={footerAdSlotVal}
+                          placeholder="e.g. 6543210987"
+                          class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] text-sm font-mono"
+                        />
+                      </div>
+                      <div
+                        id="footer-html-field"
+                        class={`col-span-2 ${footerAdTypeVal === 'html' ? '' : 'hidden'}`}
+                      >
+                        <label
+                          for="adsense_footer_ad_html"
+                          class="block text-xs font-semibold text-[var(--color-text-muted)] mb-1"
+                        >
+                          Custom HTML / JS Code Block
+                        </label>
+                        <textarea
+                          id="adsense_footer_ad_html"
+                          name="adsense_footer_ad_html"
+                          rows="3"
+                          placeholder="Enter custom HTML or JS code here"
+                          class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-main)] text-sm font-mono resize-y"
+                        >
+                          {footerAdHtmlVal}
+                        </textarea>
+                      </div>
+                      <div class="flex items-center text-xs text-[var(--color-text-muted)]">
+                        Recommended: Large Banner or Horizontal unit.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Policy & Exclusions Card */}
+            <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6">
+              <h2 class="text-xl font-bold text-[var(--color-text-main)] border-b border-[var(--color-border)] pb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2">
+                <svg
+                  class="w-5 h-5 text-[var(--color-primary)]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="2.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                  />
+                </svg>
+                Exclusions & Policy Compliance
+              </h2>
+
+              <div class="space-y-4">
+                <div>
+                  <label
+                    for="adsense_excluded_paths"
+                    class="block text-sm font-semibold text-[var(--color-text-main)] mb-1"
+                  >
+                    Exclude Paths (comma-separated list)
+                  </label>
+                  <textarea
+                    id="adsense_excluded_paths"
+                    name="adsense_excluded_paths"
+                    rows="3"
+                    class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y font-mono text-xs"
+                  >
+                    {excludedPathsVal}
+                  </textarea>
+                  <p class="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
+                    Ads will not load on any matching routes. You can use wildcard operators (e.g.
+                    `/admin/*` to match all admin pages). Highly recommended to prevent showing ads
+                    in layout admin areas.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right 1 column: Simulation and Quick Save */}
+          <div class="space-y-6">
+            {/* Live Simulation Panel */}
+            <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6 sticky top-6">
+              <div>
+                <h3 class="text-lg font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+                  Placement Simulator
+                </h3>
+                <p class="text-xs text-[var(--color-text-muted)] mt-1">
+                  Real-time simulation preview of enabled ad units on standard page templates.
+                </p>
+              </div>
+
+              {/* Simulated Page Wireframe */}
+              <div class="border border-[var(--color-border)] rounded-xl p-3 bg-[var(--color-bg)] space-y-2.5 font-mono text-[9px] relative overflow-hidden select-none">
+                {/* Top Header Block */}
+                <div class="bg-[var(--color-card)] border border-[var(--color-border)] p-2 rounded flex justify-between items-center text-[8px]">
+                  <span class="font-bold">🎯 WordFinder</span>
+                  <span class="text-[var(--color-text-muted)]">Menu</span>
+                </div>
+
+                {/* Simulated Header Ad */}
+                <div
+                  id="sim-header-ad"
+                  class="bg-blue-500/10 border border-blue-500/30 text-blue-500 text-center py-2.5 rounded font-bold uppercase tracking-wider hidden transition-all"
+                >
+                  Header Ad
+                </div>
+
+                {/* Content block */}
+                <div class="grid grid-cols-3 gap-2">
+                  {/* Main body wireframe */}
+                  <div class="col-span-2 space-y-2 bg-[var(--color-card)] border border-[var(--color-border)] p-2 rounded">
+                    <div class="h-2 w-3/4 bg-[var(--color-text-muted)]/20 rounded" />
+                    <div class="h-1 bg-[var(--color-text-muted)]/10 rounded w-full" />
+                    <div class="h-1 bg-[var(--color-text-muted)]/10 rounded w-full" />
+
+                    {/* In Content Ad Simulated */}
+                    <div
+                      id="sim-incontent-ad"
+                      class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-center py-1.5 rounded font-bold uppercase tracking-wider hidden transition-all"
+                    >
+                      In-Content Ad
+                    </div>
+
+                    <div class="h-1 bg-[var(--color-text-muted)]/10 rounded w-full" />
+                    <div class="h-1 bg-[var(--color-text-muted)]/10 rounded w-5/6" />
+                  </div>
+
+                  {/* Sidebar wireframe */}
+                  <div class="col-span-1 space-y-2 flex flex-col">
+                    <div class="flex-1 bg-[var(--color-card)] border border-[var(--color-border)] p-2 rounded space-y-1">
+                      <div class="h-1.5 w-1/2 bg-[var(--color-text-muted)]/20 rounded" />
+                      <div class="h-1 bg-[var(--color-text-muted)]/10 w-full rounded" />
+
+                      {/* Sidebar Ad Simulated */}
+                      <div
+                        id="sim-sidebar-ad"
+                        class="bg-purple-500/10 border border-purple-500/30 text-purple-500 text-center py-5 rounded font-bold uppercase tracking-wider hidden transition-all flex items-center justify-center text-[7px]"
+                      >
+                        Sidebar
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Simulated Footer Ad */}
+                <div
+                  id="sim-footer-ad"
+                  class="bg-amber-500/10 border border-amber-500/30 text-amber-500 text-center py-2 rounded font-bold uppercase tracking-wider hidden transition-all"
+                >
+                  Footer Ad
+                </div>
+
+                {/* Footer block */}
+                <div class="bg-[var(--color-card)] border border-[var(--color-border)] p-2 rounded text-[7px] text-[var(--color-text-muted)] text-center">
+                  &copy; 2026 WordFinder
+                </div>
+              </div>
+
+              <div id="settings-status" class="hidden p-4 rounded-xl text-sm font-medium" />
+
+              <div class="pt-4 border-t border-[var(--color-border)] space-y-3">
+                <button
+                  type="submit"
+                  id="submit-btn"
+                  class="w-full btn-primary py-3 rounded-xl font-bold cursor-pointer flex justify-center items-center shadow-md hover:shadow-lg transition-shadow"
+                >
+                  Save AdSense Config
+                </button>
+
+                <a
+                  href="/admin"
+                  class="w-full flex items-center justify-center py-2.5 rounded-xl border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-bg-alt)] hover:text-[var(--color-text-main)] transition-colors"
+                >
+                  Return to Dashboard
+                </a>
+              </div>
+            </div>
+          </div>
+        </form>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<script>
+  // UI selectors
+  const enabledToggle = document.getElementById('adsense_enabled') as HTMLInputElement;
+  const autoAdsToggle = document.getElementById('adsense_auto_ads_enabled') as HTMLInputElement;
+  const sandboxToggle = document.getElementById('adsense_sandbox_mode') as HTMLInputElement;
+  const clientIdInput = document.getElementById('adsense_client_id') as HTMLInputElement;
+  const clientErrorSpan = document.getElementById('client-id-error') as HTMLSpanElement;
+
+  const headerToggle = document.getElementById('adsense_header_ad_enabled') as HTMLInputElement;
+  const sidebarToggle = document.getElementById('adsense_sidebar_ad_enabled') as HTMLInputElement;
+  const inContentToggle = document.getElementById(
+    'adsense_in_content_ad_enabled',
+  ) as HTMLInputElement;
+  const footerToggle = document.getElementById('adsense_footer_ad_enabled') as HTMLInputElement;
+
+  // Simulator selectors
+  const simHeader = document.getElementById('sim-header-ad') as HTMLDivElement;
+  const simSidebar = document.getElementById('sim-sidebar-ad') as HTMLDivElement;
+  const simInContent = document.getElementById('sim-incontent-ad') as HTMLDivElement;
+  const simFooter = document.getElementById('sim-footer-ad') as HTMLDivElement;
+
+  const statusBox = document.getElementById('settings-status') as HTMLDivElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const form = document.getElementById('adsense-form') as HTMLFormElement;
+
+  // Live simulation sync
+  function updateSimulation() {
+    const isGloballyEnabled = enabledToggle?.checked;
+
+    if (!isGloballyEnabled) {
+      simHeader?.classList.add('hidden');
+      simSidebar?.classList.add('hidden');
+      simInContent?.classList.add('hidden');
+      simFooter?.classList.add('hidden');
+      return;
+    }
+
+    if (headerToggle?.checked) {
+      simHeader?.classList.remove('hidden');
+    } else {
+      simHeader?.classList.add('hidden');
+    }
+
+    if (sidebarToggle?.checked) {
+      simSidebar?.classList.remove('hidden');
+    } else {
+      simSidebar?.classList.add('hidden');
+    }
+
+    if (inContentToggle?.checked) {
+      simInContent?.classList.remove('hidden');
+    } else {
+      simInContent?.classList.add('hidden');
+    }
+
+    if (footerToggle?.checked) {
+      simFooter?.classList.remove('hidden');
+    } else {
+      simFooter?.classList.add('hidden');
+    }
+  }
+
+  // Event Listeners for Live Simulation
+  enabledToggle?.addEventListener('change', updateSimulation);
+  headerToggle?.addEventListener('change', updateSimulation);
+  sidebarToggle?.addEventListener('change', updateSimulation);
+  inContentToggle?.addEventListener('change', updateSimulation);
+  footerToggle?.addEventListener('change', updateSimulation);
+
+  // Setup dynamic field controls (type radio toggle and container opacity state)
+  function setupAdUnitControls(placementId: string) {
+    const toggle = document.getElementById(`adsense_${placementId}_ad_enabled`) as HTMLInputElement;
+    const container = document.getElementById(`${placementId}-ad-inputs`) as HTMLDivElement;
+    const adsenseField = document.getElementById(`${placementId}-adsense-field`);
+    const htmlField = document.getElementById(`${placementId}-html-field`);
+    const slotInput = document.getElementById(`adsense_${placementId}_ad_slot`) as HTMLInputElement;
+    const htmlInput = document.getElementById(
+      `adsense_${placementId}_ad_html`,
+    ) as HTMLTextAreaElement;
+
+    function updateState() {
+      const isEnabled = toggle?.checked;
+
+      // Update opacity / interaction state of inputs block
+      if (isEnabled) {
+        container?.classList.remove('opacity-50', 'pointer-events-none');
+      } else {
+        container?.classList.add('opacity-50', 'pointer-events-none');
+      }
+
+      // Read selected format radio button value
+      const radioAdsense = document.querySelector(
+        `input[name="adsense_${placementId}_ad_type"][value="adsense"]`,
+      ) as HTMLInputElement;
+      const isAdSenseFormat = radioAdsense?.checked;
+
+      if (isAdSenseFormat) {
+        adsenseField?.classList.remove('hidden');
+        htmlField?.classList.add('hidden');
+        if (slotInput) slotInput.required = isEnabled;
+        if (htmlInput) htmlInput.required = false;
+      } else {
+        adsenseField?.classList.add('hidden');
+        htmlField?.classList.remove('hidden');
+        if (slotInput) slotInput.required = false;
+        if (htmlInput) htmlInput.required = isEnabled;
+      }
+    }
+
+    toggle?.addEventListener('change', updateState);
+
+    // Add change listeners to the format radio buttons
+    const radios = document.querySelectorAll(`input[name="adsense_${placementId}_ad_type"]`);
+    radios.forEach((radio) => {
+      radio.addEventListener('change', updateState);
+    });
+
+    // Run initial update
+    updateState();
+  }
+
+  // Initialize controllers
+  setupAdUnitControls('header');
+  setupAdUnitControls('sidebar');
+  setupAdUnitControls('in_content');
+  setupAdUnitControls('footer');
+
+  // Run initial simulator sync
+  updateSimulation();
+
+  // Handle Form Submission
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusBox.classList.add('hidden');
+    statusBox.className = 'p-4 rounded-xl text-sm font-medium hidden';
+    clientErrorSpan?.classList.add('hidden');
+
+    const clientId = clientIdInput?.value.trim();
+
+    // Client ID basic validator
+    if (enabledToggle?.checked && clientId && !clientId.startsWith('ca-pub-')) {
+      clientErrorSpan?.classList.remove('hidden');
+      clientIdInput?.focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving Settings...';
+
+    const formData = new FormData(form);
+
+    const adsensePayload: Record<string, string> = {
+      adsense_client_id: ((formData.get('adsense_client_id') as string) || '').trim(),
+      adsense_enabled: enabledToggle?.checked ? 'true' : 'false',
+      adsense_auto_ads_enabled: autoAdsToggle?.checked ? 'true' : 'false',
+      adsense_sandbox_mode: sandboxToggle?.checked ? 'true' : 'false',
+      adsense_publisher_account_id: (
+        (formData.get('adsense_publisher_account_id') as string) || ''
+      ).trim(),
+
+      adsense_header_ad_slot: ((formData.get('adsense_header_ad_slot') as string) || '').trim(),
+      adsense_header_ad_enabled: headerToggle?.checked ? 'true' : 'false',
+      adsense_header_ad_type: (
+        (formData.get('adsense_header_ad_type') as string) || 'adsense'
+      ).trim(),
+      adsense_header_ad_html: ((formData.get('adsense_header_ad_html') as string) || '').trim(),
+
+      adsense_sidebar_ad_slot: ((formData.get('adsense_sidebar_ad_slot') as string) || '').trim(),
+      adsense_sidebar_ad_enabled: sidebarToggle?.checked ? 'true' : 'false',
+      adsense_sidebar_ad_type: (
+        (formData.get('adsense_sidebar_ad_type') as string) || 'adsense'
+      ).trim(),
+      adsense_sidebar_ad_html: ((formData.get('adsense_sidebar_ad_html') as string) || '').trim(),
+
+      adsense_footer_ad_slot: ((formData.get('adsense_footer_ad_slot') as string) || '').trim(),
+      adsense_footer_ad_enabled: footerToggle?.checked ? 'true' : 'false',
+      adsense_footer_ad_type: (
+        (formData.get('adsense_footer_ad_type') as string) || 'adsense'
+      ).trim(),
+      adsense_footer_ad_html: ((formData.get('adsense_footer_ad_html') as string) || '').trim(),
+
+      adsense_in_content_ad_slot: (
+        (formData.get('adsense_in_content_ad_slot') as string) || ''
+      ).trim(),
+      adsense_in_content_ad_enabled: inContentToggle?.checked ? 'true' : 'false',
+      adsense_in_content_ad_type: (
+        (formData.get('adsense_in_content_ad_type') as string) || 'adsense'
+      ).trim(),
+      adsense_in_content_ad_html: (
+        (formData.get('adsense_in_content_ad_html') as string) || ''
+      ).trim(),
+      adsense_in_content_paragraphs: (
+        (formData.get('adsense_in_content_paragraphs') as string) || '3'
+      ).trim(),
+
+      adsense_excluded_paths: ((formData.get('adsense_excluded_paths') as string) || '').trim(),
+    };
+
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ settings: adsensePayload }),
+      });
+
+      if (res.ok) {
+        statusBox.innerText = 'AdSense configuration saved successfully!';
+        statusBox.className =
+          'p-4 rounded-xl text-sm font-semibold bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400';
+        statusBox.classList.remove('hidden');
+      } else {
+        const data = await res.json();
+        statusBox.innerText = data.error || 'Failed to save AdSense configuration.';
+        statusBox.className =
+          'p-4 rounded-xl text-sm font-semibold bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400';
+        statusBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.error(err);
+      statusBox.innerText = 'A network error occurred. Please try again.';
+      statusBox.className =
+        'p-4 rounded-xl text-sm font-semibold bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400';
+      statusBox.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save AdSense Config';
+      statusBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+</script>

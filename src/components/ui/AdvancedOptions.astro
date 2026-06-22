@@ -1,0 +1,99 @@
+---
+interface Props {
+  defaultOpen?: boolean;
+}
+
+const { defaultOpen = false } = Astro.props;
+---
+
+<details class="group" open={defaultOpen ? true : undefined}>
+  <summary
+    class="flex items-center gap-2 cursor-pointer select-none list-none text-sm font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors duration-200 py-2"
+    aria-expanded={defaultOpen ? "true" : "false"}
+    aria-controls="adv-options-content"
+    id="adv-options-summary"
+  >
+    <svg aria-hidden="true" focusable="false" class="h-4 w-4 transition-transform duration-200 group-open:rotate-90"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke-width="2.5"
+      stroke="currentColor"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"></path>
+    </svg>
+    Advanced Options
+  </summary>
+
+  <div id="adv-options-content" class="pt-3 pb-1 fade-in">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <!-- Must Include -->
+      <div class="space-y-1.5">
+        <label for="must-include" class="block text-xs font-semibold text-[var(--color-text-main)]">
+          Must Include
+        </label>
+        <input
+          type="text"
+          id="must-include"
+          name="mustInclude"
+          placeholder="e.g. QU"
+          maxlength="10"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          class="input-field text-sm font-semibold uppercase tracking-wider"
+        />
+        <p class="text-[0.65rem] text-[var(--color-text-muted)]">
+          Contiguous letters the word must contain (e.g. AB)
+        </p>
+      </div>
+
+      <!-- Starts With -->
+      <div class="space-y-1.5">
+        <label for="starts-with" class="block text-xs font-semibold text-[var(--color-text-main)]">
+          Starts With
+        </label>
+        <input
+          type="text"
+          id="starts-with"
+          name="startsWith"
+          placeholder="e.g. SC"
+          maxlength="10"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          class="input-field text-sm font-semibold uppercase tracking-wider"
+        />
+        <p class="text-[0.65rem] text-[var(--color-text-muted)]">Starting letters</p>
+      </div>
+
+      <!-- Ends With -->
+      <div class="space-y-1.5">
+        <label for="ends-with" class="block text-xs font-semibold text-[var(--color-text-main)]">
+          Ends With
+        </label>
+        <input
+          type="text"
+          id="ends-with"
+          name="endsWith"
+          placeholder="e.g. ING"
+          maxlength="10"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          class="input-field text-sm font-semibold uppercase tracking-wider"
+        />
+        <p class="text-[0.65rem] text-[var(--color-text-muted)]">Ending letters</p>
+      </div>
+    </div>
+  </div>
+</details>
+
+<script>
+  const details = document.querySelector('details.group') as HTMLDetailsElement;
+  const summary = document.getElementById('adv-options-summary');
+  if (details && summary) {
+    details.addEventListener('toggle', () => {
+      summary.setAttribute('aria-expanded', String(details.open));
+    });
+  }
+</script>

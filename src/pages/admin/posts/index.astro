@@ -1,0 +1,187 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { db } from '@db/client';
+import { posts } from '@db/schema';
+import { desc } from 'drizzle-orm';
+
+export const prerender = false;
+
+let allPosts: (typeof posts.$inferSelect)[] = [];
+let dbError = '';
+
+if (db) {
+  try {
+    allPosts = await db.select().from(posts).orderBy(desc(posts.createdAt)).all();
+  } catch (e: unknown) {
+    dbError = e instanceof Error ? e.message : 'Database error occurred';
+    console.error('Error fetching posts:', e);
+  }
+} else {
+  dbError = 'Database not configured';
+}
+---
+
+<AdminLayout title="Blog Posts">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1
+          class="text-3xl font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+        >
+          Blog Posts
+        </h1>
+        <p class="text-[var(--color-text-muted)] mt-1">Manage, edit, and publish articles.</p>
+      </div>
+      <a href="/admin/posts/new" class="btn-primary inline-flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+        </svg>
+        New Post
+      </a>
+    </div>
+
+    <!-- Error state -->
+    {
+      dbError && (
+        <div class="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm font-medium">
+          {dbError}
+        </div>
+      )
+    }
+
+    <!-- Posts Table/List -->
+    {
+      !dbError && (
+        <div class="card overflow-hidden border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl">
+          {allPosts.length === 0 ? (
+            <div class="p-12 text-center text-[var(--color-text-muted)]">
+              <p class="text-lg font-medium">No posts found</p>
+              <p class="text-sm mt-1">Create your first blog post to get started!</p>
+              <a href="/admin/posts/new" class="btn-primary mt-4 inline-block">
+                Create Post
+              </a>
+            </div>
+          ) : (
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-[var(--color-border)] bg-[var(--color-bg-alt)]/50">
+                    <th class="px-6 py-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                      Title
+                    </th>
+                    <th class="px-6 py-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                      Author
+                    </th>
+                    <th class="px-6 py-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th class="px-6 py-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                      Published Date
+                    </th>
+                    <th class="px-6 py-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-right">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--color-border)]">
+                  {allPosts.map((post) => (
+                    <tr class="hover:bg-[var(--color-bg-alt)]/30 transition-colors">
+                      <td class="px-6 py-4">
+                        <div class="font-semibold text-[var(--color-text-main)] truncate max-w-xs sm:max-w-md">
+                          {post.title}
+                        </div>
+                        <div class="text-xs text-[var(--color-text-muted)]">/{post.slug}</div>
+                      </td>
+                      <td class="px-6 py-4 text-sm text-[var(--color-text-main)]">{post.author}</td>
+                      <td class="px-6 py-4 text-sm">
+                        {() => {
+                          const isScheduled = post.published && new Date(post.pubDate) > new Date();
+                          if (isScheduled) {
+                            return (
+                              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
+                                Scheduled
+                              </span>
+                            );
+                          }
+                          return (
+                            <span
+                              class={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${post.published ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400'}`}
+                            >
+                              {post.published ? 'Published' : 'Draft'}
+                            </span>
+                          );
+                        }}
+                      </td>
+                      <td class="px-6 py-4 text-sm text-[var(--color-text-muted)]">
+                        {post.pubDate ? new Date(post.pubDate).toLocaleDateString() : 'N/A'}
+                      </td>
+                      <td class="px-6 py-4 text-sm text-right space-x-3 whitespace-nowrap">
+                        <a
+                          href={`/admin/posts/${post.id}/edit`}
+                          class="text-[var(--color-primary)] hover:text-[var(--color-primary-light)] font-medium inline-flex items-center gap-1"
+                        >
+                          Edit
+                        </a>
+                        <button
+                          type="button"
+                          class="text-red-600 hover:text-red-400 font-medium cursor-pointer"
+                          data-delete-btn
+                          data-post-id={post.id}
+                          data-post-title={post.title}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<script>
+  import { showToast } from '../../../lib/toast';
+
+  const deleteBtns = document.querySelectorAll('[data-delete-btn]');
+  deleteBtns.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const postId = btn.getAttribute('data-post-id');
+      const postTitle = btn.getAttribute('data-post-title');
+
+      if (!postId) return;
+
+      if (confirm(`Are you sure you want to delete "${postTitle}"?`)) {
+        btn.textContent = 'Deleting...';
+        (btn as HTMLButtonElement).disabled = true;
+
+        try {
+          const res = await fetch(`/api/admin/posts/${postId}`, {
+            method: 'DELETE',
+          });
+
+          if (res.ok) {
+            showToast('Post deleted successfully!', 'success');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          } else {
+            showToast('Failed to delete post.', 'error');
+            btn.textContent = 'Delete';
+            (btn as HTMLButtonElement).disabled = false;
+          }
+        } catch (err) {
+          console.error(err);
+          showToast('A network error occurred.', 'error');
+          btn.textContent = 'Delete';
+          (btn as HTMLButtonElement).disabled = false;
+        }
+      }
+    });
+  });
+</script>

@@ -1,0 +1,223 @@
+---
+import { SITE_URL } from '@lib/config';
+import { TWL_SCORES, ENABLE_SCORES, SOWPODS_SCORES } from '../data/tileScores';
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import AdPlaceholder from '../components/ui/AdPlaceholder.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import { loadDictionary } from '../lib/dictionaryLoader';
+import { calculateWordScore } from '../lib/scoreCalculator';
+
+const title = 'Words Without Vowels — Scrabble Words with No A, E, I, O, U';
+const description =
+  "Complete list of Scrabble words without any vowels (A, E, I, O, U). Essential for when you're stuck with consonant-heavy racks. Includes scores and definitions.";
+
+const vowels = new Set(['A', 'E', 'I', 'O', 'U']);
+const twlAll = [...(await loadDictionary('TWL'))];
+const twlNoVowel = twlAll.filter(
+  (w) =>
+    !w
+      .toUpperCase()
+      .split('')
+      .some((c) => vowels.has(c)),
+);
+const sowpodsAll = [...(await loadDictionary('SOWPODS'))];
+const sowpodsNoVowel = sowpodsAll.filter(
+  (w) =>
+    !w
+      .toUpperCase()
+      .split('')
+      .some((c) => vowels.has(c)),
+);
+const enableAll = [...(await loadDictionary('ENABLE'))];
+const enableNoVowel = enableAll.filter(
+  (w) =>
+    !w
+      .toUpperCase()
+      .split('')
+      .some((c) => vowels.has(c)),
+);
+
+// Sort by score descending
+const twlWords = twlNoVowel
+  .map((w) => ({
+    word: w.toUpperCase(),
+    score: calculateWordScore(w, 'TWL'),
+  }))
+  .sort((a, b) => b.score - a.score);
+
+const allDataJson = JSON.stringify({
+  TWL: twlNoVowel
+    .map((w) => ({ word: w.toUpperCase(), score: calculateWordScore(w, 'TWL') }))
+    .sort((a, b) => b.score - a.score),
+  SOWPODS: sowpodsNoVowel
+    .map((w) => ({ word: w.toUpperCase(), score: calculateWordScore(w, 'SOWPODS') }))
+    .sort((a, b) => b.score - a.score),
+  ENABLE: enableNoVowel
+    .map((w) => ({ word: w.toUpperCase(), score: calculateWordScore(w, 'ENABLE') }))
+    .sort((a, b) => b.score - a.score),
+});
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical=`${SITE_URL}/words-without-vowels`
+  />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: title,
+      description,
+      url: `${SITE_URL}/words-without-vowels`,
+    }}
+  />
+
+  <Breadcrumb
+    items={[
+      { label: 'Home', href: '/' },
+      { label: 'Word Lists', href: '/word-lists' },
+      { label: 'Words Without Vowels' },
+    ]}
+  />
+
+  <section class="py-10 md:py-16">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="text-center mb-10">
+        <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3">
+          Words Without Vowels
+        </h1>
+        <p class="text-[var(--color-text-muted)] text-lg max-w-2xl mx-auto">
+          All valid Scrabble words containing no vowels (A, E, I, O, U). Lifesavers when your rack
+          is full of consonants.
+        </p>
+        <p class="text-sm text-[var(--color-text-muted)] opacity-60 mt-2">
+          TWL: {twlNoVowel.length} words · SOWPODS: {sowpodsNoVowel.length} words · ENABLE: {
+            enableNoVowel.length
+          } words
+        </p>
+      </div>
+
+      <!-- Dictionary Filter -->
+      <div class="flex justify-center gap-2 mb-8">
+        <button
+          class="dict-filter-btn px-4 py-2 text-sm font-medium rounded-full bg-[var(--color-primary)] text-white"
+          data-dict="TWL">TWL</button
+        >
+        <button
+          class="dict-filter-btn px-4 py-2 text-sm font-medium rounded-full bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-main)]"
+          data-dict="SOWPODS">SOWPODS</button
+        >
+        <button
+          class="dict-filter-btn px-4 py-2 text-sm font-medium rounded-full bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-main)]"
+          data-dict="ENABLE">ENABLE</button
+        >
+      </div>
+
+      <div
+        id="word-grid"
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
+      >
+        {
+          twlWords.map(({ word, score }) => (
+            <a
+              href={`/word/${word.toLowerCase()}`}
+              class="word-card bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] p-3 text-center hover:shadow-md hover:border-[var(--color-primary)] transition-all block"
+            >
+              <div class="flex items-center justify-center gap-0.5 mb-1.5">
+                {word.split('').map((ch) => (
+                  <span class="tile">
+                    {ch}
+                    <sub>{calculateWordScore(ch, 'TWL')}</sub>
+                  </span>
+                ))}
+              </div>
+              <span class="score-badge">{score} pts</span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <div class="container mx-auto px-4 max-w-4xl">
+    <AdPlaceholder slot_id="no-vowels-mid" class="my-8" />
+  </div>
+
+  <section class="py-12 md:py-16 border-t">
+    <div class="container mx-auto px-4 max-w-4xl prose prose-lg">
+      <h2 class="text-2xl font-bold mb-4">Why Learn Words Without Vowels?</h2>
+      <p>
+        Getting stuck with a rack full of consonants is one of the most frustrating situations in
+        Scrabble. Knowing the vowel-less words can turn a losing position into a scoring
+        opportunity. These words are particularly valuable because most players don't know them.
+      </p>
+
+      <h2 class="text-2xl font-bold mt-10 mb-4">Common No-Vowel Words</h2>
+      <ul>
+        <li><strong>CWM</strong> — A bowl-shaped geological depression (also spelled "cwm")</li>
+        <li><strong>SHH</strong> — Used to command silence</li>
+        <li><strong>TSK</strong> — An expression of disapproval</li>
+        <li><strong>HMM</strong> — An expression of thought or hesitation</li>
+        <li><strong>BRR</strong> — An exclamation of cold</li>
+        <li><strong>GRR</strong> — An expression of anger (SOWPODS)</li>
+        <li><strong>NTH</strong> — To the highest degree</li>
+        <li><strong>PHT</strong> — An exclamation (SOWPODS)</li>
+      </ul>
+
+      <h2 class="text-2xl font-bold mt-10 mb-4">The Role of Y</h2>
+      <p>
+        Notice that Y is not considered a vowel in Scrabble dictionary terms. Words like "CRY",
+        "DRY", "FLY", "FRY", "GYM", "HYP", "PLY", "PRY", "SKY", "SLY", "SPY", "STY", "TRY", and
+        "WHY" use Y as a vowel sound but are not listed here since they technically contain no
+        standard vowels.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script is:inline define:vars={{ allDataJson, TWL_SCORES, ENABLE_SCORES, SOWPODS_SCORES }}>
+  (function () {
+    const allData = JSON.parse(allDataJson);
+    const TILE_SCORES = {
+      TWL: TWL_SCORES,
+      SOWPODS: SOWPODS_SCORES,
+      ENABLE: ENABLE_SCORES,
+    };
+
+    const grid = document.getElementById('word-grid');
+
+    document.querySelectorAll('.dict-filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.dict-filter-btn').forEach((b) => {
+          b.classList.remove('bg-[var(--color-primary)]', 'text-white');
+          b.classList.add('bg-[var(--color-bg-alt)]', 'text-[var(--color-text-muted)]');
+        });
+        btn.classList.add('bg-[var(--color-primary)]', 'text-white');
+        btn.classList.remove('bg-[var(--color-bg-alt)]', 'text-[var(--color-text-muted)]');
+        const dict = btn.dataset.dict;
+        const words = allData[dict] || [];
+        const scores = TILE_SCORES[dict];
+        grid.innerHTML = words
+          .map(
+            ({ word, score }) =>
+              `<a href="/word/${word.toLowerCase()}" class="word-card bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] p-3 text-center hover:shadow-md hover:border-[var(--color-primary)] transition-all block">
+          <div class="flex items-center justify-center gap-0.5 mb-1.5">${word
+            .split('')
+            .map((c) => `<span class="tile">${c}<sub>${scores[c] || 0}</sub></span>`)
+            .join('')}</div>
+          <span class="score-badge">${score} pts</span>
+        </a>`,
+          )
+          .join('');
+      });
+    });
+  })();
+</script>

@@ -1,0 +1,145 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import { calculateWordScore } from '../lib/scoreCalculator';
+
+const title = 'Hardest Scrabble Words to Play — Obscure High Scorers';
+const description =
+  'Linguistic guide to the hardest and most obscure high-scoring Scrabble words. Learn to play CWM, SYZYGY, CRWTH, and baffle your opponents.';
+
+const HARD_WORDS = [
+  {
+    word: 'SYZYGY',
+    definition: 'The straight-line alignment of three celestial bodies.',
+    tip: 'Uses three Y tiles acting as vowels. Perfect if you have drawn multiple Ys.',
+  },
+  {
+    word: 'CWM',
+    definition: 'A steep-walled semicircular basin in a mountain (cirque).',
+    tip: 'Contains no vowels! Essential for clearing consonant clumping.',
+  },
+  {
+    word: 'CRWTH',
+    definition: 'An ancient Celtic stringed instrument.',
+    tip: 'No standard vowels. Perfect for dumping consonants.',
+  },
+  {
+    word: 'MUZJIKS',
+    definition: 'Russian peasants (plural of muzhik).',
+    tip: 'Contains both Z and J, two of the highest scoring consonants.',
+  },
+  {
+    word: 'HAZZANS',
+    definition: 'Cantors in synagogues.',
+    tip: 'Requires two Zs. A massive score if played on multipliers.',
+  },
+  {
+    word: 'PHLOX',
+    definition: 'A herbaceous plant with fragrant flowers.',
+    tip: 'High-scoring X and P. Easy to construct with common vowels.',
+  },
+  {
+    word: 'QI',
+    definition: 'Life force in Chinese philosophy.',
+    tip: 'Simple 2-letter word containing Q. The ultimate bailout play.',
+  },
+  {
+    word: 'QAT',
+    definition: 'An East African shrub.',
+    tip: 'Crucial 3-letter word to play Q when U is not on your rack.',
+  },
+];
+
+const formattedWords = HARD_WORDS.map((w) => ({
+  ...w,
+  score: calculateWordScore(w.word, 'TWL'),
+}));
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical=`${SITE_URL}/hardest-scrabble-words`
+  />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: title,
+      description,
+      url: `${SITE_URL}/hardest-scrabble-words`,
+    }}
+  />
+
+  <Breadcrumb
+    items={[
+      { label: 'Home', href: '/' },
+      { label: 'Word Lists', href: '/word-list' },
+      { label: 'Hardest Words to Play' },
+    ]}
+  />
+
+  <section class="py-10 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="text-center mb-10">
+        <h1
+          class="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+        >
+          Hardest Scrabble Words to Play
+        </h1>
+        <p class="text-[var(--color-text-muted)] text-lg max-w-2xl mx-auto">
+          Stuck with awkward consonants or zero vowels? Master these obscure, high-scoring words to
+          solve difficult rack setups.
+        </p>
+      </div>
+
+      <div class="space-y-6">
+        {
+          formattedWords.map(({ word, definition, score, tip }) => (
+            <div class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] flex flex-wrap items-center justify-between gap-4 hover:shadow-md transition-all">
+              <div class="flex items-center gap-4 flex-wrap">
+                <a href={`/word/${word.toLowerCase()}`} class="flex items-center gap-0.5">
+                  {word.split('').map((ch) => (
+                    <span class="tile !w-8 !h-8 !text-sm shadow-sm">
+                      {ch}
+                      <sub class="!text-[0.5rem]">{calculateWordScore(ch, 'TWL')}</sub>
+                    </span>
+                  ))}
+                </a>
+                <div class="max-w-md">
+                  <h3 class="font-bold text-sm text-[var(--color-text-main)] mb-1 uppercase tracking-wider">
+                    {word}
+                  </h3>
+                  <p class="text-xs text-[var(--color-text-main)] mb-1">
+                    <strong>Definition:</strong> {definition}
+                  </p>
+                  <p class="text-xs text-[var(--color-text-muted)] leading-relaxed italic">{tip}</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="score-badge text-xs">{score} pts</span>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="prose max-w-none mt-16 text-[var(--color-text-main)]">
+        <h2 class="text-2xl font-bold mb-4">Tips for Obscure Word Plays</h2>
+        <p class="leading-relaxed mb-4">
+          Obscure words are your best defense when you have poor rack balance. Memorizing 2-letter
+          and 3-letter vowel-less words (like <strong>CWM</strong> or <strong>HM</strong>) allows
+          you to dump duplicate letters without forfeiting your turn by swapping tiles.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

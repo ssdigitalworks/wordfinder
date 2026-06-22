@@ -1,0 +1,209 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { db } from '@db/client';
+import { messages } from '@db/schema';
+import { desc } from 'drizzle-orm';
+
+export const prerender = false;
+
+let allMessages: (typeof messages.$inferSelect)[] = [];
+let dbError = '';
+
+if (db) {
+  try {
+    allMessages = await db.select().from(messages).orderBy(desc(messages.createdAt)).all();
+  } catch (e: unknown) {
+    dbError = e instanceof Error ? e.message : String(e) || 'Database error occurred';
+    console.error('Error fetching messages:', e);
+  }
+} else {
+  dbError = 'Database not configured';
+}
+---
+
+<AdminLayout title="Messages">
+  <div class="space-y-6">
+    <!-- Header & Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+          Messages
+        </h1>
+        <p class="text-[var(--color-text-muted)] mt-1">View and manage contact form submissions.</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          id="bulk-delete-btn"
+          disabled
+          class="px-4 py-2 bg-red-600/10 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-sm transition-colors flex items-center gap-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Delete Selected
+        </button>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    {
+      dbError && (
+        <div class="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm font-medium">
+          {dbError}
+        </div>
+      )
+    }
+
+    <!-- Messages Container -->
+    {
+      !dbError && (
+        <div class="card overflow-hidden border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl">
+          {allMessages.length === 0 ? (
+            <div class="p-12 text-center text-[var(--color-text-muted)]">
+              <p class="text-lg font-medium">No messages found</p>
+              <p class="text-sm mt-1">Submissions from the public contact form will appear here.</p>
+            </div>
+          ) : (
+            <div>
+              <div class="bg-[var(--color-bg-alt)] border-b border-[var(--color-border)] px-6 py-3 flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="select-all"
+                  class="w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                />
+                <label for="select-all" class="text-sm font-semibold text-[var(--color-text-main)] cursor-pointer select-none">
+                  Select All
+                </label>
+              </div>
+              <div class="divide-y divide-[var(--color-border)]">
+              {allMessages.map((msg) => (
+                <div class={`flex group items-stretch transition-colors ${!msg.read ? 'bg-[var(--color-primary)]/5' : ''} hover:bg-[var(--color-bg-alt)]/30`}>
+                  <div class={`flex items-center px-4 sm:px-6 ${!msg.read ? 'border-l-4 border-l-[var(--color-primary)]' : 'border-l-4 border-l-transparent'}`}>
+                    <input
+                      type="checkbox"
+                      value={msg.id}
+                      class="msg-checkbox w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                    />
+                  </div>
+                  <a
+                    href={`/admin/messages/${msg.id}`}
+                    class="block flex-1 py-6 pr-6"
+                  >
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div class="min-w-0 space-y-1">
+                        <div class="flex items-center gap-2">
+                        <span
+                          class={`font-bold ${!msg.read ? 'text-[var(--color-text-main)]' : 'text-[var(--color-text-muted)] font-semibold'}`}
+                        >
+                          {msg.name}
+                        </span>
+                        <span class="text-xs text-[var(--color-text-muted)]">
+                          &lt;{msg.email}&gt;
+                        </span>
+                        {!msg.read && (
+                          <span class="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)] shrink-0 animate-pulse" />
+                        )}
+                      </div>
+                      <p
+                        class={`text-sm font-semibold truncate ${!msg.read ? 'text-[var(--color-text-main)]' : 'text-[var(--color-text-muted)]'}`}
+                      >
+                        {msg.subject}
+                      </p>
+                      <p class="text-xs text-[var(--color-text-muted)] line-clamp-1">
+                        {msg.message}
+                      </p>
+                      </div>
+                      <div class="shrink-0 text-xs text-[var(--color-text-muted)] self-start sm:self-center font-medium">
+                        {msg.createdAt ? new Date(msg.createdAt).toLocaleString() : 'N/A'}
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<script>
+  import { showToast } from '../../../lib/toast';
+
+  const selectAll = document.getElementById('select-all') as HTMLInputElement;
+  const checkboxes = document.querySelectorAll('.msg-checkbox') as NodeListOf<HTMLInputElement>;
+  const bulkDeleteBtn = document.getElementById('bulk-delete-btn') as HTMLButtonElement;
+
+  function updateBulkDeleteState() {
+    if (!bulkDeleteBtn) return;
+    const anyChecked = Array.from(checkboxes).some((cb) => cb.checked);
+    bulkDeleteBtn.disabled = !anyChecked;
+    
+    if (selectAll) {
+      const allChecked = Array.from(checkboxes).every((cb) => cb.checked);
+      const someChecked = anyChecked && !allChecked;
+      selectAll.checked = allChecked;
+      selectAll.indeterminate = someChecked;
+    }
+  }
+
+  if (selectAll) {
+    selectAll.addEventListener('change', (e) => {
+      const isChecked = (e.target as HTMLInputElement).checked;
+      checkboxes.forEach((cb) => (cb.checked = isChecked));
+      updateBulkDeleteState();
+    });
+  }
+
+  checkboxes.forEach((cb) => {
+    cb.addEventListener('change', updateBulkDeleteState);
+  });
+
+  if (bulkDeleteBtn) {
+    bulkDeleteBtn.addEventListener('click', async () => {
+      const selectedIds = Array.from(checkboxes)
+        .filter((cb) => cb.checked)
+        .map((cb) => Number(cb.value));
+
+      if (selectedIds.length === 0) return;
+
+      if (!confirm(`Are you sure you want to delete ${selectedIds.length} message(s)? This action cannot be undone.`)) {
+        return;
+      }
+
+      bulkDeleteBtn.disabled = true;
+      const originalText = bulkDeleteBtn.innerHTML;
+      bulkDeleteBtn.textContent = 'Deleting...';
+
+      try {
+        const res = await fetch('/api/admin/messages', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: selectedIds }),
+        });
+
+        if (res.ok) {
+          showToast(`${selectedIds.length} message(s) deleted successfully`, 'success');
+          setTimeout(() => {
+            window.location.reload();
+          }, 800);
+        } else {
+          const data = await res.json();
+          showToast(data.error || 'Failed to delete messages', 'error');
+          bulkDeleteBtn.disabled = false;
+          bulkDeleteBtn.innerHTML = originalText;
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('A network error occurred. Please try again.', 'error');
+        bulkDeleteBtn.disabled = false;
+        bulkDeleteBtn.innerHTML = originalText;
+      }
+    });
+  }
+</script>

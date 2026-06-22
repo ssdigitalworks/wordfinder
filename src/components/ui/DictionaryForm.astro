@@ -1,0 +1,115 @@
+---
+interface Props {
+  defaultWord?: string;
+}
+
+const { defaultWord = '' } = Astro.props;
+---
+
+<form id="dictionary-form" class="card space-y-4" novalidate>
+  <div class="space-y-2">
+    <label for="check-word" class="block text-sm font-semibold text-[var(--color-text-main)]">
+      Enter a word to check
+    </label>
+    <div class="flex gap-2">
+      <div class="relative flex-1">
+        <input
+          type="text"
+          id="check-word"
+          name="word"
+          value={defaultWord}
+          placeholder="Type a word..."
+          maxlength="25"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          class="air-input text-lg font-[var(--font-control)] uppercase tracking-wider transition-all duration-200"
+        />
+      </div>
+      <button
+        type="submit"
+        id="check-word-btn"
+        class="btn-primary shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <svg aria-hidden="true" focusable="false" class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span class="hidden sm:inline">Check</span>
+      </button>
+    </div>
+    <p class="text-xs text-[var(--color-text-muted)]">
+      Check if a word is valid in Scrabble (TWL &amp; SOWPODS dictionaries)
+    </p>
+  </div>
+
+  <!-- Result Display -->
+  <div id="dict-result" class="hidden fade-in" role="status" aria-live="polite">
+    <!-- Valid Result -->
+    <div id="dict-valid" class="hidden rounded-xl alert-success p-4">
+      <div class="flex items-start gap-3">
+        <div
+          class="flex items-center justify-center w-10 h-10 rounded-full bg-green-100/50 dark:bg-emerald-900/30 shrink-0"
+        >
+          <svg aria-hidden="true" focusable="false" class="h-5 w-5 text-green-600 dark:text-emerald-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2.5"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path>
+          </svg>
+        </div>
+        <div>
+          <h3
+            class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-base font-bold text-current flex items-center gap-2"
+          >
+            <span id="valid-word" class="uppercase tracking-wider"></span>
+            <span class="text-sm font-normal opacity-85">is valid!</span>
+          </h3>
+          <div class="mt-2 flex items-center gap-3 flex-wrap">
+            <span id="valid-score" class="score-badge text-xs px-2 py-0.5"></span>
+            <span id="valid-dicts" class="text-xs opacity-80"></span>
+          </div>
+          <p id="valid-definition" class="mt-2 text-sm opacity-90 hidden"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invalid Result -->
+    <div id="dict-invalid" class="hidden rounded-xl alert-danger p-4">
+      <div class="flex items-start gap-3">
+        <div
+          class="flex items-center justify-center w-10 h-10 rounded-full bg-red-100/50 dark:bg-red-900/30 shrink-0"
+        >
+          <svg aria-hidden="true" focusable="false" class="h-5 w-5 text-red-600 dark:text-red-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2.5"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </div>
+        <div>
+          <h3
+            class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-base font-bold text-current flex items-center gap-2"
+          >
+            <span id="invalid-word" class="uppercase tracking-wider"></span>
+            <span class="text-sm font-normal opacity-85">is not valid</span>
+          </h3>
+          <p class="mt-1 text-sm opacity-90">
+            This word is not found in the Scrabble dictionary. Check your spelling and try again.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>

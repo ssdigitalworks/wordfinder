@@ -1,0 +1,614 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { db } from '@db/client';
+import { settings } from '@db/schema';
+
+export const prerender = false;
+
+let dbError = '';
+let settingsMap: Record<string, string> = {
+  site_name: '',
+  site_tagline: '',
+  site_favicon_url: '',
+  google_site_verification: '',
+  default_seo_title: '',
+  default_seo_description: '',
+  contact_email: '',
+  contact_response_time: '',
+  contact_title: '',
+  contact_description: '',
+  contact_success_message: '',
+  contact_form_enabled: '',
+  contact_subjects: '',
+  footer_about_text: '',
+  footer_disclaimer_text: '',
+  social_twitter: '',
+  social_facebook: '',
+  social_youtube: '',
+  header_scripts: '',
+  footer_scripts: '',
+  nav_links: '',
+};
+
+if (db) {
+  try {
+    const rows = await db.select().from(settings).all();
+    for (const row of rows) {
+      settingsMap[row.key] = row.value;
+    }
+  } catch (e: unknown) {
+    dbError = e instanceof Error ? e.message : String(e) || 'Database error occurred';
+    console.error('Error fetching settings:', e);
+  }
+} else {
+  dbError = 'Database not configured';
+}
+
+const defaultSeoTitle = 'Scrabble Word Finder — Find Words Instantly';
+const defaultSeoDesc =
+  'Expert Scrabble tips, strategy guides, word lists, and game comparisons. Improve your Scrabble and Words with Friends game.';
+const defaultContactEmail = 'hello@scrabblewordfinder.com';
+const defaultContactResponse = 'We typically respond within 24–48 hours.';
+const defaultContactTitle = 'Contact Us — Scrabble Word Finder';
+const defaultContactDesc =
+  'Get in touch with the Scrabble Word Finder team. Send us feedback, report a bug, suggest a feature, or just say hello.';
+const defaultContactSuccess =
+  'Thank you for reaching out. We have received your message and will get back to you as soon as possible.';
+const defaultContactSubjects = 'General Inquiry, Bug Report, Feature Request, Feedback, Other';
+
+const siteNameVal = settingsMap.site_name || 'Scrabble Word Finder';
+const siteTaglineVal = settingsMap.site_tagline || 'Find Words Instantly';
+const siteFaviconUrlVal = settingsMap.site_favicon_url || '/favicon.svg';
+
+const googleVerifyVal = settingsMap.google_site_verification || '';
+const seoTitleVal = settingsMap.default_seo_title || defaultSeoTitle;
+const seoDescVal = settingsMap.default_seo_description || defaultSeoDesc;
+
+const contactEmailVal = settingsMap.contact_email || defaultContactEmail;
+const contactResponseVal = settingsMap.contact_response_time || defaultContactResponse;
+const contactTitleVal = settingsMap.contact_title || defaultContactTitle;
+const contactDescVal = settingsMap.contact_description || defaultContactDesc;
+const contactSuccessVal = settingsMap.contact_success_message || defaultContactSuccess;
+const contactFormEnabledVal = settingsMap.contact_form_enabled !== 'false'; // defaults to true
+const contactSubjectsVal = settingsMap.contact_subjects || defaultContactSubjects;
+
+const defaultAboutText = 'The fastest way to find valid Scrabble words. Enter your letters and discover high-scoring words instantly. Works with TWL, SOWPODS, and ENABLE dictionaries.';
+const defaultDisclaimerText = 'SCRABBLE ® is a registered trademark. All intellectual property rights in and to the game are owned in the U.S.A. by Hasbro, Inc., in Canada by Hasbro Canada, Inc., and throughout the rest of the world, by J.W. Spear & Sons, PLC of Enfield, Middlesex, England, a subsidiary of Mattel Inc. Mattel & Spear are not affiliated with Hasbro or Hasbro Canada. Words With Friends™ is a trademark of Zynga Inc. This website is not affiliated with, endorsed by, or sponsored by Hasbro, Mattel, Zynga, or any of their partners.';
+const defaultNavLinks = JSON.stringify([
+  { label: 'Dictionary Checker', href: '/dictionary-checker' },
+  { label: 'Two Letter Words', href: '/two-letter-scrabble-words' },
+  { label: 'Word Lists', href: '/word-lists' },
+  { label: 'WWF Finder', href: '/words-with-friends-cheat' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'About', href: '/about' },
+], null, 2);
+
+const footerAboutVal = settingsMap.footer_about_text || defaultAboutText;
+const footerDisclaimerVal = settingsMap.footer_disclaimer_text || defaultDisclaimerText;
+const socialTwitterVal = settingsMap.social_twitter || '';
+const socialFacebookVal = settingsMap.social_facebook || '';
+const socialYoutubeVal = settingsMap.social_youtube || '';
+const headerScriptsVal = settingsMap.header_scripts || '';
+const footerScriptsVal = settingsMap.footer_scripts || '';
+const navLinksVal = settingsMap.nav_links || defaultNavLinks;
+---
+
+<AdminLayout title="Site Settings">
+  <div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div>
+      <h1
+        class="text-3xl font-bold text-[var(--color-text-main)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+      >
+        Site Settings
+      </h1>
+      <p class="text-[var(--color-text-muted)] mt-1">
+        Configure global text, links, branding, scripts, and contact parameters.
+      </p>
+    </div>
+
+    <!-- Error state -->
+    {
+      dbError && (
+        <div class="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm font-medium">
+          {dbError}
+        </div>
+      )
+    }
+
+    <!-- Form -->
+    {
+      !dbError && (
+        <form id="settings-form" class="space-y-8">
+          {/* Site Branding Section */}
+          <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6">
+            <h2 class="text-xl font-bold text-[var(--color-text-main)] border-b border-[var(--color-border)] pb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+              Site Identity & Branding
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  for="site_name"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Site Name
+                </label>
+                <input
+                  type="text"
+                  id="site_name"
+                  name="site_name"
+                  value={siteNameVal}
+                  required
+                  class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="site_tagline"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Site Tagline
+                </label>
+                <input
+                  type="text"
+                  id="site_tagline"
+                  name="site_tagline"
+                  value={siteTaglineVal}
+                  required
+                  class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
+                />
+              </div>
+
+              {/* Favicon */}
+              <div class="md:col-span-2 space-y-2">
+                <label
+                  for="site_favicon_url"
+                  class="block text-sm font-semibold text-[var(--color-text-main)]"
+                >
+                  Site Favicon URL
+                </label>
+                <div class="flex gap-3">
+                  <input
+                    type="text"
+                    id="site_favicon_url"
+                    name="site_favicon_url"
+                    value={siteFaviconUrlVal}
+                    placeholder="e.g. /favicon.svg"
+                    class="flex-1 px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
+                  />
+                  <label class="px-4 py-2.5 bg-[var(--color-bg-alt)] hover:bg-[var(--color-border)] border border-[var(--color-border)] text-sm font-semibold rounded-xl cursor-pointer flex items-center justify-center shrink-0 text-[var(--color-text-main)] transition-colors select-none">
+                    <span>Upload Favicon</span>
+                    <input
+                      type="file"
+                      id="favicon-upload"
+                      class="hidden"
+                      accept="image/*,image/x-icon"
+                    />
+                  </label>
+                </div>
+                <div id="favicon-upload-status" class="hidden text-xs font-semibold" />
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Page Section */}
+          <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6">
+            <h2 class="text-xl font-bold text-[var(--color-text-main)] border-b border-[var(--color-border)] pb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+              Contact Page Configuration
+            </h2>
+
+            <div class="grid grid-cols-1 gap-6">
+              {/* Form Toggle Status */}
+              <div class="flex items-center gap-3 py-1">
+                <input
+                  type="checkbox"
+                  id="contact_form_enabled"
+                  name="contact_form_enabled"
+                  checked={contactFormEnabledVal}
+                  class="w-5 h-5 rounded border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                />
+                <label
+                  for="contact_form_enabled"
+                  class="text-sm font-semibold text-[var(--color-text-main)] cursor-pointer"
+                >
+                  Enable Contact Form (visible on public contact page)
+                </label>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label
+                    for="contact_email"
+                    class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                  >
+                    Contact Email Address
+                  </label>
+                  <input
+                    type="email"
+                    id="contact_email"
+                    name="contact_email"
+                    value={contactEmailVal}
+                    required
+                    class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    for="contact_response_time"
+                    class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                  >
+                    Response Time Note
+                  </label>
+                  <input
+                    type="text"
+                    id="contact_response_time"
+                    name="contact_response_time"
+                    value={contactResponseVal}
+                    required
+                    class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  for="contact_title"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Contact Page SEO Title
+                </label>
+                <input
+                  type="text"
+                  id="contact_title"
+                  name="contact_title"
+                  value={contactTitleVal}
+                  required
+                  class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="contact_description"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Contact Page Heading / Description Text
+                </label>
+                <textarea
+                  id="contact_description"
+                  name="contact_description"
+                  rows="3"
+                  required
+                  class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y"
+                >
+                  {contactDescVal}
+                </textarea>
+              </div>
+
+              <div>
+                <label
+                  for="contact_success_message"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Success Submission Message
+                </label>
+                <textarea
+                  id="contact_success_message"
+                  name="contact_success_message"
+                  rows="3"
+                  required
+                  class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y"
+                >
+                  {contactSuccessVal}
+                </textarea>
+              </div>
+
+              <div>
+                <label
+                  for="contact_subjects"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Custom Dropdown Subjects (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  id="contact_subjects"
+                  name="contact_subjects"
+                  value={contactSubjectsVal}
+                  required
+                  class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SEO Defaults Section */}
+          <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6">
+            <h2 class="text-xl font-bold text-[var(--color-text-main)] border-b border-[var(--color-border)] pb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+              SEO Defaults & Google Webmaster
+            </h2>
+
+            <div class="space-y-6">
+              <div>
+                <label
+                  for="google_site_verification"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Google Site Verification Token
+                </label>
+                <input
+                  type="text"
+                  id="google_site_verification"
+                  name="google_site_verification"
+                  value={googleVerifyVal}
+                  placeholder="e.g. google-site-verification-code"
+                  class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="default_seo_title"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Default Site SEO Title
+                </label>
+                <input
+                  type="text"
+                  id="default_seo_title"
+                  name="default_seo_title"
+                  value={seoTitleVal}
+                  required
+                  class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="default_seo_description"
+                  class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+                >
+                  Default Site SEO Description
+                </label>
+                <textarea
+                  id="default_seo_description"
+                  name="default_seo_description"
+                  rows="3"
+                  required
+                  class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y"
+                >
+                  {seoDescVal}
+                </textarea>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer & Social Section */}
+          <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6">
+            <h2 class="text-xl font-bold text-[var(--color-text-main)] border-b border-[var(--color-border)] pb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+              Footer & Social
+            </h2>
+            <div class="space-y-6">
+              <div>
+                <label for="footer_about_text" class="block text-sm font-semibold text-[var(--color-text-main)] mb-2">
+                  Footer About Text
+                </label>
+                <textarea id="footer_about_text" name="footer_about_text" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y">{footerAboutVal}</textarea>
+              </div>
+              <div>
+                <label for="footer_disclaimer_text" class="block text-sm font-semibold text-[var(--color-text-main)] mb-2">
+                  Footer Disclaimer Text
+                </label>
+                <textarea id="footer_disclaimer_text" name="footer_disclaimer_text" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y">{footerDisclaimerVal}</textarea>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label for="social_twitter" class="block text-sm font-semibold text-[var(--color-text-main)] mb-2">Twitter URL</label>
+                  <input type="text" id="social_twitter" name="social_twitter" value={socialTwitterVal} class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all" />
+                </div>
+                <div>
+                  <label for="social_facebook" class="block text-sm font-semibold text-[var(--color-text-main)] mb-2">Facebook URL</label>
+                  <input type="text" id="social_facebook" name="social_facebook" value={socialFacebookVal} class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all" />
+                </div>
+                <div>
+                  <label for="social_youtube" class="block text-sm font-semibold text-[var(--color-text-main)] mb-2">YouTube URL</label>
+                  <input type="text" id="social_youtube" name="social_youtube" value={socialYoutubeVal} class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Section */}
+          <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6">
+            <h2 class="text-xl font-bold text-[var(--color-text-main)] border-b border-[var(--color-border)] pb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+              Navigation
+            </h2>
+            <div>
+              <label for="nav_links" class="block text-sm font-semibold text-[var(--color-text-main)] mb-2">
+                Header Navigation Links (JSON format)
+              </label>
+              <textarea id="nav_links" name="nav_links" rows="6" class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y">{navLinksVal}</textarea>
+            </div>
+          </div>
+
+          {/* Scripts Injection Section */}
+          <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] rounded-2xl shadow-sm space-y-6">
+            <h2 class="text-xl font-bold text-[var(--color-text-main)] border-b border-[var(--color-border)] pb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+              Script Injections
+            </h2>
+            <div class="space-y-6">
+              <div>
+                <label for="header_scripts" class="block text-sm font-semibold text-[var(--color-text-main)] mb-2">
+                  Header Scripts (Analytics, Meta tags)
+                </label>
+                <textarea id="header_scripts" name="header_scripts" rows="4" class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y">{headerScriptsVal}</textarea>
+              </div>
+              <div>
+                <label for="footer_scripts" class="block text-sm font-semibold text-[var(--color-text-main)] mb-2">
+                  Footer Scripts (Widgets, Tracking)
+                </label>
+                <textarea id="footer_scripts" name="footer_scripts" rows="4" class="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all resize-y">{footerScriptsVal}</textarea>
+              </div>
+            </div>
+          </div>
+
+          {/* Notification messages */}
+          <div id="settings-status" class="hidden p-4 rounded-xl text-sm font-medium" />
+
+          {/* Action Bar */}
+          <div class="flex items-center justify-end gap-4 border-t border-[var(--color-border)] pt-6">
+            <button
+              type="submit"
+              id="submit-btn"
+              class="btn-primary px-8 py-3 rounded-xl font-bold cursor-pointer animate-pulse-slow"
+            >
+              Save Settings
+            </button>
+          </div>
+        </form>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<script>
+  const statusBox = document.getElementById('settings-status') as HTMLDivElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  const faviconInput = document.getElementById('site_favicon_url') as HTMLInputElement;
+  const faviconUploadInput = document.getElementById('favicon-upload') as HTMLInputElement;
+  const faviconUploadStatus = document.getElementById('favicon-upload-status') as HTMLDivElement;
+
+  // Generic Uploader helper
+  async function handleFileUpload(
+    fileInput: HTMLInputElement,
+    textInput: HTMLInputElement,
+    statusDiv: HTMLDivElement,
+  ) {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    statusDiv.innerText = 'Uploading...';
+    statusDiv.className = 'text-xs mt-1 font-semibold text-[var(--color-primary)]';
+    statusDiv.classList.remove('hidden');
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        textInput.value = data.url;
+        statusDiv.innerText = 'Upload successful!';
+        statusDiv.className = 'text-xs mt-1 font-semibold text-emerald-600 dark:text-emerald-400';
+      } else {
+        statusDiv.innerText = data.error || 'Upload failed.';
+        statusDiv.className = 'text-xs mt-1 font-semibold text-red-600 dark:text-red-400';
+      }
+    } catch (err) {
+      console.error(err);
+      statusDiv.innerText = 'Network error during upload.';
+      statusDiv.className = 'text-xs mt-1 font-semibold text-red-600 dark:text-red-400';
+    }
+  }
+
+  faviconUploadInput?.addEventListener('change', () => {
+    handleFileUpload(faviconUploadInput, faviconInput, faviconUploadStatus);
+  });
+
+  const form = document.getElementById('settings-form') as HTMLFormElement;
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusBox.classList.add('hidden');
+    statusBox.className = 'p-4 rounded-xl text-sm font-medium hidden';
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
+    const formData = new FormData(form);
+
+    const settingsPayload: Record<string, string> = {
+      site_name: formData.get('site_name') as string,
+      site_tagline: formData.get('site_tagline') as string,
+      site_favicon_url: formData.get('site_favicon_url') as string,
+      google_site_verification: formData.get('google_site_verification') as string,
+      default_seo_title: formData.get('default_seo_title') as string,
+      default_seo_description: formData.get('default_seo_description') as string,
+      contact_email: formData.get('contact_email') as string,
+      contact_response_time: formData.get('contact_response_time') as string,
+      contact_title: formData.get('contact_title') as string,
+      contact_description: formData.get('contact_description') as string,
+      contact_success_message: formData.get('contact_success_message') as string,
+      contact_form_enabled: formData.get('contact_form_enabled') === 'on' ? 'true' : 'false',
+      contact_subjects: formData.get('contact_subjects') as string,
+      footer_about_text: formData.get('footer_about_text') as string,
+      footer_disclaimer_text: formData.get('footer_disclaimer_text') as string,
+      social_twitter: formData.get('social_twitter') as string,
+      social_facebook: formData.get('social_facebook') as string,
+      social_youtube: formData.get('social_youtube') as string,
+      header_scripts: formData.get('header_scripts') as string,
+      footer_scripts: formData.get('footer_scripts') as string,
+      nav_links: formData.get('nav_links') as string,
+    };
+
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ settings: settingsPayload }),
+      });
+
+      if (res.ok) {
+        statusBox.innerText = 'Settings saved successfully!';
+        statusBox.classList.add(
+          'bg-emerald-50',
+          'dark:bg-emerald-950/20',
+          'border',
+          'border-emerald-200',
+          'dark:border-emerald-900/30',
+          'text-emerald-600',
+          'dark:text-emerald-400',
+        );
+        statusBox.classList.remove('hidden');
+      } else {
+        const data = await res.json();
+        statusBox.innerText = data.error || 'Failed to save settings.';
+        statusBox.classList.add(
+          'bg-red-50',
+          'dark:bg-red-950/20',
+          'border',
+          'border-red-200',
+          'dark:border-red-900/30',
+          'text-red-600',
+          'dark:text-red-400',
+        );
+        statusBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.error(err);
+      statusBox.innerText = 'A network error occurred. Please try again.';
+      statusBox.classList.add(
+        'bg-red-50',
+        'dark:bg-red-950/20',
+        'border',
+        'border-red-200',
+        'dark:border-red-900/30',
+        'text-red-600',
+        'dark:text-red-400',
+      );
+      statusBox.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save Settings';
+      statusBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+</script>

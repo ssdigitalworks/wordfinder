@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /data/
+Disallow: /admin/
+
+Sitemap: https://scrabblewordfinder.com/sitemap-index.xml
+Sitemap: https://scrabblewordfinder.com/sitemaps/blog.xml
+Sitemap: https://scrabblewordfinder.com/sitemaps/contains-letters.xml
+Sitemap: https://scrabblewordfinder.com/sitemaps/ending-letters.xml
+Sitemap: https://scrabblewordfinder.com/sitemaps/lengths.xml
+Sitemap: https://scrabblewordfinder.com/sitemaps/starting-letters.xml
+Sitemap: https://scrabblewordfinder.com/sitemaps/tools.xml
+Sitemap: https://scrabblewordfinder.com/sitemaps/words-index.xml

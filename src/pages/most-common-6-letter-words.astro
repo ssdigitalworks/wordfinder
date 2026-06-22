@@ -1,0 +1,227 @@
+---
+import { SITE_URL } from '@lib/config';
+import { TWL_SCORES, ENABLE_SCORES, SOWPODS_SCORES } from '../data/tileScores';
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import { loadDictionary } from '../lib/dictionaryLoader';
+import { calculateWordScore } from '../lib/scoreCalculator';
+import { getWordDetails } from '../lib/wordDetails';
+
+const title = 'Most Common 6-Letter Words — Scrabble Word List';
+const description =
+  'Complete list of the 100 most common 6-letter words in English. Perfect for Scrabble strategy, crosswords, and board game training.';
+
+const twlAll = Array.from(await loadDictionary('TWL'));
+const twlTop = twlAll
+  .filter((w) => w.length === 6)
+  .map((w) => {
+    const details = getWordDetails(w);
+    return {
+      word: w.toUpperCase(),
+      score: calculateWordScore(w, 'TWL'),
+      freq: details.frequency.percentage,
+    };
+  })
+  .sort((a, b) => b.freq - a.freq || a.word.localeCompare(b.word))
+  .slice(0, 100);
+
+const sowpodsAll = Array.from(await loadDictionary('SOWPODS'));
+const sowpodsTop = sowpodsAll
+  .filter((w) => w.length === 6)
+  .map((w) => {
+    const details = getWordDetails(w);
+    return {
+      word: w.toUpperCase(),
+      score: calculateWordScore(w, 'SOWPODS'),
+      freq: details.frequency.percentage,
+    };
+  })
+  .sort((a, b) => b.freq - a.freq || a.word.localeCompare(b.word))
+  .slice(0, 100);
+
+const enableAll = Array.from(await loadDictionary('ENABLE'));
+const enableTop = enableAll
+  .filter((w) => w.length === 6)
+  .map((w) => {
+    const details = getWordDetails(w);
+    return {
+      word: w.toUpperCase(),
+      score: calculateWordScore(w, 'ENABLE'),
+      freq: details.frequency.percentage,
+    };
+  })
+  .sort((a, b) => b.freq - a.freq || a.word.localeCompare(b.word))
+  .slice(0, 100);
+
+const allDataJson = JSON.stringify({ TWL: twlTop, SOWPODS: sowpodsTop, ENABLE: enableTop });
+
+const faqs = [
+  {
+    question: 'How do 6-letter words help in Scrabble strategy?',
+    answer:
+      'Six-letter words are prime setup candidates. They allow you to bridge across lanes or set up parallel links, and are only one letter away from a 50-point Bingo bonus.',
+  },
+  {
+    question: 'What are common prefixes for 6-letter words?',
+    answer:
+      'Common prefixes for six-letter words include RE-, UN-, DE-, IN-, and CO-, which are highly useful for altering existing board plays.',
+  },
+];
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical=`${SITE_URL}/most-common-6-letter-words`
+    schemaType="List"
+    faqs={faqs}
+  />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: title,
+      description,
+      url: `${SITE_URL}/most-common-6-letter-words`,
+    }}
+  />
+
+  <Breadcrumb
+    items={[
+      { label: 'Home', href: '/' },
+      { label: 'Word Lists', href: '/word-list' },
+      { label: 'Most Common 6-Letter Words' },
+    ]}
+  />
+
+  <section class="py-10 md:py-16">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="text-center mb-10">
+        <h1
+          class="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+        >
+          Most Common 6-Letter Words
+        </h1>
+        <p class="text-[var(--color-text-muted)] text-lg max-w-2xl mx-auto">
+          Explore the top 100 most common six-letter words. Excellent for expanding your vocabulary,
+          setting up Scrabble plays, and solving crosswords.
+        </p>
+      </div>
+
+      <!-- Dictionary Filter -->
+      <div class="flex justify-center gap-2 mb-8">
+        <button
+          class="dict-filter-btn px-4 py-2 text-sm font-semibold rounded-full bg-[var(--color-primary)] text-white"
+          data-dict="TWL">TWL</button
+        >
+        <button
+          class="dict-filter-btn px-4 py-2 text-sm font-semibold rounded-full bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-main)] transition-colors border border-[var(--color-border)]"
+          data-dict="SOWPODS">SOWPODS</button
+        >
+        <button
+          class="dict-filter-btn px-4 py-2 text-sm font-semibold rounded-full bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-main)] transition-colors border border-[var(--color-border)]"
+          data-dict="ENABLE">ENABLE</button
+        >
+      </div>
+
+      <!-- Word Grid Container -->
+      <div
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
+        id="words-grid"
+      >
+        {
+          twlTop.map(({ word, score }) => (
+            <a
+              href={`/word/${word.toLowerCase()}`}
+              class="word-card bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] hover:border-[var(--color-primary)] p-3 text-center hover:shadow-md transition-all"
+            >
+              <div class="flex items-center justify-center gap-0.5 mb-1.5">
+                {word.split('').map((ch) => (
+                  <span class="tile !w-7 !h-7 !text-xs shadow-sm">
+                    {ch}
+                    <sub class="!text-[0.6rem]">{calculateWordScore(ch, 'TWL')}</sub>
+                  </span>
+                ))}
+              </div>
+              <span class="score-badge text-xs">{score} pts</span>
+            </a>
+          ))
+        }
+      </div>
+
+      <div class="prose max-w-none mt-16 text-[var(--color-text-main)]">
+        <h2 class="text-2xl font-bold mb-4">Strategic Value of 6-Letter Words</h2>
+        <p class="leading-relaxed mb-4">
+          Six-letter words represent a high-value category in competitive board play. Because
+          players start with 7 tiles on their rack, drawing common letter blends lets you easily
+          construct 6-letter plays that are ready to hook into existing letters on the board.
+        </p>
+
+        <h3 class="text-xl font-semibold mt-6 mb-3">Linguistic Tips for 6-Letter Play</h3>
+        <ul class="list-disc list-inside space-y-2 mb-4">
+          <li>
+            <strong>Prefix Hooking:</strong> Keep prefixes like UN- and RE- on hand to modify opponent
+            plays for additional score value.
+          </li>
+          <li>
+            <strong>Suffix Expansion:</strong> Suffixes like -ED, -ING, and -ER allow you to extend 3,
+            4, or 5-letter plays into a 6-letter layout.
+          </li>
+          <li>
+            <strong>Lane Blocking:</strong> Play shorter 6-letter words parallel to existing words to
+            block premium lane setups.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script is:inline define:vars={{ allDataJson, TWL_SCORES, ENABLE_SCORES, SOWPODS_SCORES }}>
+  (function () {
+    const allData = JSON.parse(allDataJson);
+    const TILE_SCORES = {
+      TWL: TWL_SCORES,
+      SOWPODS: SOWPODS_SCORES,
+      ENABLE: ENABLE_SCORES,
+    };
+
+    const grid = document.getElementById('words-grid');
+
+    function renderCard(word, score, scores) {
+      return `<a href="/word/${word.toLowerCase()}" class="word-card bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] hover:border-[var(--color-primary)] p-3 text-center hover:shadow-md transition-all">
+      <div class="flex items-center justify-center gap-0.5 mb-1.5">${word
+        .split('')
+        .map(
+          (c) =>
+            `<span class="tile !w-7 !h-7 !text-xs shadow-sm">${c}<sub>${scores[c] || 0}</sub></span>`,
+        )
+        .join('')}</div>
+      <span class="score-badge text-xs">${score} pts</span>
+    </a>`;
+    }
+
+    document.querySelectorAll('.dict-filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.dict-filter-btn').forEach((b) => {
+          b.classList.remove('bg-[var(--color-primary)]', 'text-white');
+          b.classList.add('bg-[var(--color-bg-alt)]', 'text-[var(--color-text-muted)]');
+        });
+        btn.classList.add('bg-[var(--color-primary)]', 'text-white');
+        btn.classList.remove('bg-[var(--color-bg-alt)]', 'text-[var(--color-text-muted)]');
+        const dict = btn.dataset.dict;
+        const words = allData[dict] || [];
+        const scores = TILE_SCORES[dict];
+        if (grid)
+          grid.innerHTML = words.map(({ word, score }) => renderCard(word, score, scores)).join('');
+      });
+    });
+  })();
+</script>

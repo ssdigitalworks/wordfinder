@@ -1,0 +1,472 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import AdPlaceholder from '../components/ui/AdPlaceholder.astro';
+import FAQSection from '../components/ui/FAQSection.astro';
+import { loadDictionary } from '../lib/dictionaryLoader';
+import { calculateWordScore } from '../lib/scoreCalculator';
+import { getDynamicSEOStats } from '../lib/wordStatsGenerator';
+import DynamicSEOParagraph from '../components/seo/DynamicSEOParagraph.astro';
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=86400');
+
+const { len } = Astro.params;
+if (!len) {
+  return Astro.redirect('/word-lists');
+}
+
+const lenValue = parseInt(len, 10);
+if (isNaN(lenValue) || lenValue < 2 || lenValue > 15) {
+  return Astro.redirect('/word-lists');
+}
+
+const dictParam = Astro.url.searchParams.get('dict')?.toUpperCase() || 'TWL';
+const currentDict = ['TWL', 'SOWPODS', 'ENABLE'].includes(dictParam)
+  ? (dictParam as 'TWL' | 'SOWPODS' | 'ENABLE')
+  : 'TWL';
+
+const rawDict = await loadDictionary(currentDict);
+const validWords = Array.from(rawDict).filter((w) => w.length === lenValue);
+
+// Group by first letter for readability/crawlability
+function getGroupedByFirst(words: string[], dict: 'TWL' | 'SOWPODS' | 'ENABLE') {
+  const groups: Record<string, { word: string; score: number }[]> = {};
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach((l) => {
+    groups[l] = [];
+  });
+
+  words.forEach((w) => {
+    const first = w[0].toUpperCase();
+    if (groups[first]) {
+      groups[first].push({ word: w, score: calculateWordScore(w, dict) });
+    }
+  });
+
+  // Sort each group
+  Object.keys(groups).forEach((l) => {
+    groups[l].sort((a, b) => b.score - a.score || a.word.localeCompare(b.word));
+  });
+  return groups;
+}
+
+// Sort all valid words first (by score descending, then alphabetical)
+validWords.sort((a, b) => {
+  const scoreA = calculateWordScore(a, currentDict);
+  const scoreB = calculateWordScore(b, currentDict);
+  return scoreB - scoreA || a.localeCompare(b);
+});
+
+const pageParam = Astro.url.searchParams.get('page') || '1';
+let page = parseInt(pageParam, 10);
+if (isNaN(page) || page < 1) page = 1;
+
+const totalMatches = validWords.length;
+const totalPages = Math.ceil(totalMatches / 100);
+
+const listStats = getDynamicSEOStats(validWords, currentDict);
+
+if (page > totalPages && totalPages > 0) page = totalPages;
+
+const pageWords = validWords.slice((page - 1) * 100, page * 100);
+const groupedData = getGroupedByFirst(pageWords, currentDict);
+
+const paginationSuffix = totalPages > 1 ? ` — Page ${page} of ${totalPages}` : '';
+
+let title = '';
+let description = '';
+
+if (lenValue === 2) {
+  title = `2-Letter Scrabble Words${paginationSuffix} — The Ultimate Two-Letter Word List`;
+  description = `Master Scrabble with our complete list of 2-letter words. Learn all two-letter words to score big points and dominate the board.`;
+} else if (lenValue === 3) {
+  title = `3-Letter Words for Scrabble${paginationSuffix} — Short & High Scoring`;
+  description = `Improve your game with the full list of 3-letter Scrabble words. Discover high-scoring three-letter words using J, Q, X, and Z.`;
+} else if (lenValue === 4) {
+  title = `4-Letter Scrabble Words${paginationSuffix} — Essential Word List`;
+  description = `Browse all valid 4-letter words for Scrabble and Words with Friends. Use four-letter words strategically to clear your rack.`;
+} else if (lenValue === 5) {
+  title = `5-Letter Words for Wordle & Scrabble${paginationSuffix} — Complete List`;
+  description = `Find the perfect 5-letter word for Wordle, Scrabble, or Words with Friends. Sort by points and learn the definitions.`;
+} else if (lenValue === 7) {
+  title = `7-Letter Scrabble Words${paginationSuffix} — Get a Bingo Every Time`;
+  description = `Score a 50-point bonus with our list of 7-letter bingo words. Master seven-letter words to become a Scrabble champion.`;
+} else {
+  title = `${lenValue}-Letter Scrabble Words${paginationSuffix} — Complete Word List`;
+  description = `Complete list of all valid ${lenValue}-letter words in Scrabble. Filter by TWL, SOWPODS, and ENABLE dictionaries with point values and definitions.`;
+}
+const canonicalPageSuffix = page > 1 ? `?page=${page}` : '';
+const canonical = new URL(`/${lenValue}-letter-words${canonicalPageSuffix}`, SITE_URL).href;
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const lettersOnPage = Array.from(new Set(pageWords.map((w) => w[0].toUpperCase()))).sort();
+
+const breadcrumbItems = [
+  { label: 'Home', href: '/' },
+  { label: 'Word Lists', href: '/word-lists' },
+  { label: `${lenValue}-Letter Words` },
+];
+
+const top3Words = validWords
+  .slice(0, 3)
+  .map((w) => w)
+  .join(', ');
+const faqs = [
+  {
+    question: `How many ${lenValue}-letter words are there in Scrabble?`,
+    answer: `There are ${totalMatches} valid ${lenValue}-letter words in the official North American TWL dictionary.`,
+  },
+  {
+    question: `What are the highest scoring ${lenValue}-letter words?`,
+    answer: `Some of the highest scoring ${lenValue}-letter Scrabble words are ${top3Words || 'not available'}.`,
+  },
+  {
+    question: `How can I memorize ${lenValue}-letter words?`,
+    answer: `The best strategy to memorize ${lenValue}-letter words is focusing on common prefixes and suffixes, and practicing anagrams.`,
+  },
+];
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonical}
+    schemaType="List"
+    listItems={pageWords.slice(0, 50).map((w) => ({ name: w, url: `/word/${w.toLowerCase()}` }))}
+    faqs={faqs}
+  />
+  {
+    page > 1 && (
+      <link
+        slot="head"
+        rel="prev"
+        href={new URL(`/${lenValue}-letter-words?page=${page - 1}`, SITE_URL).href}
+      />
+    )
+  }
+  {
+    page < totalPages && (
+      <link
+        slot="head"
+        rel="next"
+        href={new URL(`/${lenValue}-letter-words?page=${page + 1}`, SITE_URL).href}
+      />
+    )
+  }
+
+  <Breadcrumb items={breadcrumbItems} />
+
+  <!-- Premium Blur Background Accent -->
+  <div
+    class="absolute top-0 left-0 w-full h-[650px] pointer-events-none overflow-hidden -z-10 opacity-75"
+  >
+    <div
+      class="absolute top-[-12%] left-[10%] w-[40%] h-[55%] rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] blur-[100px] opacity-10 dark:opacity-[0.2] animate-pulse"
+      style="animation-duration: 8s;"
+    >
+    </div>
+  </div>
+
+  <section class="py-10 md:py-16">
+    <div class="container-narrow">
+      <div class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-black mb-4 tracking-tight">
+          <span class="text-[var(--color-primary)]">{lenValue}-Letter</span> Scrabble Words
+        </h1>
+        <p class="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto">
+          Found <strong class="text-[var(--color-text-main)]">{totalMatches.toLocaleString()}</strong> valid {lenValue}-letter words for Scrabble and Words with Friends.
+        </p>
+      </div>
+
+      <DynamicSEOParagraph stats={listStats} type="Length" pattern={String(lenValue)} />
+
+      <div class="card p-4 sm:p-6 mb-10 border border-[var(--color-primary)]/20 shadow-md">
+        <div class="flex justify-center gap-2">
+          <a
+            href={`/${lenValue}-letter-words?dict=TWL`}
+            class={`px-4 py-2 text-sm font-semibold rounded-full border transition-colors ${currentDict === 'TWL' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:border-[var(--color-primary)] hover:text-[var(--color-text-main)]'}`}
+          >TWL</a>
+          <a
+            href={`/${lenValue}-letter-words?dict=SOWPODS`}
+            class={`px-4 py-2 text-sm font-semibold rounded-full border transition-colors ${currentDict === 'SOWPODS' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:border-[var(--color-primary)] hover:text-[var(--color-text-main)]'}`}
+          >SOWPODS</a>
+          <a
+            href={`/${lenValue}-letter-words?dict=ENABLE`}
+            class={`px-4 py-2 text-sm font-semibold rounded-full border transition-colors ${currentDict === 'ENABLE' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:border-[var(--color-primary)] hover:text-[var(--color-text-main)]'}`}
+          >ENABLE</a>
+        </div>
+      </div>
+
+      <div class="flex gap-8">
+        <!-- Alphabet Sidebar Navigation -->
+        <nav
+          class="hidden md:flex flex-col gap-1 sticky top-24 self-start"
+          aria-label="Alphabet navigation"
+          id="alphabet-sidebar"
+        >
+          {
+            lettersOnPage.map((letter) => (
+              <a
+                href={`#letter-${letter}`}
+                class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] hover:bg-[var(--color-primary)] hover:text-white transition-colors text-[var(--color-text-muted)] alphabet-link"
+                data-letter={letter}
+              >
+                {letter}
+              </a>
+            ))
+          }
+        </nav>
+
+        <!-- Word Grid -->
+        <div id="word-grid" class="flex-1">
+          {
+            alphabet.map((letter) => {
+              const wordsInLetter = groupedData[letter] || [];
+              if (wordsInLetter.length === 0) return null;
+              return (
+                <div
+                  id={`letter-${letter}`}
+                  class="mb-10 scroll-mt-20 letter-block"
+                  data-letter={letter}
+                >
+                  <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[var(--color-border)] pb-2 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+                    <span class="w-8 h-8 flex items-center justify-center bg-[var(--color-primary)] text-white rounded-lg font-bold text-sm">
+                      {letter}
+                    </span>
+                    <span>
+                      {lenValue}-Letter Words starting with {letter}
+                    </span>
+                  </h2>
+                  <div class={`grid gap-3 lg:gap-4 letter-group ${
+                    lenValue > 11 ? 'grid-cols-1 md:grid-cols-2' :
+                    lenValue > 8 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
+                    lenValue > 5 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4' :
+                    'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+                  }`}>
+                    {wordsInLetter.map(({ word: w, score }) => (
+                      <a
+                        href={`/word/${w.toLowerCase()}`}
+                        class="word-card bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-3 sm:p-4 text-center hover:shadow-lg hover:border-[var(--color-primary)] transition-all cursor-pointer block group"
+                        data-word={w}
+                      >
+                        <div class="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 mb-2 sm:mb-3">
+                          {w.split('').map((ch) => (
+                            <span class="tile tile-sm group-hover:scale-105 transition-transform duration-200">
+                              {ch}
+                              <sub>{calculateWordScore(ch, currentDict)}</sub>
+                            </span>
+                          ))}
+                        </div>
+                        <span class="score-badge text-xs sm:text-sm font-extrabold text-[var(--color-primary)] bg-[var(--color-primary-wash)] px-3 py-1 rounded-full inline-block">{score} pts</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          }
+
+          {
+            totalMatches === 0 && (
+              <div id="no-results-msg" class="text-center py-16 text-[var(--color-text-muted)]">
+                <p class="text-lg font-medium">No words found in this dictionary</p>
+              </div>
+            )
+          }
+
+          {
+            totalPages > 1 && (
+              <nav
+                class="flex items-center justify-between mt-10 border-t border-[var(--color-border)] pt-6"
+                aria-label="Pagination"
+              >
+                <div>
+                  {page > 1 ? (
+                    <a
+                      href={`/${lenValue}-letter-words?dict=${currentDict}&page=${page - 1}`}
+                      class="btn-ghost text-sm font-semibold"
+                    >
+                      ← Previous
+                    </a>
+                  ) : (
+                    <span class="text-[var(--color-text-muted)] opacity-50 text-sm font-semibold">
+                      ← Previous
+                    </span>
+                  )}
+                </div>
+                <span class="text-sm text-[var(--color-text-muted)]">
+                  Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+                </span>
+                <div>
+                  {page < totalPages ? (
+                    <a
+                      href={`/${lenValue}-letter-words?dict=${currentDict}&page=${page + 1}`}
+                      class="btn-ghost text-sm font-semibold"
+                    >
+                      Next →
+                    </a>
+                  ) : (
+                    <span class="text-[var(--color-text-muted)] opacity-50 text-sm font-semibold">
+                      Next →
+                    </span>
+                  )}
+                </div>
+              </nav>
+            )
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container mx-auto px-4 max-w-4xl">
+    <AdPlaceholder slot_id="length-page-mid" class="my-8" />
+  </div>
+
+  <!-- Rich Internal Linking Hub -->
+  <section class="py-12 border-t border-[var(--color-border)] mt-12 bg-[var(--color-bg-alt)]/25">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Related Patterns -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h3
+            class="font-bold text-lg mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-[var(--color-text-main)]"
+          >
+            📏 More Word Lengths
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            {
+              [4, 5, 6, 7, 8, 9, 10, 11].map((p) => (
+                <a
+                  href={`/${p}-letter-words`}
+                  class="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-main)] transition-colors"
+                >
+                  {p}-Letter Words
+                </a>
+              ))
+            }
+          </div>
+        </div>
+
+        <!-- Related Word Lists -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h3
+            class="font-bold text-lg mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-[var(--color-text-main)]"
+          >
+            📋 Popular Word Lists
+          </h3>
+          <div class="flex flex-col gap-2 text-sm">
+            <a
+              href="/two-letter-scrabble-words"
+              class="hover:text-[var(--color-primary)] transition-colors">2-Letter Words</a
+            >
+            <a href="/3-letter-words" class="hover:text-[var(--color-primary)] transition-colors"
+              >3-Letter Words</a
+            >
+            <a
+              href="/words-without-vowels"
+              class="hover:text-[var(--color-primary)] transition-colors">Words Without Vowels</a
+            >
+            <a
+              href="/scrabble-vowel-words"
+              class="hover:text-[var(--color-primary)] transition-colors">Vowel-Heavy Words</a
+            >
+            <a
+              href="/highest-scoring-scrabble-words"
+              class="hover:text-[var(--color-primary)] transition-colors">Highest Scoring Words</a
+            >
+            <a href="/rare-q-words" class="hover:text-[var(--color-primary)] transition-colors"
+              >Q Without U Words</a
+            >
+            <a href="/z-words-without-u" class="hover:text-[var(--color-primary)] transition-colors"
+              >Z Without U Words</a
+            >
+          </div>
+        </div>
+
+        <!-- Related Tools -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h3
+            class="font-bold text-lg mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-[var(--color-text-main)]"
+          >
+            🛠️ Scrabble Help Tools
+          </h3>
+          <div class="flex flex-col gap-2 text-sm">
+            <a href="/" class="hover:text-[var(--color-primary)] transition-colors"
+              >Scrabble Word Finder</a
+            >
+            <a
+              href="/dictionary-checker"
+              class="hover:text-[var(--color-primary)] transition-colors">Dictionary Checker</a
+            >
+            <a href="/anagram-solver" class="hover:text-[var(--color-primary)] transition-colors"
+              >Anagram Solver</a
+            >
+            <a href="/unscramble" class="hover:text-[var(--color-primary)] transition-colors"
+              >Word Unscrambler</a
+            >
+            <a href="/crossword-solver" class="hover:text-[var(--color-primary)] transition-colors"
+              >Crossword Solver</a
+            >
+            <a href="/wordle-solver" class="hover:text-[var(--color-primary)] transition-colors"
+              >Wordle Solver</a
+            >
+            <a
+              href="/words-with-friends-cheat"
+              class="hover:text-[var(--color-primary)] transition-colors"
+              >Words With Friends Cheat</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Related Word Lists Panel -->
+  <div class="container mx-auto px-4 max-w-5xl mb-8 pt-8 border-t border-[var(--color-border)]">
+    <h3 class="text-lg font-bold text-[var(--color-text-main)] mb-4">Related Word Lists</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {
+        lenValue > 2 && (
+          <a
+            href={`/${lenValue - 1}-letter-words`}
+            class="text-sm text-[var(--color-primary)] hover:underline"
+          >
+            {lenValue - 1}-Letter Words
+          </a>
+        )
+      }
+      {
+        lenValue < 15 && (
+          <a
+            href={`/${lenValue + 1}-letter-words`}
+            class="text-sm text-[var(--color-primary)] hover:underline"
+          >
+            {lenValue + 1}-Letter Words
+          </a>
+        )
+      }
+      <a
+        href={`/two-letter-scrabble-words`}
+        class="text-sm text-[var(--color-primary)] hover:underline"
+      >
+        2-Letter Words
+      </a>
+      <a href={`/3-letter-words`} class="text-sm text-[var(--color-primary)] hover:underline">
+        3-Letter Words
+      </a>
+      <a href={`/scrabble-vowel-words`} class="text-sm text-[var(--color-primary)] hover:underline">
+        Vowel Words
+      </a>
+      <a href={`/words-without-vowels`} class="text-sm text-[var(--color-primary)] hover:underline">
+        Words Without Vowels
+      </a>
+    </div>
+  </div>
+
+  <FAQSection faqs={faqs} />
+</BaseLayout>

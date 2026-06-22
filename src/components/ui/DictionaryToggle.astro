@@ -1,0 +1,95 @@
+---
+interface DictOption {
+  id: string;
+  label: string;
+  description: string;
+}
+
+interface Props {
+  defaultDict?: string;
+  name?: string;
+}
+
+const { defaultDict = 'twl', name = 'dictionary' } = Astro.props;
+
+const dictionaries: DictOption[] = [
+  {
+    id: 'twl',
+    label: 'TWL',
+    description: 'Tournament Word List (North America)',
+  },
+  {
+    id: 'sowpods',
+    label: 'SOWPODS',
+    description: 'International Scrabble Dictionary',
+  },
+  {
+    id: 'enable',
+    label: 'ENABLE',
+    description: 'Enhanced North American Benchmark Lexicon',
+  },
+];
+---
+
+<fieldset class="space-y-2">
+  <legend class="block text-sm font-semibold text-[var(--color-text-main)]"> Dictionary </legend>
+  <div
+    class="flex flex-wrap gap-2"
+    id="dict-toggle-group"
+    role="radiogroup"
+    aria-label="Select dictionary"
+  >
+    {
+      dictionaries.map((dict) => (
+        <button
+          type="button"
+          role="radio"
+          aria-checked={dict.id === defaultDict ? 'true' : 'false'}
+          data-dict={dict.id}
+          class:list={['dict-btn', dict.id === defaultDict && 'active']}
+          title={dict.description}
+        >
+          {dict.label}
+        </button>
+      ))
+    }
+    <input type="hidden" name={name} id="dict-input" value={defaultDict} />
+  </div>
+  <p class="text-xs text-[var(--color-text-muted)]" id="dict-description">
+    {dictionaries.find((d) => d.id === defaultDict)?.description}
+  </p>
+</fieldset>
+
+<script>
+  const group = document.getElementById('dict-toggle-group');
+  const hiddenInput = document.getElementById('dict-input') as HTMLInputElement | null;
+  const descEl = document.getElementById('dict-description');
+
+  const descriptions: Record<string, string> = {
+    twl: 'Tournament Word List (North America)',
+    sowpods: 'International Scrabble Dictionary',
+    enable: 'Enhanced North American Benchmark Lexicon',
+  };
+
+  if (group && hiddenInput && descEl) {
+    group.addEventListener('click', (e) => {
+      const target = (e.target as HTMLElement).closest('[data-dict]') as HTMLElement | null;
+      if (!target) return;
+
+      const dict = target.dataset.dict;
+      if (!dict) return;
+
+      // Update active state
+      group.querySelectorAll('.dict-btn').forEach((btn) => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-checked', 'false');
+      });
+      target.classList.add('active');
+      target.setAttribute('aria-checked', 'true');
+
+      // Update hidden input and description
+      hiddenInput.value = dict;
+      descEl.textContent = descriptions[dict] || '';
+    });
+  }
+</script>

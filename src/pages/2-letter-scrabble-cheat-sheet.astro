@@ -1,0 +1,236 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import { loadDictionary } from '../lib/dictionaryLoader';
+import { calculateWordScore } from '../lib/scoreCalculator';
+
+const title = '2-Letter Scrabble Words Cheat Sheet — Complete List';
+const description =
+  'Complete grid sheet of all valid 2-letter Scrabble words with points value and definitions. Study ZA, QI, OX, and master parallel board plays.';
+
+const TWO_LETTER_DEFS: Record<string, string> = {
+  AA: 'Rough cindery lava',
+  AB: 'Abdominal muscle',
+  AD: 'Advertisement',
+  AE: 'One (Scottish)',
+  AG: 'Agriculture',
+  AH: 'Expression of surprise',
+  AI: 'Three-toed sloth',
+  AL: 'East Indian shrub',
+  AM: 'Form of to be',
+  AN: 'Indefinite article',
+  AR: 'Letter R sound',
+  AS: 'To the same degree',
+  AT: 'In, on, or near',
+  AW: 'Expression of protest',
+  AX: 'Cutting tool',
+  AY: 'Yes vote',
+  BA: 'Soul in Egyptian mythology',
+  BE: 'To exist',
+  BI: 'Bisexual (slang)',
+  BO: 'Friend or fellow',
+  BY: 'Near or close to',
+  DA: 'Father (colloquial)',
+  DE: 'Of or from (French)',
+  DO: 'First tone of scale',
+  ED: 'Education (slang)',
+  EF: 'Letter F sound',
+  EH: 'Inquiry expression',
+  EL: 'Elevated railway',
+  EM: 'Letter M sound',
+  EN: 'Letter N sound',
+  ER: 'Hesitation expression',
+  ES: 'Letter S sound',
+  ET: 'Past tense of eat',
+  EW: 'Expression of disgust',
+  EX: 'Former partner',
+  FA: 'Fourth tone of scale',
+  FE: 'Hebrew letter',
+  GI: 'Martial arts uniform',
+  GO: 'To move forward',
+  HA: 'Expression of triumph',
+  HE: 'Male person',
+  HI: 'Greeting',
+  HM: 'Expression of silence/hesitation',
+  HO: 'Expression of surprise',
+  ID: 'Part of the psyche',
+  IF: 'Condition marker',
+  IN: 'Located inside',
+  IS: 'Form of to be',
+  IT: 'Neuter pronoun',
+  JO: 'Sweetheart',
+  KA: 'Egyptian spiritual double',
+  KI: 'Japanese life force',
+  LA: 'Sixth tone of scale',
+  LI: 'Chinese unit of distance',
+  LO: 'Look or behold',
+  MA: 'Mother',
+  ME: 'First-person pronoun',
+  MI: 'Third tone of scale',
+  MM: 'Expression of agreement',
+  MO: 'Moment',
+  MU: 'Greek letter',
+  MY: 'Possessive pronoun',
+  NA: 'No or not',
+  NE: 'Born with the name of',
+  NO: 'Negative answer',
+  NU: 'Greek letter',
+  OD: 'Hypothetical force',
+  OE: 'Whirlwind off Faroe Islands',
+  OF: 'Belonging to',
+  OH: 'Expression of surprise',
+  OI: 'Inquiry call',
+  OK: 'All right',
+  OM: 'Sacred Hindu mantra',
+  ON: 'Supported by',
+  OP: 'Abstract art style',
+  OR: 'Conjunction marker',
+  OS: 'Mouth or bone',
+  OW: 'Expression of pain',
+  OX: 'Bovine animal',
+  OY: 'Expression of dismay',
+  PA: 'Father',
+  PE: 'Hebrew letter',
+  PI: 'Mathematical constant',
+  PO: 'Chamber pot',
+  QI: 'Life force',
+  RE: 'Second tone of scale',
+  SH: 'Request for silence',
+  SI: 'Seventh tone of scale',
+  SO: 'In the manner indicated',
+  TA: 'Thank you (slang)',
+  TE: 'Seventh tone of scale variation',
+  TI: 'Seventh tone of scale',
+  TO: 'Direction indicator',
+  UH: 'Hesitation sound',
+  UM: 'Hesitation expression',
+  UN: 'One (colloquial)',
+  UP: 'Higher position',
+  US: 'Plural pronoun',
+  UT: 'Musical tone',
+  WE: 'Plural pronoun',
+  WO: 'Woe',
+  XI: 'Greek letter',
+  XU: 'Vietnamese coin',
+  YA: 'You (slang)',
+  YE: 'You (archaic)',
+  YO: 'Greeting',
+  ZA: 'Pizza',
+};
+
+const twlAll = Array.from(await loadDictionary('TWL'));
+const twl2L = twlAll
+  .filter((w) => w.length === 2)
+  .map((w) => {
+    const word = w.toUpperCase();
+    return {
+      word,
+      score: calculateWordScore(word, 'TWL'),
+      definition: TWO_LETTER_DEFS[word] || 'Valid two-letter Scrabble word',
+    };
+  })
+  .sort((a, b) => a.word.localeCompare(b.word));
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical=`${SITE_URL}/2-letter-scrabble-cheat-sheet`
+  />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: title,
+      description,
+      url: `${SITE_URL}/2-letter-scrabble-cheat-sheet`,
+    }}
+  />
+
+  <Breadcrumb
+    items={[
+      { label: 'Home', href: '/' },
+      { label: 'Word Lists', href: '/word-list' },
+      { label: '2-Letter Cheat Sheet' },
+    ]}
+  />
+
+  <section class="py-10 md:py-16">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="text-center mb-10">
+        <h1
+          class="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+        >
+          2-Letter Scrabble Words Cheat Sheet
+        </h1>
+        <p class="text-[var(--color-text-muted)] text-lg max-w-2xl mx-auto">
+          Every valid 2-letter word in the TWL Scrabble dictionary, complete with scores and brief
+          definitions. Essential for parallel play.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {
+          twl2L.map(({ word, score, definition }) => (
+            <div class="card p-4 border border-[var(--color-border)] bg-[var(--color-card)] flex items-center justify-between gap-3 hover:shadow-md transition-all">
+              <div class="flex items-center gap-2.5">
+                <a href={`/word/${word.toLowerCase()}`} class="flex items-center gap-0.5">
+                  {word.split('').map((ch) => (
+                    <span class="tile !w-7 !h-7 !text-xs shadow-sm">
+                      {ch}
+                      <sub class="!text-[0.6rem]">{calculateWordScore(ch, 'TWL')}</sub>
+                    </span>
+                  ))}
+                </a>
+                <div>
+                  <h3 class="font-bold text-xs text-[var(--color-text-main)] uppercase tracking-wide">
+                    {word} ({score} pts)
+                  </h3>
+                  <p class="text-[10px] text-[var(--color-text-muted)] line-clamp-1">
+                    {definition}
+                  </p>
+                </div>
+              </div>
+              <a
+                href={`/word/${word.toLowerCase()}`}
+                class="text-[10px] text-[var(--color-primary)] font-semibold hover:underline"
+              >
+                Info
+              </a>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="prose max-w-none mt-16 text-[var(--color-text-main)]">
+        <h2 class="text-2xl font-bold mb-4">Why Two-Letter Words Matter</h2>
+        <p class="leading-relaxed mb-4">
+          Two-letter words are the lifeblood of competitive Scrabble. They are primary tools for:
+        </p>
+        <ul class="list-disc list-inside space-y-2 mb-4">
+          <li>
+            <strong>Parallel Plays:</strong> Laying a word parallel to another creates intersecting 2-letter
+            words, giving you points for each intersection.
+          </li>
+          <li>
+            <strong>Bailouts:</strong> Dumping awkward high-scoring consonants like Z (in <strong
+              >ZA</strong
+            >) or Q (in <strong>QI</strong>) when you have a clogged rack.
+          </li>
+          <li>
+            <strong>Blocking:</strong> Blocking pathways for your opponent by clogging open lanes on the
+            board.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

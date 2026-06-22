@@ -1,0 +1,1144 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { TWL_SCORES } from '../../data/tileScores';
+import SEO from '../../components/seo/SEO.astro';
+import Breadcrumb from '../../components/layout/Breadcrumb.astro';
+import AdPlaceholder from '../../components/ui/AdPlaceholder.astro';
+import FAQSection from '../../components/ui/FAQSection.astro';
+import { checkWord } from '../../lib/wordEngine';
+import { calculateWordScore } from '../../lib/scoreCalculator';
+import { getWordRelationships } from '../../lib/wordStats';
+import { getWordDetails } from '../../lib/wordDetails';
+import { loadDictionaryData } from '../../lib/dictionaryLoader';
+import { fetchWordDefinition } from '../../lib/definition';
+import { getRateLimitStatus, getClientIp } from '../../lib/rateLimiter';
+
+// Rate Limiting Check
+const ip = getClientIp(Astro.request, Astro.clientAddress);
+const rateLimit = await getRateLimitStatus(ip, 60, 60 * 1000);
+if (!rateLimit.success) {
+  return new Response('Too many requests. Please try again later.', {
+    status: 429,
+    headers: {
+      'Retry-After': String(rateLimit.retryAfter),
+    },
+  });
+}
+
+// Set long CDN cache headers for optimal performance
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, s-maxage=604800, stale-while-revalidate=86400',
+);
+
+const { word } = Astro.params;
+if (!word) {
+  return Astro.redirect('/word-lists');
+}
+
+const wordUpper = word.toUpperCase().replace(/[^A-Z]/g, '');
+if (wordUpper.length < 2 || wordUpper.length > 15) {
+  return Astro.redirect('/word-lists');
+}
+
+const details = getWordDetails(wordUpper);
+
+const isValidTWL = await checkWord(wordUpper, 'TWL');
+const isValidSOWPODS = await checkWord(wordUpper, 'SOWPODS');
+const isValidENABLE = await checkWord(wordUpper, 'ENABLE');
+const isValidAny = isValidTWL || isValidSOWPODS || isValidENABLE;
+
+const twlScore = calculateWordScore(wordUpper, 'TWL');
+const sowpodsScore = calculateWordScore(wordUpper, 'SOWPODS');
+const enableScore = calculateWordScore(wordUpper, 'ENABLE');
+
+// Syllable Count Heuristic
+function countSyllables(w: string): number {
+  w = w.toLowerCase().trim();
+  if (w.length <= 3) return 1;
+  w = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
+  w = w.replace(/^y/, '');
+  const syl = w.match(/[aeiouy]{1,2}/g);
+  return syl ? syl.length : 1;
+}
+const syllablesCount = countSyllables(wordUpper);
+
+// Fetch definition (Server-side with caching) - Short-circuit if invalid
+interface DefGroup { partOfSpeech?: string; definitions?: { definition?: string; example?: string }[]; synonyms?: string[]; antonyms?: string[]; }
+let definitions: DefGroup[] = [];
+let dictionaryApiSource = 'N/A';
+if (isValidAny) {
+  const defResult = await fetchWordDefinition(wordUpper);
+  definitions = defResult.definitions;
+  dictionaryApiSource = defResult.source;
+}
+
+// Get similar/related words - Short-circuit if invalid
+let twlRelationships: Record<string, string[]> = {
+  anagrams: [],
+  subwords: [],
+  hooks: [],
+  blankAnagrams: [],
+  prefixes: [],
+  suffixes: [],
+};
+if (isValidAny) {
+  twlRelationships = await getWordRelationships(wordUpper, 'TWL');
+}
+
+// Get synonyms and antonyms from definitions combined with programmatic fallbacks
+const synonyms = Array.from(
+  new Set([...definitions.flatMap((d) => d.synonyms || []), ...details.synonyms]),
+).slice(0, 10);
+const antonyms = Array.from(
+  new Set([...definitions.flatMap((d) => d.antonyms || []), ...details.antonyms]),
+).slice(0, 10);
+
+// Fetch words for advanced internal linking - Short-circuit if invalid
+let sameLengthWords: string[] = [];
+let sameStartingWords: string[] = [];
+let sameEndingWords: string[] = [];
+
+function getDeterministicSubset<T>(array: T[], count: number, seedWord: string): T[] {
+  if (array.length <= count) return array;
+  let hash = 0;
+  for (let i = 0; i < seedWord.length; i++) {
+    hash = seedWord.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  hash = Math.abs(hash);
+  const result: T[] = [];
+  const len = array.length;
+  for (let i = 0; i < count; i++) {
+    const idx = (hash + i * 29) % len;
+    result.push(array[idx]);
+  }
+  return result;
+}
+
+if (isValidAny) {
+  const twlDictData = await loadDictionaryData('TWL');
+
+  const sameLengthAll = (twlDictData.wordsByLength[wordUpper.length] || []).filter(
+    (w) => w !== wordUpper,
+  );
+  sameLengthWords = getDeterministicSubset(sameLengthAll, 8, wordUpper);
+
+  const sameStartingAll = (
+    twlDictData.wordsByLengthAndStartLetter[`${wordUpper.length}-${wordUpper[0]}`] || []
+  ).filter((w) => w !== wordUpper);
+  sameStartingWords = getDeterministicSubset(
+    sameStartingAll.length > 0
+      ? sameStartingAll
+      : (twlDictData.wordsByStartLetter[wordUpper[0]] || []).filter((w) => w !== wordUpper),
+    8,
+    wordUpper,
+  );
+
+  const sameEndingAll = (twlDictData.wordsByLength[wordUpper.length] || []).filter(
+    (w) => w.endsWith(wordUpper[wordUpper.length - 1]) && w !== wordUpper,
+  );
+  sameEndingWords = getDeterministicSubset(
+    sameEndingAll.length > 0
+      ? sameEndingAll
+      : twlDictData.wordList.filter(
+          (w) => w.endsWith(wordUpper[wordUpper.length - 1]) && w !== wordUpper,
+        ),
+    8,
+    wordUpper,
+  );
+}
+
+const TILE_VALUES = TWL_SCORES;
+
+// SEO values and Thin Content Check (Task 14)
+const isThinContent =
+  definitions.length === 0 && (wordUpper.length < 5 || details.frequency.label === 'Rare');
+const shouldNoindex = !isValidAny || isThinContent;
+
+const title = `Is ${wordUpper} A Valid Scrabble Word? Scores, Definition & Anagrams`;
+const description = `Find out if ${wordUpper} is valid in Scrabble & Words with Friends. Get points value, definition, syllables, synonyms, antonyms, and list of anagrams.`;
+const canonical = new URL(`/word/${wordUpper.toLowerCase()}`, SITE_URL).href;
+
+const faqs = [
+  {
+    question: `Is ${wordUpper} a valid Scrabble word?`,
+    answer: `${wordUpper} is ${isValidTWL ? 'a valid' : 'not a valid'} Scrabble word in the North American TWL dictionary, and ${isValidSOWPODS ? 'is valid' : 'is not valid'} internationally in the SOWPODS dictionary.`,
+  },
+  {
+    question: `How many points is ${wordUpper} worth in Scrabble?`,
+    answer: `In Scrabble, ${wordUpper} is worth ${twlScore} points. In Words with Friends, it is worth ${enableScore} points.`,
+  },
+  {
+    question: `How many syllables are in ${wordUpper}?`,
+    answer: `There ${syllablesCount === 1 ? 'is' : 'are'} ${syllablesCount} syllable${syllablesCount === 1 ? '' : 's'} in ${wordUpper}.`,
+  },
+];
+
+const breadcrumbItems = [
+  { label: 'Home', href: '/' },
+  { label: 'Word Lists', href: '/word-lists' },
+  { label: `${wordUpper.length}-Letter Words`, href: `/${wordUpper.length}-letter-words` },
+  { label: wordUpper },
+];
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonical}
+    schemaType="Word"
+    wordName={wordUpper}
+    faqs={faqs}
+    noindex={shouldNoindex}
+  />
+
+  <Breadcrumb items={breadcrumbItems} />
+
+  <!-- Premium Background Accent Blurs -->
+  <div
+    class="absolute top-0 left-0 w-full h-[650px] pointer-events-none overflow-hidden -z-10 opacity-75"
+  >
+    <div
+      class="absolute top-[-12%] left-[10%] w-[40%] h-[55%] rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] blur-[100px] opacity-10 dark:opacity-[0.2] animate-pulse"
+      style="animation-duration: 8s;"
+    >
+    </div>
+    <div
+      class="absolute top-[-8%] right-[10%] w-[35%] h-[50%] rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 blur-[110px] opacity-10 dark:opacity-[0.18] animate-pulse"
+      style="animation-duration: 12s; animation-delay: 2s;"
+    >
+    </div>
+  </div>
+
+  <div class="container mx-auto px-4 max-w-5xl py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left Column: Word Overview & Details -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Main Word Header Card -->
+        <div
+          class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] relative overflow-hidden"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div class="flex items-center gap-3">
+              <h1
+                class="text-3xl md:text-4xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-[var(--color-text-main)]"
+              >
+                Word: {wordUpper}
+              </h1>
+              <button
+                type="button"
+                id="favorite-btn"
+                class="w-9 h-9 rounded-full flex items-center justify-center border border-[var(--color-border)] bg-[var(--color-bg-alt)] hover:text-red-500 hover:border-red-200 transition-colors text-sm text-[var(--color-text-muted)] cursor-pointer"
+                title="Add to Favorites"
+                data-word={wordUpper}
+              >
+                🤍
+              </button>
+            </div>
+            <div class="flex gap-2">
+              {
+                isValidAny ? (
+                  <span class="inline-flex items-center text-xs font-semibold text-green-700 bg-green-100 dark:bg-green-950/30 dark:text-green-400 px-3 py-1 rounded-full border border-green-200 dark:border-green-900/50">
+                    ✓ Valid Scrabble Word
+                  </span>
+                ) : (
+                  <span class="inline-flex items-center text-xs font-semibold text-red-700 bg-red-100 dark:bg-red-950/30 dark:text-red-400 px-3 py-1 rounded-full border border-red-200 dark:border-red-900/50">
+                    ✗ Invalid Scrabble Word
+                  </span>
+                )
+              }
+            </div>
+          </div>
+
+          <!-- Giant 3D Letter Tiles -->
+          <div class="flex flex-wrap justify-center md:justify-start gap-1.5 mb-6 py-4">
+            {
+              wordUpper.split('').map((char) => (
+                <span class="tile tile-lg">
+                  {char}
+                  <sub>{TILE_VALUES[char] ?? 0}</sub>
+                </span>
+              ))
+            }
+          </div>
+
+          <!-- Quick Stats Grid -->
+          <div
+            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 pt-4 border-t border-[var(--color-border)]"
+          >
+            <div class="text-center md:text-left">
+              <span
+                class="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-semibold"
+                >Length</span
+              >
+              <span class="text-xl font-bold text-[var(--color-text-main)]"
+                >{wordUpper.length} letters</span
+              >
+            </div>
+            <div class="text-center md:text-left">
+              <span
+                class="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-semibold"
+                >Syllables</span
+              >
+              <span class="text-xl font-bold text-[var(--color-text-main)]">{syllablesCount}</span>
+            </div>
+            <div class="text-center md:text-left">
+              <span
+                class="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-semibold"
+                title="Rough Pronunciation">Pronunciation</span
+              >
+              <span class="text-base font-bold text-[var(--color-text-main)] font-mono"
+                >{details.phonetic}</span
+              >
+            </div>
+            <div class="text-center md:text-left">
+              <span
+                class="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-semibold"
+                >Frequency</span
+              >
+              <span class="text-base font-bold text-[var(--color-text-main)]"
+                >{details.frequency.label}</span
+              >
+            </div>
+            <div class="text-center md:text-left">
+              <span
+                class="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-semibold"
+                >Scrabble</span
+              >
+              <span class="text-xl font-bold text-[var(--color-primary)]">{twlScore} pts</span>
+            </div>
+            <div class="text-center md:text-left">
+              <span
+                class="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-semibold"
+                >WWF Score</span
+              >
+              <span class="text-xl font-bold text-indigo-500">{enableScore} pts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Linguistic Statistics Card -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2
+            class="text-xl font-bold mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2"
+          >
+            📊 Linguistic Statistics & Letter Breakdown
+          </h2>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div
+              class="bg-[var(--color-bg-alt)] border border-[var(--color-border)] p-3 rounded-xl text-center"
+            >
+              <span class="block text-xs text-[var(--color-text-muted)] font-semibold uppercase"
+                >Vowels</span
+              >
+              <span class="text-lg font-extrabold text-[var(--color-text-main)]"
+                >{details.letterBreakdown.vowelsCount}</span
+              >
+            </div>
+            <div
+              class="bg-[var(--color-bg-alt)] border border-[var(--color-border)] p-3 rounded-xl text-center"
+            >
+              <span class="block text-xs text-[var(--color-text-muted)] font-semibold uppercase"
+                >Consonants</span
+              >
+              <span class="text-lg font-extrabold text-[var(--color-text-main)]"
+                >{details.letterBreakdown.consonantsCount}</span
+              >
+            </div>
+            <div
+              class="bg-[var(--color-bg-alt)] border border-[var(--color-border)] p-3 rounded-xl text-center"
+            >
+              <span class="block text-xs text-[var(--color-text-muted)] font-semibold uppercase"
+                >Unique Letters</span
+              >
+              <span class="text-lg font-extrabold text-[var(--color-text-main)]"
+                >{details.letterBreakdown.uniqueLettersCount}</span
+              >
+            </div>
+            <div
+              class="bg-[var(--color-bg-alt)] border border-[var(--color-border)] p-3 rounded-xl text-center"
+            >
+              <span class="block text-xs text-[var(--color-text-muted)] font-semibold uppercase"
+                >Top Tile</span
+              >
+              <span class="text-base font-extrabold text-[var(--color-primary)]"
+                >{details.letterBreakdown.highestTileLetter}
+                <span class="text-xs text-[var(--color-text-muted)]"
+                  >({details.letterBreakdown.highestTileScore} pts)</span
+                ></span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart Word Insights Card -->
+        <div
+          class="card p-6 border border-indigo-200 dark:border-indigo-900 bg-gradient-to-br from-indigo-50/40 to-purple-50/20 dark:from-indigo-950/10 dark:to-purple-950/5 relative overflow-hidden"
+        >
+          <div
+            class="absolute -right-12 -top-12 w-28 h-28 rounded-full bg-indigo-500/10 blur-xl pointer-events-none"
+          >
+          </div>
+          <div class="flex items-center gap-3 mb-4">
+            <div
+              class="w-9 h-9 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white flex items-center justify-center text-lg shadow-sm"
+            >
+              🧠
+            </div>
+            <div>
+              <h3
+                class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] font-bold text-base text-indigo-950 dark:text-indigo-200"
+              >
+                Smart Word Insights & Strategy
+              </h3>
+              <p class="text-xs text-indigo-700/70 dark:text-indigo-400/70">
+                Tactical Scrabble placement and word difficulty
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <div
+              class="bg-white/60 dark:bg-zinc-900/30 rounded-xl p-3 border border-indigo-100/50 dark:border-indigo-900/20"
+            >
+              <span
+                class="block text-xs uppercase tracking-wider text-indigo-700 dark:text-indigo-400 font-bold mb-1"
+                >Linguistic Level</span
+              >
+              <span class="text-sm font-bold text-[var(--color-text-main)]"
+                >{details.difficulty}</span
+              >
+            </div>
+            <div
+              class="bg-white/60 dark:bg-zinc-900/30 rounded-xl p-3 border border-indigo-100/50 dark:border-indigo-900/20"
+            >
+              <span
+                class="block text-xs uppercase tracking-wider text-indigo-700 dark:text-indigo-400 font-bold mb-1"
+                >Spelling Pitfalls</span
+              >
+              <span class="text-xs text-[var(--color-text-muted)] leading-relaxed block mt-0.5"
+                >{details.pitfall}</span
+              >
+            </div>
+            <div
+              class="bg-white/60 dark:bg-zinc-900/30 rounded-xl p-3 border border-indigo-100/50 dark:border-indigo-900/20"
+            >
+              <span
+                class="block text-xs uppercase tracking-wider text-indigo-700 dark:text-indigo-400 font-bold mb-1"
+                >Board Strategy</span
+              >
+              <span class="text-xs text-[var(--color-text-muted)] leading-relaxed block mt-0.5"
+                >{details.strategy}</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <AdPlaceholder slot_id="word-page-above-defs" />
+
+        <!-- Definitions Card -->
+        <div class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2 class="text-2xl font-bold mb-6 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+            Definition of {wordUpper}
+          </h2>
+
+          {
+            !isValidAny ? (
+              <div class="p-4 bg-red-50/50 dark:bg-red-950/10 border border-red-200/50 dark:border-red-900/30 rounded-xl">
+                <p class="text-xs sm:text-sm text-[var(--color-text-muted)] dark:text-red-400 leading-relaxed">
+                  <strong>{wordUpper}</strong> is not a valid word in any of the standard Scrabble
+                  or Words with Friends dictionaries (TWL, SOWPODS, or ENABLE).
+                </p>
+              </div>
+            ) : definitions.length > 0 ? (
+              <div class="space-y-6">
+                {definitions.map((def: DefGroup) => (
+                  <div class="border-b border-[var(--color-border)] last:border-none pb-4 last:pb-0">
+                    <span class="inline-block text-xs font-bold uppercase tracking-wider bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] px-2.5 py-1 rounded-md mb-3 border border-[var(--color-border)]">
+                      {def.partOfSpeech}
+                    </span>
+                    <ol class="list-decimal list-inside space-y-3">
+                      {def.definitions?.map((d: { definition?: string; example?: string }) => (
+                        <li class="text-sm text-[var(--color-text-main)] leading-relaxed">
+                          <span class="text-[var(--color-text-main)]">{d.definition}</span>
+                          {d.example && (
+                            <p class="text-xs text-[var(--color-text-muted)] italic mt-1 pl-4 border-l-2 border-[var(--color-border)]">
+                              "{d.example}"
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
+                <p class="text-[10px] text-[var(--color-text-muted)] text-right mt-4 italic">
+                  Source: Definitions compiled dynamically via {dictionaryApiSource}.
+                </p>
+              </div>
+            ) : (
+              <div class="space-y-4">
+                <div class="p-4 bg-amber-50/50 dark:bg-amber-950/10 border border-amber-200/50 dark:border-amber-900/30 rounded-xl mb-4">
+                  <p class="text-xs sm:text-sm text-[var(--color-text-muted)] leading-relaxed">
+                    No definition found for <strong>{wordUpper}</strong> in the public dictionary
+                    database. However, this is a fully verified, valid Scrabble word.
+                  </p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="bg-[var(--color-bg-alt)] border border-[var(--color-border)] p-4 rounded-xl">
+                    <h4 class="font-bold text-xs uppercase text-[var(--color-text-muted)] mb-2">
+                      Phonetic & Syllables
+                    </h4>
+                    <p class="text-sm font-medium text-[var(--color-text-main)]">
+                      Rough Pronunciation:{' '}
+                      <span class="font-mono text-[var(--color-primary)] font-bold">
+                        {details.phonetic}
+                      </span>
+                    </p>
+                    <p class="text-sm font-medium text-[var(--color-text-main)] mt-1">
+                      Syllables: <span class="font-bold">{syllablesCount}</span>
+                    </p>
+                    <p class="text-sm font-medium text-[var(--color-text-main)] mt-1">
+                      Difficulty Level:{' '}
+                      <span class="text-indigo-600 dark:text-indigo-400 font-bold">
+                        {details.difficulty}
+                      </span>
+                    </p>
+                  </div>
+                  <div class="bg-[var(--color-bg-alt)] border border-[var(--color-border)] p-4 rounded-xl">
+                    <h4 class="font-bold text-xs uppercase text-[var(--color-text-muted)] mb-2">
+                      Spelling Pitfalls
+                    </h4>
+                    <p class="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                      {details.pitfall}
+                    </p>
+                  </div>
+                </div>
+                <div class="bg-[var(--color-bg-alt)] border border-[var(--color-border)] p-4 rounded-xl mt-4">
+                  <h4 class="font-bold text-xs uppercase text-[var(--color-text-muted)] mb-2">
+                    Board Strategy & Placement Advice
+                  </h4>
+                  <p class="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                    {details.strategy}
+                  </p>
+                </div>
+              </div>
+            )
+          }
+        </div>
+
+        <!-- Etymology & Usage Card -->
+        <div
+          class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] space-y-6"
+        >
+          <div>
+            <h2
+              class="text-xl font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2"
+            >
+              📜 Word Pattern Notes
+            </h2>
+            <p class="text-sm text-[var(--color-text-muted)] leading-relaxed">
+              {details.etymology}
+            </p>
+          </div>
+          <div class="border-t border-[var(--color-border)] pt-5">
+            <h2
+              class="text-xl font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2"
+            >
+              🗣️ Example Sentences
+            </h2>
+            <ul class="space-y-3">
+              {
+                details.examples.map((ex) => (
+                  <li class="text-sm text-[var(--color-text-main)] leading-relaxed flex gap-2">
+                    <span class="text-[var(--color-primary)] font-bold">•</span>
+                    <span class="italic">"{ex}"</span>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+
+        <!-- Trivia & Strategy Card -->
+        <div
+          class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] space-y-6"
+        >
+          <div>
+            <h2
+              class="text-xl font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2"
+            >
+              💡 Interesting Word Trivia & Facts
+            </h2>
+            <p
+              class="text-sm text-[var(--color-text-muted)] leading-relaxed bg-[var(--color-bg-alt)] border border-[var(--color-border)] rounded-xl p-4"
+            >
+              {details.interestingFact}
+            </p>
+          </div>
+          <div class="border-t border-[var(--color-border)] pt-5">
+            <h2
+              class="text-xl font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2"
+            >
+              🎯 Scrabble Board Placement & Usage Tips
+            </h2>
+            <p
+              class="text-sm text-[var(--color-text-muted)] leading-relaxed bg-[var(--color-bg-alt)] border border-[var(--color-border)] rounded-xl p-4"
+            >
+              {details.usageTip}
+            </p>
+          </div>
+        </div>
+
+        <!-- Dictionary Validity Summary Table -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2 class="text-xl font-bold mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+            Dictionary Validity
+          </h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="border-b border-[var(--color-border)]">
+                  <th class="py-2.5 font-semibold text-[var(--color-text-muted)]"
+                    >Dictionary Lexicon</th
+                  >
+                  <th class="py-2.5 font-semibold text-[var(--color-text-muted)] text-center"
+                    >Status</th
+                  >
+                  <th class="py-2.5 font-semibold text-[var(--color-text-muted)] text-right"
+                    >Base Value</th
+                  >
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-[var(--color-border)] last:border-none">
+                  <td class="py-3 font-medium">TWL (US/Canada Scrabble)</td>
+                  <td class="py-3 text-center">
+                    <span
+                      class={isValidTWL
+                        ? 'text-green-600 font-semibold'
+                        : 'text-[var(--color-text-muted)]'}
+                    >
+                      {isValidTWL ? '✓ Valid' : '✗ Invalid'}
+                    </span>
+                  </td>
+                  <td class="py-3 text-right font-bold text-[var(--color-primary)]"
+                    >{twlScore} pts</td
+                  >
+                </tr>
+                <tr class="border-b border-[var(--color-border)] last:border-none">
+                  <td class="py-3 font-medium">SOWPODS (UK/International Scrabble)</td>
+                  <td class="py-3 text-center">
+                    <span
+                      class={isValidSOWPODS
+                        ? 'text-green-600 font-semibold'
+                        : 'text-[var(--color-text-muted)]'}
+                    >
+                      {isValidSOWPODS ? '✓ Valid' : '✗ Invalid'}
+                    </span>
+                  </td>
+                  <td class="py-3 text-right font-bold text-[var(--color-primary)]"
+                    >{sowpodsScore} pts</td
+                  >
+                </tr>
+                <tr class="border-b border-[var(--color-border)] last:border-none">
+                  <td class="py-3 font-medium">ENABLE (Words With Friends Lexicon)</td>
+                  <td class="py-3 text-center">
+                    <span
+                      class={isValidENABLE
+                        ? 'text-green-600 font-semibold'
+                        : 'text-[var(--color-text-muted)]'}
+                    >
+                      {isValidENABLE ? '✓ Valid' : '✗ Invalid'}
+                    </span>
+                  </td>
+                  <td class="py-3 text-right font-bold text-indigo-500">{enableScore} pts</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <FAQSection faqs={faqs} />
+
+        <!-- Popular Related Searches -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2 class="text-lg font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+            Popular Related Searches
+          </h2>
+          <div class="flex flex-wrap gap-2">
+            {
+              details.popularSearches.map((query) => {
+                let href = '/';
+                if (query.toLowerCase().includes('anagram')) {
+                  href = `/anagram-solver?letters=${wordUpper.toLowerCase()}`;
+                } else if (
+                  query.toLowerCase().includes('points') ||
+                  query.toLowerCase().includes('valid')
+                ) {
+                  href = `/dictionary-checker?word=${wordUpper.toLowerCase()}`;
+                } else if (query.toLowerCase().includes('starting')) {
+                  href = `/words-starting-with-${wordUpper.slice(0, 2).toLowerCase()}`;
+                } else if (query.toLowerCase().includes('ending')) {
+                  href = `/words-ending-in-${wordUpper.slice(-2).toLowerCase()}`;
+                }
+                return (
+                  <a
+                    href={href}
+                    class="text-xs px-3 py-1.5 rounded-lg bg-[var(--color-bg-alt)] border border-[var(--color-border)] text-[var(--color-text-main)] hover:border-[var(--color-primary)] transition-colors"
+                  >
+                    {query}
+                  </a>
+                );
+              })
+            }
+          </div>
+        </div>
+
+        <!-- Common Phrases Card -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2
+            class="text-xl font-bold mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2"
+          >
+            🔗 Common Phrases & Idioms
+          </h2>
+          <p class="text-xs text-[var(--color-text-muted)] mb-4">
+            Here are some popular expressions, phrases, and collocations containing <strong
+              >{wordUpper}</strong
+            >:
+          </p>
+          <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {
+              details.phrases.map((phrase) => (
+                <li class="flex items-center gap-2 text-sm text-[var(--color-text-main)] bg-[var(--color-bg-alt)] border border-[var(--color-border)] rounded-xl p-3 hover:border-[var(--color-primary)] transition-colors">
+                  <span class="text-[var(--color-primary)] font-semibold font-mono">#</span>
+                  <span class="capitalize font-medium">{phrase}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+
+      <!-- Right Column: Internal Linking & Relationships -->
+      <div class="space-y-6">
+        <!-- Synonyms & Antonyms Card -->
+        {
+          (synonyms.length > 0 || antonyms.length > 0) && (
+            <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+              <h2 class="text-lg font-bold mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+                Thesaurus
+              </h2>
+
+              {synonyms.length > 0 && (
+                <div class="mb-4">
+                  <span class="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-2">
+                    Synonyms
+                  </span>
+                  <div class="flex flex-wrap gap-1.5">
+                    {synonyms.map((syn) => (
+                      <a
+                        href={`/word/${syn.toLowerCase()}`}
+                        class="text-xs px-2.5 py-1 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border)] text-[var(--color-text-main)] hover:border-[var(--color-primary)] transition-colors"
+                      >
+                        {syn}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {antonyms.length > 0 && (
+                <div>
+                  <span class="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-2">
+                    Antonyms
+                  </span>
+                  <div class="flex flex-wrap gap-1.5">
+                    {antonyms.map((ant) => (
+                      <a
+                        href={`/word/${ant.toLowerCase()}`}
+                        class="text-xs px-2.5 py-1 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border)] text-[var(--color-text-main)] hover:border-[var(--color-primary)] transition-colors"
+                      >
+                        {ant}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        }
+
+        <!-- Anagrams of the Word -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2 class="text-lg font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+            Anagrams
+          </h2>
+          <p class="text-xs text-[var(--color-text-muted)] mb-3">
+            Words that contain the exact same letters as <strong>{wordUpper}</strong>:
+          </p>
+          {
+            twlRelationships.anagrams.length > 0 ? (
+              <div class="flex flex-wrap gap-1.5">
+                {twlRelationships.anagrams.map((anag: string) => (
+                  <a
+                    href={`/word/${anag.toLowerCase()}`}
+                    class="text-xs px-2.5 py-1.5 font-semibold rounded-lg bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-main)] transition-colors"
+                  >
+                    {anag}
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p class="text-xs text-[var(--color-text-muted)] italic">No anagrams found.</p>
+            )
+          }
+        </div>
+
+        <!-- Hook Words -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2 class="text-lg font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+            Hook Words
+          </h2>
+          <p class="text-xs text-[var(--color-text-muted)] mb-3">
+            Valid words formed by adding a letter to the start or end of <strong>{wordUpper}</strong
+            >:
+          </p>
+          {
+            twlRelationships.hooks.length > 0 ? (
+              <div class="flex flex-wrap gap-1.5">
+                {twlRelationships.hooks.map((hk: string) => (
+                  <a
+                    href={`/word/${hk.toLowerCase()}`}
+                    class="text-xs px-2.5 py-1.5 font-semibold rounded-lg bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-main)] transition-colors"
+                  >
+                    {hk}
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p class="text-xs text-[var(--color-text-muted)] italic">No hook words found.</p>
+            )
+          }
+        </div>
+
+        <!-- Sub-words (Smaller Words Formed from letters) -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2 class="text-lg font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+            Sub-words
+          </h2>
+          <p class="text-xs text-[var(--color-text-muted)] mb-3">
+            Smaller words created by unscrambling subset letters of <strong>{wordUpper}</strong>:
+          </p>
+          {
+            twlRelationships.subwords.length > 0 ? (
+              <div class="flex flex-wrap gap-1.5">
+                {twlRelationships.subwords.map((subw: string) => (
+                  <a
+                    href={`/word/${subw.toLowerCase()}`}
+                    class="text-xs px-2 py-1 rounded bg-[var(--color-bg-alt)] hover:bg-[var(--color-primary)] hover:text-white transition-colors text-[var(--color-text-muted)]"
+                  >
+                    {subw}
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p class="text-xs text-[var(--color-text-muted)] italic">No sub-words found.</p>
+            )
+          }
+        </div>
+
+        <!-- Word Family & Similar Words Card -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)]">
+          <h2 class="text-lg font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+            Word Family
+          </h2>
+          <p class="text-xs text-[var(--color-text-muted)] mb-3">
+            Inflections, derivatives, and morphological family of <strong>{wordUpper}</strong>:
+          </p>
+          <div class="flex flex-wrap gap-1.5 mb-5">
+            {
+              details.wordFamily.map((fam) => (
+                <a
+                  href={`/word/${fam.toLowerCase()}`}
+                  class="text-xs px-2.5 py-1.5 font-semibold rounded-lg bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-main)] transition-colors"
+                >
+                  {fam}
+                </a>
+              ))
+            }
+          </div>
+
+          <h2 class="text-lg font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+            Similar Spelled Words
+          </h2>
+          <p class="text-xs text-[var(--color-text-muted)] mb-3">
+            Words with matching prefixes or suffixes:
+          </p>
+          <div class="flex flex-wrap gap-1.5">
+            {
+              details.similarWords.map((sim) => (
+                <a
+                  href={`/word/${sim.toLowerCase()}`}
+                  class="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-main)] transition-colors"
+                >
+                  {sim}
+                </a>
+              ))
+            }
+          </div>
+        </div>
+
+        <!-- Same Length & Letter Matching Words -->
+        {
+          isValidAny && (
+            <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)] space-y-6">
+              <div>
+                <h2 class="text-lg font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+                  Same Length Words ({wordUpper.length} Letters)
+                </h2>
+                <p class="text-xs text-[var(--color-text-muted)] mb-3">
+                  Other valid {wordUpper.length}-letter Scrabble words:
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  {sameLengthWords.map((w) => (
+                    <a
+                      href={`/word/${w.toLowerCase()}`}
+                      class="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-main)] transition-colors"
+                    >
+                      {w}
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div class="border-t border-[var(--color-border)] pt-5">
+                <h2 class="text-lg font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+                  Words Starting with {wordUpper[0]}
+                </h2>
+                <p class="text-xs text-[var(--color-text-muted)] mb-3">
+                  Other words starting with the letter {wordUpper[0]}:
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  {sameStartingWords.map((w) => (
+                    <a
+                      href={`/word/${w.toLowerCase()}`}
+                      class="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-main)] transition-colors"
+                    >
+                      {w}
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div class="border-t border-[var(--color-border)] pt-5">
+                <h2 class="text-lg font-bold mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+                  Words Ending with {wordUpper[wordUpper.length - 1]}
+                </h2>
+                <p class="text-xs text-[var(--color-text-muted)] mb-3">
+                  Other words ending in the letter {wordUpper[wordUpper.length - 1]}:
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  {sameEndingWords.map((w) => (
+                    <a
+                      href={`/word/${w.toLowerCase()}`}
+                      class="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-main)] transition-colors"
+                    >
+                      {w}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        <!-- Quick Links Hub -->
+        <div class="card p-6 border border-[var(--color-border)] bg-[var(--color-card)] space-y-3">
+          <h2 class="text-lg font-bold font-['Plus_Jakarta_Sans',system-ui,sans-serif] mb-2">
+            Category Hubs
+          </h2>
+          <a
+            href={`/${wordUpper.length}-letter-words`}
+            class="flex justify-between items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] border-b border-[var(--color-border)] pb-2 transition-colors"
+          >
+            <span>All {wordUpper.length}-letter words</span>
+            <span>→</span>
+          </a>
+          {
+            8 >= wordUpper.length && (
+              <a
+                href={`/${wordUpper.length}-letter-words-starting-with/${wordUpper[0].toLowerCase()}`}
+                class="flex justify-between items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] border-b border-[var(--color-border)] pb-2 transition-colors"
+              >
+                <span>
+                  {wordUpper.length}-letter words starting with {wordUpper[0]}
+                </span>
+                <span>→</span>
+              </a>
+            )
+          }
+          {
+            8 >= wordUpper.length && (
+              <a
+                href={`/${wordUpper.length}-letter-words-ending-in/${wordUpper[wordUpper.length - 1].toLowerCase()}`}
+                class="flex justify-between items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] border-b border-[var(--color-border)] pb-2 transition-colors"
+              >
+                <span>
+                  {wordUpper.length}-letter words ending in {wordUpper[wordUpper.length - 1]}
+                </span>
+                <span>→</span>
+              </a>
+            )
+          }
+          <a
+            href={`/words-containing-${wordUpper[0].toLowerCase()}`}
+            class="flex justify-between items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] border-b border-[var(--color-border)] pb-2 transition-colors"
+          >
+            <span>Words containing letter {wordUpper[0]}</span>
+            <span>→</span>
+          </a>
+          <a
+            href={`/words-starting-with/${wordUpper[0].toLowerCase()}`}
+            class="flex justify-between items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] border-b border-[var(--color-border)] pb-2 transition-colors"
+          >
+            <span>Words starting with {wordUpper[0]}</span>
+            <span>→</span>
+          </a>
+          <a
+            href={`/words-ending-in/${wordUpper[wordUpper.length - 1].toLowerCase()}`}
+            class="flex justify-between items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] pb-1 transition-colors"
+          >
+            <span>Words ending in {wordUpper[wordUpper.length - 1]}</span>
+            <span>→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  // Handle favoriting copy / toggle action
+  const favBtn = document.getElementById('favorite-btn');
+  if (favBtn) {
+    const word = favBtn.dataset.word;
+
+    // Check if already favorited on load
+    const favorites = JSON.parse(localStorage.getItem('scrabble_favorites') || '[]');
+    if (favorites.includes(word)) {
+      if (favBtn) favBtn.textContent = '❤️';
+      if (favBtn) favBtn.classList.add('text-red-500');
+    } else {
+      if (favBtn) favBtn.textContent = '🤍';
+    }
+
+    // Long Press / Hold gesture implementation
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let isLongPress = false;
+    let ignoreNextClick = false;
+
+    function triggerToggle() {
+      if (!favBtn) return;
+      favBtn.classList.remove('animate-heart-pop');
+      void favBtn.offsetWidth; // force reflow
+      favBtn.classList.add('animate-heart-pop');
+
+      const currentFavs = JSON.parse(localStorage.getItem('scrabble_favorites') || '[]');
+      const idx = currentFavs.indexOf(word);
+      if (idx === -1) {
+        currentFavs.push(word);
+        favBtn.textContent = '❤️';
+        favBtn.classList.add('text-red-500');
+
+        if (typeof (window as any).animateFavoriteHeart === 'function') {
+          (window as any).animateFavoriteHeart(favBtn);
+        }
+      } else {
+        currentFavs.splice(idx, 1);
+        favBtn.textContent = '🤍';
+        favBtn.classList.remove('text-red-500');
+      }
+      localStorage.setItem('scrabble_favorites', JSON.stringify(currentFavs));
+      // Dispatch custom event to notify other components (e.g. UserDashboard)
+      window.dispatchEvent(new Event('scrabble_favorites_changed'));
+    }
+
+    function startPress(e: Event) {
+      if (e.type === 'touchstart') {
+        e.preventDefault();
+      } else if (e.type === 'mousedown' && (e as MouseEvent).button !== 0) {
+        return;
+      }
+      e.stopPropagation();
+      isLongPress = false;
+      if (favBtn) favBtn.classList.add('heart-grow');
+
+      timer = setTimeout(() => {
+        isLongPress = true;
+        ignoreNextClick = true;
+        if (favBtn) favBtn.classList.remove('heart-grow');
+        triggerToggle();
+        if ('vibrate' in navigator) {
+          navigator.vibrate(40);
+        }
+      }, 600); // 600ms hold time
+    }
+
+    function endPress(e: Event) {
+      if (e.type === 'touchend') {
+        e.preventDefault();
+      }
+      e.stopPropagation();
+
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      if (favBtn) favBtn.classList.remove('heart-grow');
+
+      if (!isLongPress) {
+        if (e.type === 'touchend') {
+          triggerToggle();
+        }
+      }
+    }
+
+    function cancelPress(e: Event) {
+      e.stopPropagation();
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      if (favBtn) favBtn.classList.remove('heart-grow');
+    }
+
+    if (favBtn) {
+      favBtn.addEventListener('mousedown', startPress);
+      favBtn.addEventListener('mouseup', endPress);
+      favBtn.addEventListener('mouseleave', cancelPress);
+
+      favBtn.addEventListener('touchstart', startPress, { passive: false });
+      favBtn.addEventListener('touchend', endPress, { passive: false });
+      favBtn.addEventListener('touchcancel', cancelPress);
+
+      favBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (ignoreNextClick) {
+          ignoreNextClick = false;
+          return;
+        }
+        triggerToggle();
+      });
+
+      favBtn.addEventListener('animationend', () => {
+        if (favBtn) favBtn.classList.remove('animate-heart-pop');
+      });
+    }
+  }
+</script>

@@ -1,0 +1,404 @@
+---
+import { generateCsrfToken, getSessionSecret } from '../lib/adminAuth';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+}
+
+const secret = getSessionSecret();
+const csrfToken = generateCsrfToken(secret);
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#FAF9F6" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="csrf-token" content={csrfToken} />
+
+    <title>{title} | Admin Panel</title>
+
+    <!-- Self-hosted font preloading -->
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link
+      rel="preload"
+      href="/fonts/plus-jakarta-sans-700.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Theme: Apply immediately to prevent flash -->
+    <script is:inline>
+      (function () {
+        const stored = localStorage.getItem('theme');
+        const theme =
+          stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body
+    class="bg-[var(--color-bg)] text-[var(--color-text-main)] min-h-screen flex font-[var(--font-control)]"
+  >
+    <!-- Sidebar -->
+    <aside
+      id="sidebar"
+      class="fixed inset-y-0 left-0 z-40 w-64 bg-[var(--color-card)] border-r border-[var(--color-border)] transform -translate-x-full transition-transform duration-300 md:translate-x-0 md:static md:h-screen flex flex-col"
+    >
+      <!-- Brand -->
+      <div
+        class="h-16 flex items-center justify-between px-6 border-b border-[var(--color-border)]"
+      >
+        <a href="/admin" class="flex items-center gap-2">
+          <span
+            class="text-xl font-extrabold text-[var(--color-primary)] font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+          >
+            WordFinder Admin
+          </span>
+        </a>
+        <button
+          id="close-sidebar"
+          type="button"
+          class="md:hidden p-1.5 rounded-lg hover:bg-[var(--color-bg-alt)] text-[var(--color-text-muted)]"
+          aria-label="Close menu"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Nav Links -->
+      <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <a
+          href="/admin"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--color-bg-alt)]"
+          data-nav-link
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+            ></path>
+          </svg>
+          Dashboard
+        </a>
+        <a
+          href="/admin/posts"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--color-bg-alt)]"
+          data-nav-link
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 7.5h1.5m-1.5 3h1.5m-7.5-6h7.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"
+            ></path>
+          </svg>
+          Blog Posts
+        </a>
+        <a
+          href="/admin/settings"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--color-bg-alt)]"
+          data-nav-link
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.991l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.645-.869L9.594 3.94z"
+            ></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          Settings
+        </a>
+        <a
+          href="/admin/adsense"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--color-bg-alt)]"
+          data-nav-link
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 6v12m-3-2.818l.879.659c1.546 1.16 3.696 1.16 5.242 0l.88-.659M9.375 8.182l.879-.659c1.546-1.16 3.696-1.16 5.242 0l.88.659m-8.121 4.5h10.25"
+            ></path>
+          </svg>
+          AdSense Settings
+        </a>
+        <a
+          href="/admin/users"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--color-bg-alt)]"
+          data-nav-link
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+          </svg>
+          Manage Admins
+        </a>
+        <a
+          href="/admin/messages"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--color-bg-alt)]"
+          data-nav-link
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+            ></path>
+          </svg>
+          Messages
+        </a>
+      </nav>
+
+      <!-- Logout Form -->
+      <div class="p-4 border-t border-[var(--color-border)]">
+        <form id="logout-form" action="/api/admin/logout" method="POST">
+          <button
+            type="button"
+            id="logout-btn"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--color-border)] hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 hover:border-red-200 dark:hover:border-red-900/30 text-sm font-medium transition-colors"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
+              ></path>
+            </svg>
+            Logout
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Overlay for Mobile Sidebar -->
+    <div
+      id="sidebar-overlay"
+      class="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm hidden md:hidden"
+    >
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-y-auto">
+      <!-- Topbar -->
+      <header
+        class="h-16 bg-[var(--color-card)] border-b border-[var(--color-border)] px-6 flex items-center justify-between shrink-0"
+      >
+        <div class="flex items-center gap-4">
+          <button
+            id="open-sidebar"
+            type="button"
+            class="md:hidden p-1.5 rounded-lg hover:bg-[var(--color-bg-alt)] text-[var(--color-text-muted)]"
+            aria-label="Open menu"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
+            </svg>
+          </button>
+          <span class="text-sm font-medium text-[var(--color-text-muted)] hidden sm:inline">
+            Admin Panel &rsaquo; <span class="text-[var(--color-text-main)] font-semibold"
+              >{title}</span
+            >
+          </span>
+        </div>
+
+        <!-- Toolbar Actions -->
+        <div class="flex items-center gap-4">
+          <!-- Theme Toggle -->
+          <button
+            id="theme-toggle"
+            type="button"
+            class="p-2 rounded-xl border border-[var(--color-border)] hover:bg-[var(--color-bg-alt)] text-[var(--color-text-main)] transition-colors"
+            aria-label="Toggle theme"
+          >
+            <span class="dark:hidden">
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
+                ></path>
+              </svg>
+            </span>
+            <span class="hidden dark:inline">
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 3v2.25m0 13.5V21m8.955-8.955h-2.25m-13.5 0h-2.25m16.035-6.035l-1.591 1.591M21.75 12M12 5.25a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5z"
+                ></path>
+              </svg>
+            </span>
+          </button>
+
+          <!-- User Profile (Static indicator) -->
+          <div class="flex items-center gap-2">
+            <span
+              class="w-8 h-8 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-bold text-sm"
+            >
+              A
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Body -->
+      <main class="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
+        <slot />
+      </main>
+    </div>
+
+    <!-- Scripts for UI interactions -->
+    <script>
+      // Global Fetch Interceptor to attach CSRF token to all internal API requests
+      const originalFetch = window.fetch;
+      window.fetch = async function (...args) {
+        let [resource, config] = args;
+        const url = typeof resource === 'string' ? resource : resource instanceof Request ? resource.url : '';
+        
+        if (url.startsWith('/api/admin') && config && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(config.method?.toUpperCase() || '')) {
+          const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+          if (token) {
+            config.headers = {
+              ...config.headers,
+              'X-CSRF-Token': token
+            };
+          }
+        }
+        return originalFetch.apply(this, args);
+      };
+
+      // Navigation highlight active link
+      const links = document.querySelectorAll('[data-nav-link]');
+      const currentPath = window.location.pathname;
+      links.forEach((link) => {
+        const href = link.getAttribute('href');
+        if (href && (currentPath === href || (href !== '/admin' && currentPath.startsWith(href)))) {
+          link.classList.add('bg-[var(--color-primary-light)]', 'text-[var(--color-primary)]');
+          link.classList.remove('text-[var(--color-text-muted)]');
+        } else {
+          link.classList.add('text-[var(--color-text-muted)]');
+        }
+      });
+
+      // Mobile sidebar logic
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      const openBtn = document.getElementById('open-sidebar');
+      const closeBtn = document.getElementById('close-sidebar');
+
+      function toggleSidebar() {
+        sidebar?.classList.toggle('-translate-x-full');
+        overlay?.classList.toggle('hidden');
+      }
+
+      openBtn?.addEventListener('click', toggleSidebar);
+      closeBtn?.addEventListener('click', toggleSidebar);
+      overlay?.addEventListener('click', toggleSidebar);
+
+      // Theme toggle functionality
+      const themeToggle = document.getElementById('theme-toggle');
+      themeToggle?.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', nextTheme);
+        localStorage.setItem('theme', nextTheme);
+      });
+
+      // Logout via fetch to trigger global interceptor CSRF
+      const logoutBtn = document.getElementById('logout-btn');
+      logoutBtn?.addEventListener('click', async () => {
+        try {
+          const res = await fetch('/api/admin/logout', { method: 'POST' });
+          if (res.ok || res.redirected) {
+            window.location.href = '/admin/login';
+          }
+        } catch (e) {
+          console.error('Logout failed', e);
+        }
+      });
+    </script>
+  </body>
+</html>

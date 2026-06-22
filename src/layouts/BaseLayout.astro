@@ -1,0 +1,801 @@
+---
+
+import Header from '../components/layout/Header.astro';
+import MobileMenu from '../components/layout/MobileMenu.astro';
+import Footer from '../components/layout/Footer.astro';
+import UserDashboard from '../components/ui/UserDashboard.astro';
+import AdPlaceholder from '../components/ui/AdPlaceholder.astro';
+import ToastContainer from '../components/ui/ToastContainer.astro';
+import { getSettings } from '../lib/getSetting';
+import '../styles/global.css';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+
+// AD_CLIENT was previously used but is now removed to avoid unused variable warning
+
+const measurementId = import.meta.env.PUBLIC_MEASUREMENT_ID || '';
+
+const gtmUrl = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+
+const settingsObj = await getSettings({
+  adsense_enabled: 'false',
+  adsense_client_id: import.meta.env.PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-XXXXXXXXXXXXXXXX',
+  adsense_auto_ads_enabled: 'false',
+  adsense_publisher_account_id: '',
+  adsense_sandbox_mode: 'true',
+  adsense_header_ad_enabled: 'false',
+  adsense_header_ad_slot: '',
+  adsense_header_ad_type: 'adsense',
+  adsense_header_ad_html: '',
+  adsense_footer_ad_enabled: 'false',
+  adsense_footer_ad_slot: '',
+  adsense_footer_ad_type: 'adsense',
+  adsense_footer_ad_html: '',
+  adsense_excluded_paths: '/admin/*, /login, /404',
+  header_scripts: '',
+  footer_scripts: '',
+  site_favicon_url: '/favicon.svg'
+});
+
+const adsenseEnabled = settingsObj.adsense_enabled === 'true';
+const adsenseClientId = settingsObj.adsense_client_id;
+const adsenseAutoAdsEnabled = settingsObj.adsense_auto_ads_enabled === 'true';
+const adsensePublisherAccountId = settingsObj.adsense_publisher_account_id;
+const adsenseSandboxMode = settingsObj.adsense_sandbox_mode === 'true';
+
+const headerAdEnabled = settingsObj.adsense_header_ad_enabled === 'true';
+const headerAdSlot = settingsObj.adsense_header_ad_slot;
+const headerAdType = settingsObj.adsense_header_ad_type;
+const headerAdHtml = settingsObj.adsense_header_ad_html;
+
+const footerAdEnabled = settingsObj.adsense_footer_ad_enabled === 'true';
+const footerAdSlot = settingsObj.adsense_footer_ad_slot;
+const footerAdType = settingsObj.adsense_footer_ad_type;
+const footerAdHtml = settingsObj.adsense_footer_ad_html;
+
+const excludedPathsRaw = settingsObj.adsense_excluded_paths;
+const currentPath = Astro.url.pathname;
+const excludedPaths = excludedPathsRaw
+  .split(',')
+  .map((p) => p.trim())
+  .filter(Boolean);
+
+let isPathExcluded = false;
+for (const pattern of excludedPaths) {
+  if (pattern.endsWith('*')) {
+    const prefix = pattern.slice(0, -1);
+    if (currentPath.startsWith(prefix)) {
+      isPathExcluded = true;
+      break;
+    }
+  } else if (currentPath === pattern) {
+    isPathExcluded = true;
+    break;
+  }
+}
+
+const shouldShowAdsGlobal = adsenseEnabled && !isPathExcluded;
+const headerScripts = settingsObj.header_scripts;
+const footerScripts = settingsObj.footer_scripts;
+const siteFavicon = settingsObj.site_favicon_url;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#FAF9F6" />
+    <link
+      rel="icon"
+      type={siteFavicon.endsWith('.svg')
+        ? 'image/svg+xml'
+        : siteFavicon.endsWith('.ico')
+          ? 'image/x-icon'
+          : 'image/png'}
+      href={siteFavicon}
+    />
+
+    <!-- Self-hosted font preloading -->
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link
+      rel="preload"
+      href="/fonts/plus-jakarta-sans-700.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Preconnect to external dictionary API -->
+    <link rel="preconnect" href="https://api.dictionaryapi.dev" crossorigin />
+
+    <!-- Theme: Apply immediately to prevent flash -->
+    <script is:inline>
+      (function () {
+        const stored = localStorage.getItem('theme');
+        const theme =
+          stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+
+    <!-- Google Consent Mode v2 Initialization -->
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+
+      const savedAnalytics = localStorage.getItem('consent-analytics') === 'true';
+      const savedAdsense = localStorage.getItem('consent-ads') === 'true';
+      const hasConsented = localStorage.getItem('cookie-consent') !== null;
+
+      window.gtag('consent', 'default', {
+        ad_storage: hasConsented && savedAdsense ? 'granted' : 'denied',
+        ad_user_data: hasConsented && savedAdsense ? 'granted' : 'denied',
+        ad_personalization: hasConsented && savedAdsense ? 'granted' : 'denied',
+        analytics_storage: hasConsented && savedAnalytics ? 'granted' : 'denied',
+        wait_for_update: 500,
+      });
+    </script>
+
+    {
+      measurementId && (
+        <script is:inline id="gtm-injector" data-id={measurementId} data-url={gtmUrl}>
+          (function() {
+            function loadAnalytics() {
+              if (window.analyticsLoaded) return;
+              const hasConsented = localStorage.getItem('cookie-consent') !== null;
+              const savedAnalytics = localStorage.getItem('consent-analytics') === 'true';
+              if (hasConsented && savedAnalytics) {
+                const el = document.getElementById('gtm-injector');
+                const mId = el.getAttribute('data-id');
+                const gUrl = el.getAttribute('data-url');
+                
+                const script = document.createElement('script');
+                script.async = true;
+                script.src = gUrl;
+                document.head.appendChild(script);
+                
+                window.gtag = window.gtag || function() { window.dataLayer.push(arguments); };
+                window.gtag('js', new Date());
+                window.gtag('config', mId);
+                
+                window.analyticsLoaded = true;
+              }
+            }
+            loadAnalytics();
+            window.addEventListener('consent-updated', loadAnalytics);
+          })();
+        </script>
+      )
+    }
+
+    {
+      adsensePublisherAccountId && (
+        <meta name="google-adsense-account" content={adsensePublisherAccountId} />
+      )
+    }
+
+    {
+      shouldShowAdsGlobal && adsenseAutoAdsEnabled && !adsenseSandboxMode && (
+        <script is:inline id="adsense-injector" data-client={adsenseClientId}>
+          (function() {
+            function loadAdsense() {
+              if (window.adsenseLoaded) return;
+              const hasConsented = localStorage.getItem('cookie-consent') !== null;
+              const savedAdsense = localStorage.getItem('consent-ads') === 'true';
+              if (hasConsented && savedAdsense) {
+                const script = document.createElement('script');
+                script.async = true;
+                script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${document.getElementById('adsense-injector').getAttribute('data-client')}`;
+                script.crossOrigin = "anonymous";
+                document.head.appendChild(script);
+                window.adsenseLoaded = true;
+              }
+            }
+            loadAdsense();
+            window.addEventListener('consent-updated', loadAdsense);
+          })();
+        </script>
+      )
+    }
+
+    <!-- SEO slot - components inject <title>, meta tags, JSON-LD here -->
+    <slot name="head" />
+
+    <!-- Error Monitoring/Capturing -->
+  </head><div
+    id="error-config"
+    data-url={import.meta.env.PUBLIC_ERROR_REPORTING_URL || '/api/log-error'}
+    class="hidden"
+  >
+  </div>
+  <script>
+    const errorEl = document.getElementById('error-config');
+    const reportingUrl = errorEl ? errorEl.getAttribute('data-url') : '/api/log-error';
+
+    window.addEventListener('error', function (event) {
+      console.error('Captured runtime error:', event.error || event.message);
+      if (reportingUrl) {
+        fetch(reportingUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: event.message,
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno,
+            stack: event.error ? event.error.stack : null,
+            url: window.location.href,
+            timestamp: new Date().toISOString(),
+          }),
+        }).catch((err) => console.warn('Failed to send error report:', err));
+      }
+    });
+
+    window.addEventListener('unhandledrejection', function (event) {
+      console.error('Captured unhandled promise rejection:', event.reason);
+      if (reportingUrl) {
+        const reason = event.reason;
+        const stack =
+          reason && typeof reason === 'object' && 'stack' in reason ? reason.stack : null;
+        fetch(reportingUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: String(reason),
+            stack: stack,
+            url: window.location.href,
+            type: 'unhandledrejection',
+            timestamp: new Date().toISOString(),
+          }),
+        }).catch((err) => console.warn('Failed to send error report:', err));
+      }
+    });
+  </script>
+  <script>
+    // Global Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Don't trigger if user is typing in an input/textarea
+      const activeElement = document.activeElement as HTMLElement | null;
+      const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
+      if (e.key === '?' && !isInputFocused) {
+        // If a help modal existed, we would show it here.
+        // For now, we focus the main input if available.
+        const mainInput = document.getElementById('letters-input');
+        if (mainInput) {
+          e.preventDefault();
+          mainInput.focus();
+        }
+      }
+    });
+  </script>
+  <Fragment set:html={headerScripts} />
+
+  <body class="flex flex-col min-h-screen">
+    <!-- Skip to main content (WCAG 2.4.1) -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-[var(--color-primary)] focus:text-white focus:rounded-lg focus:font-semibold focus:text-sm"
+    >
+      Skip to main content
+    </a>
+    <Header />
+    <MobileMenu />
+
+    {
+      shouldShowAdsGlobal && headerAdEnabled && (headerAdType === 'html' || headerAdSlot) && (
+        <div class="mt-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+          <AdPlaceholder
+            slot_id={headerAdSlot}
+            ad_type={headerAdType as 'html' | 'adsense'}
+            html_code={headerAdHtml}
+            size="leaderboard"
+          />
+        </div>
+      )
+    }
+
+    <main id="main-content" class:list={['flex-1', className]}>
+      <slot />
+    </main>
+
+    {
+      shouldShowAdsGlobal && footerAdEnabled && (footerAdType === 'html' || footerAdSlot) && (
+        <div class="mb-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+          <AdPlaceholder
+            slot_id={footerAdSlot}
+            ad_type={footerAdType as 'html' | 'adsense'}
+            html_code={footerAdHtml}
+            size="leaderboard"
+          />
+        </div>
+      )
+    }
+
+    <Footer />
+    <UserDashboard />
+    <ToastContainer />
+
+    <!-- Premium Cookie Consent Banner -->
+    <div
+      id="cookie-consent-banner"
+      class="fixed bottom-6 right-6 left-6 md:left-auto md:max-w-md p-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)]/95 backdrop-blur-md shadow-2xl z-50 transform translate-y-20 opacity-0 transition-all duration-500 hidden"
+    >
+      <div class="flex flex-col gap-4">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl mt-0.5" aria-hidden="true">🍪</span>
+          <div>
+            <h3
+              class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-sm font-bold text-[var(--color-text-main)]"
+            >
+              We value your privacy
+            </h3>
+            <p class="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
+              We use cookies to personalize content, analyze traffic, and serve relevant ads. Check
+              our <a
+                href="/privacy-policy"
+                class="text-[var(--color-primary)] hover:underline font-semibold">Privacy Policy</a
+              >.
+            </p>
+          </div>
+        </div>
+
+        <!-- Custom Preferences Panel -->
+        <div
+          id="cookie-preferences-panel"
+          class="hidden flex-col gap-3 border-t border-[var(--color-border)] pt-3"
+        >
+          <div class="flex items-start gap-2.5">
+            <input
+              type="checkbox"
+              id="consent-necessary"
+              checked
+              disabled
+              class="mt-1 accent-[var(--color-primary)] rounded"
+            />
+            <div>
+              <label for="consent-necessary" class="text-xs font-bold text-[var(--color-text-main)]"
+                >Necessary Cookies</label
+              >
+              <p class="text-[10px] text-[var(--color-text-muted)]">
+                Required for basic site functionality and security.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2.5">
+            <input
+              type="checkbox"
+              id="consent-analytics"
+              class="mt-1 accent-[var(--color-primary)] rounded cursor-pointer"
+            />
+            <div>
+              <label
+                for="consent-analytics"
+                class="text-xs font-bold text-[var(--color-text-main)] cursor-pointer"
+                >Analytics Cookies</label
+              >
+              <p class="text-[10px] text-[var(--color-text-muted)]">
+                Allows us to understand how users interact with the site.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2.5">
+            <input
+              type="checkbox"
+              id="consent-advertising"
+              class="mt-1 accent-[var(--color-primary)] rounded cursor-pointer"
+            />
+            <div>
+              <label
+                for="consent-advertising"
+                class="text-xs font-bold text-[var(--color-text-main)] cursor-pointer"
+                >Advertising Cookies</label
+              >
+              <p class="text-[10px] text-[var(--color-text-muted)]">
+                Helps us serve relevant, personalized advertisements.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-[var(--color-border)] border-dashed"
+        >
+          <button
+            id="cookie-manage-btn"
+            class="text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
+          >
+            Customize
+          </button>
+
+          <div class="flex gap-2">
+            <button
+              id="cookie-decline-btn"
+              class="px-3.5 py-2 text-xs font-semibold rounded-xl border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-alt)] hover:text-[var(--color-text-main)] transition-colors cursor-pointer"
+            >
+              Decline All
+            </button>
+            <button
+              id="cookie-save-btn"
+              class="hidden px-3.5 py-2 text-xs font-semibold rounded-xl border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors cursor-pointer"
+            >
+              Save Preferences
+            </button>
+            <button
+              id="cookie-accept-btn"
+              class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90 transition-colors cursor-pointer"
+            >
+              Accept All
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Script to manage cookie consent and updates -->
+    <script>
+      (function () {
+        const banner = document.getElementById('cookie-consent-banner');
+        const acceptBtn = document.getElementById('cookie-accept-btn');
+        const declineBtn = document.getElementById('cookie-decline-btn');
+        const manageBtn = document.getElementById('cookie-manage-btn');
+        const saveBtn = document.getElementById('cookie-save-btn');
+        const prefPanel = document.getElementById('cookie-preferences-panel');
+        const settingsBtn = document.getElementById('open-cookie-settings');
+
+        const analyticsCheckbox = document.getElementById('consent-analytics');
+        const advertisingCheckbox = document.getElementById('consent-advertising');
+
+        if (
+          !banner ||
+          !acceptBtn ||
+          !declineBtn ||
+          !manageBtn ||
+          !saveBtn ||
+          !prefPanel ||
+          !analyticsCheckbox ||
+          !advertisingCheckbox
+        )
+          return;
+
+        function showBanner() {
+          if (!banner) return;
+          banner.classList.remove('hidden');
+          void banner.offsetHeight;
+          banner.classList.remove('translate-y-20', 'opacity-0');
+          banner.classList.add('translate-y-0', 'opacity-100');
+
+          // Initialize checkbox states from localStorage or default unchecked
+        if (analyticsCheckbox) (analyticsCheckbox as HTMLInputElement).checked = localStorage.getItem('consent-analytics') === 'true';
+        if (advertisingCheckbox) (advertisingCheckbox as HTMLInputElement).checked = localStorage.getItem('consent-ads') === 'true';
+        }
+
+        function hideBanner() {
+          if (!banner) return;
+          banner.classList.remove('translate-y-0', 'opacity-100');
+          banner.classList.add('translate-y-20', 'opacity-0');
+          setTimeout(() => {
+            banner?.classList.add('hidden');
+          }, 500);
+        }
+
+        function updateConsent(analyticsGranted: boolean, adsGranted: boolean) {
+          localStorage.setItem('cookie-consent', 'set');
+          localStorage.setItem('consent-analytics', String(analyticsGranted));
+          localStorage.setItem('consent-ads', String(adsGranted));
+
+          (window as any).gtag('consent', 'update', {
+            ad_storage: adsGranted ? 'granted' : 'denied',
+            ad_user_data: adsGranted ? 'granted' : 'denied',
+            ad_personalization: adsGranted ? 'granted' : 'denied',
+            analytics_storage: analyticsGranted ? 'granted' : 'denied',
+          });
+
+          window.dispatchEvent(new Event('consent-updated'));
+        }
+
+        // Show/Hide Preferences Panel
+        manageBtn.addEventListener('click', () => {
+          if (prefPanel.classList.contains('hidden')) {
+            prefPanel.classList.remove('hidden');
+            prefPanel.classList.add('flex');
+            saveBtn.classList.remove('hidden');
+            manageBtn.textContent = 'Hide';
+          } else {
+            prefPanel.classList.remove('flex');
+            prefPanel.classList.add('hidden');
+            saveBtn.classList.add('hidden');
+            manageBtn.textContent = 'Customize';
+          }
+        });
+
+        // Accept All
+        acceptBtn.addEventListener('click', () => {
+          updateConsent(true, true);
+          hideBanner();
+        });
+
+        // Decline All
+        declineBtn.addEventListener('click', () => {
+          updateConsent(false, false);
+          hideBanner();
+        });
+
+        // Save Preferences
+        saveBtn.addEventListener('click', () => {
+          updateConsent((analyticsCheckbox as HTMLInputElement).checked, (advertisingCheckbox as HTMLInputElement).checked);
+          hideBanner();
+        });
+
+        // Show banner if no consent state has been set yet
+        const consent = localStorage.getItem('cookie-consent');
+        if (!consent) {
+          showBanner();
+        }
+
+        if (settingsBtn) {
+          settingsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            prefPanel.classList.remove('hidden');
+            prefPanel.classList.add('flex');
+            saveBtn.classList.remove('hidden');
+            manageBtn.textContent = 'Hide';
+            showBanner();
+          });
+        }
+      })();
+    </script>
+
+    <!-- Heart Flight & Stats Celebration Animation Engine -->
+    <script>
+      // Make it globally available on the window object
+      (window as any).animateFavoriteHeart = function (sourceElement: HTMLElement) {
+        const targetElement = document.getElementById('lobby-drawer-toggle');
+        if (!targetElement) return;
+
+        const r1 = sourceElement.getBoundingClientRect();
+        const r2 = targetElement.getBoundingClientRect();
+
+        const x1 = r1.left + r1.width / 2;
+        const y1 = r1.top + r1.height / 2;
+        const x2 = r2.left + r2.width / 2;
+        const y2 = r2.top + r2.height / 2;
+
+        // Create canvas or DOM elements. DOM elements are easier and fully styleable.
+        const container = document.createElement('div');
+        container.className = 'heart-flight-container';
+        container.style.position = 'fixed';
+        container.style.left = '0';
+        container.style.top = '0';
+        container.style.width = '100vw';
+        container.style.height = '100vh';
+        container.style.pointerEvents = 'none';
+        container.style.zIndex = '99999';
+        document.body.appendChild(container);
+
+        const flier = document.createElement('div');
+        flier.style.position = 'absolute';
+        flier.style.width = '24px';
+        flier.style.height = '24px';
+        flier.style.transformOrigin = 'center center';
+        flier.style.willChange = 'transform, opacity';
+        flier.innerHTML = `<svg class="w-full h-full text-red-500 fill-red-500 filter drop-shadow-[0_2px_6px_rgba(239,68,68,0.45)]" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>`;
+        container.appendChild(flier);
+
+        // Control point for parabolic flight arc
+        const cx = (x1 + x2) / 2;
+        // Peak of arc is 180px above the higher point to give a nice high lob effect
+        const cy = Math.min(y1, y2) - 180;
+
+        const duration = 850; // 850ms total timing (12% anticipation, 88% flight)
+        const startTime = performance.now();
+
+        function easeInOutCubic(val: number) {
+          return val < 0.5 ? 4 * val * val * val : 1 - Math.pow(-2 * val + 2, 3) / 2;
+        }
+
+        function createTrailParticle(px: number, py: number) {
+          const p = document.createElement('div');
+          p.style.position = 'absolute';
+          p.style.left = `${px - 4}px`;
+          p.style.top = `${py - 4}px`;
+          p.style.width = `${6 + Math.random() * 5}px`;
+          p.style.height = p.style.width;
+          p.style.borderRadius = '50%';
+          p.style.pointerEvents = 'none';
+
+          const colors = ['#ef4444', '#f43f5e', '#ec4899', '#a855f7', '#fda4af'];
+          p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          p.style.opacity = '0.85';
+          p.style.transform = 'scale(1)';
+          p.style.willChange = 'transform, opacity';
+          container.appendChild(p);
+
+          const pDuration = 350 + Math.random() * 200;
+          const pStartTime = performance.now();
+          const dx = (Math.random() - 0.5) * 12;
+          const dy = (Math.random() - 0.3) * 10 + 6; // slow downward drift
+
+          function animateParticle(time: number) {
+            const elapsed = time - pStartTime;
+            const progress = Math.min(elapsed / pDuration, 1);
+            p.style.transform = `translate3d(${dx * progress}px, ${dy * progress}px, 0) scale(${1 - progress * 0.9})`;
+            p.style.opacity = String(0.85 * (1 - progress));
+
+            if (progress < 1) {
+              requestAnimationFrame(animateParticle);
+            } else {
+              p.remove();
+            }
+          }
+          requestAnimationFrame(animateParticle);
+        }
+
+        function triggerStatsCelebration() {
+          if (targetElement) targetElement?.classList.remove('animate-stats-bounce');
+          void targetElement?.offsetWidth; // force reflow
+          targetElement?.classList.add('animate-stats-bounce');
+
+          // Remove classes on animation end to allow repeat plays
+          const cleanup = () => {
+            targetElement?.classList.remove('animate-stats-bounce');
+            targetElement?.removeEventListener('animationend', cleanup);
+          };
+          targetElement?.addEventListener('animationend', cleanup);
+
+          // Sparkle burst confetti
+          const burstContainer = document.createElement('div');
+          burstContainer.style.position = 'fixed';
+          burstContainer.style.left = '0';
+          burstContainer.style.top = '0';
+          burstContainer.style.width = '100vw';
+          burstContainer.style.height = '100vh';
+          burstContainer.style.pointerEvents = 'none';
+          burstContainer.style.zIndex = '99999';
+          document.body.appendChild(burstContainer);
+
+          const particleCount = 16;
+          const particles: any[] = [];
+
+          for (let i = 0; i < particleCount; i++) {
+            const el = document.createElement('div');
+            el.style.position = 'absolute';
+            el.style.left = `${x2 - 6}px`;
+            el.style.top = `${y2 - 6}px`;
+            el.style.width = `${10 + Math.random() * 6}px`;
+            el.style.height = el.style.width;
+            el.style.pointerEvents = 'none';
+            el.style.willChange = 'transform, opacity';
+
+            const isHeart = Math.random() < 0.65;
+            if (isHeart) {
+              el.innerHTML = `<svg class="w-full h-full text-red-500 fill-red-500" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+            } else {
+              el.style.borderRadius = '50%';
+              const colors = [
+                '#ef4444',
+                '#f43f5e',
+                '#ec4899',
+                '#a855f7',
+                '#fda4af',
+                '#f59e0b',
+                '#10b981',
+              ];
+              el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            }
+            burstContainer.appendChild(el);
+
+            const angle = (Math.random() * 120 + 210) * (Math.PI / 180); // 210deg to 330deg (mostly upward fan)
+            const speed = 4 + Math.random() * 6;
+
+            particles.push({
+              el,
+              x: x2,
+              y: y2,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              gravity: 0.22,
+              rotation: (Math.random() - 0.5) * 360,
+              rotationSpeed: (Math.random() - 0.5) * 12,
+              scale: 0.8 + Math.random() * 0.5,
+              opacity: 1,
+            });
+          }
+
+          const burstDuration = 1100;
+          const burstStartTime = performance.now();
+
+          function animateBurst(time: number) {
+            const elapsed = time - burstStartTime;
+            const progress = Math.min(elapsed / burstDuration, 1);
+
+            particles.forEach((p) => {
+              p.x += p.vx;
+              p.y += p.vy;
+              p.vy += p.gravity;
+              p.rotation += p.rotationSpeed;
+
+              if (progress > 0.4) {
+                p.opacity = 1 - (progress - 0.4) / 0.6;
+              }
+
+              p.el.style.transform = `translate3d(${p.x - x2}px, ${p.y - y2}px, 0) rotate(${p.rotation}deg) scale(${p.scale * (1 - progress)})`;
+              p.el.style.opacity = String(p.opacity);
+            });
+
+            if (progress < 1) {
+              requestAnimationFrame(animateBurst);
+            } else {
+              burstContainer.remove();
+            }
+          }
+          requestAnimationFrame(animateBurst);
+        }
+
+        function update(time: number) {
+          const elapsed = time - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+
+          if (progress < 0.12) {
+            // Anticipation squish (0% to 12%)
+            const antProgress = progress / 0.12;
+            const scale = 1 - 0.3 * Math.sin(antProgress * Math.PI);
+            const sx = scale * 1.15;
+            const sy = scale * 0.8;
+            flier.style.transform = `translate3d(${x1 - 12}px, ${y1 - 12}px, 0) scale(${sx}, ${sy})`;
+            flier.style.opacity = '1';
+          } else {
+            // Bezier flight path (12% to 100%)
+            const flightProgress = (progress - 0.12) / 0.88;
+            const t = easeInOutCubic(flightProgress);
+
+            const x = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2;
+            const y = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2;
+
+            const tx = 2 * (1 - t) * (cx - x1) + 2 * t * (x2 - cx);
+            const ty = 2 * (1 - t) * (cy - y1) + 2 * t * (y2 - cy);
+            const angle = Math.atan2(ty, tx);
+
+            // Squash & stretch stretch along movement tangent
+            const stretchAmount = 1 + 0.45 * Math.sin(t * Math.PI);
+            const squeezeAmount = 1 / stretchAmount;
+
+            flier.style.transform = `translate3d(${x - 12}px, ${y - 12}px, 0) rotate(${angle}rad) scale(${stretchAmount}, ${squeezeAmount})`;
+
+            if (t > 0.85) {
+              flier.style.opacity = String(1 - (t - 0.85) / 0.15);
+            } else {
+              flier.style.opacity = '1';
+            }
+
+            if (Math.random() < 0.45) {
+              createTrailParticle(x, y);
+            }
+          }
+
+          if (progress < 1) {
+            requestAnimationFrame(update);
+          } else {
+            container.remove();
+            triggerStatsCelebration();
+          }
+        }
+        requestAnimationFrame(update);
+      };
+    </script>
+    <Fragment set:html={footerScripts} />
+  </body>
+
+
+</html>

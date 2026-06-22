@@ -1,0 +1,54 @@
+---
+import { SITE_URL } from '@lib/config';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEO from '../../components/seo/SEO.astro';
+import Breadcrumb from '../../components/layout/Breadcrumb.astro';
+
+export const prerender = true;
+
+const title = 'Scrabble Strategy Hub — Tips, Tricks, and Winning Plays';
+const description = 'Master Scrabble with our comprehensive strategy guides. Learn opening moves, rack management, end-game tactics, and more.';
+const canonical = new URL('/strategy', SITE_URL).href;
+
+const topics = [
+  {
+    title: 'Opening Moves',
+    description: 'Learn the best ways to start a game and control the board from the very first play.',
+    href: '/strategy/opening-moves'
+  },
+  {
+    title: 'Rack Management',
+    description: 'Discover how to balance vowels and consonants to keep your scoring potential high.',
+    href: '/strategy/rack-management'
+  },
+  {
+    title: 'End-Game Tactics',
+    description: 'Master the final turns of the game to secure your victory.',
+    href: '/strategy/end-game-tactics'
+  }
+];
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} />
+
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <Breadcrumb items={[{ label: 'Strategy Hub' }]} />
+
+    <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-text-main)] mb-4">
+      Scrabble Strategy Hub
+    </h1>
+    <p class="text-lg text-[var(--color-text-muted)] mb-8">
+      {description}
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {topics.map(topic => (
+        <a href={topic.href} class="card p-6 block hover:ring-2 hover:ring-[var(--color-primary)] transition-all">
+          <h2 class="text-xl font-bold text-[var(--color-text-main)] mb-2">{topic.title}</h2>
+          <p class="text-[var(--color-text-muted)]">{topic.description}</p>
+        </a>
+      ))}
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,108 @@
+---
+interface Props {
+  title: string;
+  slug: string;
+  date: string;
+  excerpt: string;
+  tags?: string[];
+  readingTime?: string;
+  image?: string;
+}
+
+const { title, slug, date, excerpt, tags = [], readingTime = '5 min read', image } = Astro.props;
+
+const formattedDate = new Date(date).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const href = `/blog/${slug}`;
+---
+
+<article class="group">
+  <a
+    href={href}
+    class="block rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] overflow-hidden hover:border-[var(--color-primary-light)] hover:shadow-lg transition-all duration-300"
+  >
+    <!-- Image -->
+    {
+      image ? (
+        <div class="aspect-[16/9] overflow-hidden bg-[var(--color-bg-alt)]">
+          <img
+            src={image}
+            alt={title}
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      ) : (
+        <div class="aspect-[16/9] bg-gradient-to-br from-[var(--color-primary)]/10 to-[var(--color-accent)]/10 flex items-center justify-center">
+          <span class="text-5xl opacity-50">📝</span>
+        </div>
+      )
+    }
+
+    <!-- Content -->
+    <div class="p-5">
+      <!-- Tags -->
+      {
+        tags.length > 0 && (
+          <div class="flex items-center gap-1.5 mb-2.5 flex-wrap">
+            {tags.slice(0, 3).map((tag) => (
+              <span class="inline-flex items-center rounded-md bg-[var(--color-primary)]/5 px-2 py-0.5 text-[0.65rem] font-semibold text-[var(--color-primary)] uppercase tracking-wider">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )
+      }
+
+      <!-- Title -->
+      <h3
+        class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-lg font-bold text-[var(--color-text-main)] group-hover:text-[var(--color-primary)] transition-colors duration-200 line-clamp-2 mb-2"
+      >
+        {title}
+      </h3>
+
+      <!-- Excerpt -->
+      <p class="text-sm text-[var(--color-text-muted)] line-clamp-3 leading-relaxed mb-4">
+        {excerpt}
+      </p>
+
+      <!-- Meta -->
+      <div class="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+        <time datetime={date} class="flex items-center gap-1">
+          <svg aria-hidden="true" focusable="false" class="h-3.5 w-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+            ></path>
+          </svg>
+          {formattedDate}
+        </time>
+        <span class="flex items-center gap-1">
+          <svg aria-hidden="true" focusable="false" class="h-3.5 w-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          {readingTime}
+        </span>
+      </div>
+    </div>
+  </a>
+</article>

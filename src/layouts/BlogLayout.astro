@@ -1,0 +1,391 @@
+---
+import { SITE_URL } from '@lib/config';
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import AdPlaceholder from '../components/ui/AdPlaceholder.astro';
+import { getSetting } from '../lib/getSetting';
+
+interface RelatedPost {
+  title: string;
+  slug: string;
+  date: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  ogImage?: string;
+  publishedDate: string;
+  modifiedDate?: string;
+  author?: string;
+  tags?: string[];
+  readingTime?: string;
+  relatedPosts?: RelatedPost[];
+}
+
+const {
+  title,
+  description,
+  canonical,
+  ogImage,
+  publishedDate,
+  modifiedDate,
+  author = 'Editorial Team',
+  tags = [],
+  readingTime = '5 min read',
+  relatedPosts = [],
+} = Astro.props;
+
+const siteUrl = SITE_URL;
+
+const formattedDate = new Date(publishedDate).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const formattedModifiedDate = modifiedDate
+  ? new Date(modifiedDate).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  : null;
+
+// Article Schema
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: title,
+  description,
+  image: ogImage ? `${siteUrl}${ogImage}` : undefined,
+  datePublished: publishedDate,
+  dateModified: modifiedDate || publishedDate,
+  author: {
+    '@type': 'Person',
+    name: author,
+    url: `${siteUrl}/about`,
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Scrabble Word Finder',
+    url: siteUrl,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${siteUrl}/logo.png`,
+    },
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': canonical,
+  },
+};
+
+// Breadcrumb items
+const breadcrumbItems = [{ label: 'Blog', href: '/blog' }, { label: title }];
+
+const adsenseEnabled = (await getSetting('adsense_enabled', 'false')) === 'true';
+const sidebarAdEnabled = (await getSetting('adsense_sidebar_ad_enabled', 'false')) === 'true';
+const sidebarAdSlot = await getSetting('adsense_sidebar_ad_slot', '');
+const sidebarAdType = await getSetting('adsense_sidebar_ad_type', 'adsense');
+const sidebarAdHtml = await getSetting('adsense_sidebar_ad_html', '');
+
+// Exclusions Path check
+const currentPath = Astro.url.pathname;
+const excludedPathsRaw = await getSetting('adsense_excluded_paths', '/admin/*, /login, /404');
+const excludedPaths = excludedPathsRaw
+  .split(',')
+  .map((p) => p.trim())
+  .filter(Boolean);
+
+let isPathExcluded = false;
+for (const pattern of excludedPaths) {
+  if (pattern.endsWith('*')) {
+    const prefix = pattern.slice(0, -1);
+    if (currentPath.startsWith(prefix)) {
+      isPathExcluded = true;
+      break;
+    }
+  } else if (currentPath === pattern) {
+    isPathExcluded = true;
+    break;
+  }
+}
+
+const shouldShowSidebarAd =
+  adsenseEnabled &&
+  sidebarAdEnabled &&
+  !isPathExcluded &&
+  (sidebarAdType === 'html' || sidebarAdSlot);
+---
+
+<BaseLayout>
+  <Fragment slot="head">
+    <SEO
+      title={title}
+      description={description}
+      canonical={canonical}
+      ogImage={ogImage}
+      type="article"
+      publishedDate={publishedDate}
+    />
+    <JsonLd schema={articleSchema} />
+    <slot name="head" />
+  </Fragment>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <Breadcrumb items={breadcrumbItems} />
+
+    <div class="lg:grid lg:grid-cols-[1fr_300px] lg:gap-10">
+      <!-- Article Content -->
+      <article class="min-w-0">
+        <!-- Article Header -->
+        <header class="mb-8">
+          {
+            tags.length > 0 && (
+              <div class="flex items-center gap-1.5 mb-3 flex-wrap">
+                {tags.map((tag) => (
+                  <a
+                    href={`/blog/tag/${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                    class="inline-flex items-center rounded-md bg-[var(--color-primary)]/5 px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)] uppercase tracking-wider hover:bg-[var(--color-primary)]/10 transition-colors"
+                  >
+                    {tag}
+                  </a>
+                ))}
+              </div>
+            )
+          }
+
+          <h1
+            class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--color-text-main)] leading-tight mb-4"
+          >
+            {title}
+          </h1>
+
+          <p class="text-lg text-[var(--color-text-muted)] leading-relaxed mb-5">
+            {description}
+          </p>
+
+          <div
+            class="flex items-center gap-4 text-sm text-[var(--color-text-muted)] flex-wrap border-b border-[var(--color-border)] pb-5"
+          >
+            <span class="flex items-center gap-1.5">
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                ></path>
+              </svg>
+              <time datetime={publishedDate}>{formattedDate}</time>
+            </span>
+            {
+              formattedModifiedDate && (
+                <span class="flex items-center gap-1.5 text-xs">
+                  (Updated: {formattedModifiedDate})
+                </span>
+              )
+            }
+            <span class="flex items-center gap-1.5">
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              {readingTime}
+            </span>
+            <span class="flex items-center gap-1.5">
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                ></path>
+              </svg>
+              {author}
+            </span>
+          </div>
+        </header>
+
+        <!-- Cover Image -->
+        {
+          ogImage && (
+            <div class="mb-8 rounded-2xl overflow-hidden border border-[var(--color-border)] max-h-[440px] shadow-sm animate-entrance delay-1">
+              <img
+                src={ogImage}
+                alt={title}
+                class="w-full h-full object-cover"
+                width="800"
+                height="440"
+              />
+            </div>
+          )
+        }
+
+        <!-- Article Body - prose-like styling -->
+        <div
+          class="prose-content
+          [&>p]:text-base [&>p]:leading-relaxed [&>p]:text-[var(--color-text-main)] [&>p]:mb-5
+          [&>h2]:font-['Plus_Jakarta_Sans',system-ui,sans-serif] [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:text-[var(--color-text-main)] [&>h2]:mt-10 [&>h2]:mb-4
+          [&>h3]:font-['Plus_Jakarta_Sans',system-ui,sans-serif] [&>h3]:text-xl [&>h3]:font-bold [&>h3]:text-[var(--color-text-main)] [&>h3]:mt-8 [&>h3]:mb-3
+          [&>h4]:font-['Plus_Jakarta_Sans',system-ui,sans-serif] [&>h4]:text-lg [&>h4]:font-semibold [&>h4]:text-[var(--color-text-main)] [&>h4]:mt-6 [&>h4]:mb-2
+          [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-5 [&>ul]:space-y-1.5 [&>ul]:text-[var(--color-text-main)]
+          [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-5 [&>ol]:space-y-1.5 [&>ol]:text-[var(--color-text-main)]
+          [&>blockquote]:border-l-4 [&>blockquote]:border-[var(--color-primary)] [&>blockquote]:bg-[var(--color-primary-light)] [&>blockquote]:px-5 [&>blockquote]:py-4 [&>blockquote]:rounded-r-lg [&>blockquote]:my-6 [&>blockquote]:italic [&>blockquote]:text-[var(--color-text-muted)]
+          [&>pre]:bg-[var(--color-bg-alt)] [&>pre]:text-[var(--color-text-main)] [&>pre]:rounded-xl [&>pre]:p-4 [&>pre]:overflow-x-auto [&>pre]:my-6 [&>pre]:border [&>pre]:border-[var(--color-border)]
+          [&>code]:bg-[var(--color-bg-alt)] [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded-md [&>code]:text-sm [&>code]:text-[var(--color-primary)] [&>code]:font-mono
+          [&>a]:text-[var(--color-primary)] [&>a]:underline [&>a]:decoration-[var(--color-primary)]/30 [&>a]:hover:decoration-[var(--color-primary)] [&>a]:transition-colors
+          [&>img]:rounded-xl [&>img]:my-6 [&>img]:shadow-md
+          [&>table]:w-full [&>table]:my-6 [&>table]:border-collapse [&>table>thead>tr>th]:bg-[var(--color-bg-alt)] [&>table>thead>tr>th]:px-4 [&>table>thead>tr>th]:py-2.5 [&>table>thead>tr>th]:text-left [&>table>thead>tr>th]:text-sm [&>table>thead>tr>th]:font-semibold [&>table>tbody>tr>td]:px-4 [&>table>tbody>tr>td]:py-2.5 [&>table>tbody>tr>td]:border-t [&>table>tbody>tr>td]:border-[var(--color-border)] [&>table>tbody>tr>td]:text-sm
+          [&>hr]:border-[var(--color-border)] [&>hr]:my-8"
+        >
+          <slot />
+        </div>
+
+        <!-- Author Byline -->
+        <div class="mt-12 p-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-offset)]/30 flex items-start gap-5">
+          <div class="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
+            {author.charAt(0)}
+          </div>
+          <div>
+            <p class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] font-bold text-lg text-[var(--color-text-main)] mb-1">
+              Written by {author}
+            </p>
+            <p class="text-[var(--color-text-muted)] text-sm leading-relaxed">
+              The {author} is a group of passionate word game experts dedicated to bringing you the best strategies, word lists, and game tips to improve your Scrabble, Words with Friends, and Wordle scores.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- Sidebar -->
+      <aside class="hidden lg:block">
+        <div class="sticky top-24 space-y-6">
+          <!-- Sidebar Sticky Ad -->
+          {
+            shouldShowSidebarAd && (
+              <AdPlaceholder
+                slot_id={sidebarAdSlot}
+                ad_type={sidebarAdType as 'html' | 'adsense'}
+                html_code={sidebarAdHtml}
+                size="skyscraper"
+              />
+            )
+          }
+          <!-- Related Posts -->
+          {
+            relatedPosts.length > 0 && (
+              <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5">
+                <h3 class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider mb-4">
+                  Related Articles
+                </h3>
+                <div class="space-y-3">
+                  {relatedPosts.map((post) => (
+                    <a href={`/blog/${post.slug}`} class="block group">
+                      <p class="text-sm font-medium text-[var(--color-text-main)] group-hover:text-[var(--color-primary)] transition-colors line-clamp-2">
+                        {post.title}
+                      </p>
+                      <p class="text-xs text-[var(--color-text-muted)] mt-0.5">
+                        {new Date(post.date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+
+          <!-- Word Finder CTA -->
+          <div
+            class="rounded-2xl bg-[var(--color-primary-light)] border border-[var(--color-border)] p-5 text-[var(--color-text-main)]"
+          >
+            <h3
+              class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-base font-bold text-[var(--color-primary)] mb-2"
+            >
+              Need to find words?
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] mb-4 leading-relaxed">
+              Use our free Scrabble Word Finder to discover high-scoring words instantly.
+            </p>
+            <a
+              href="/"
+              class="group relative flex items-center justify-center gap-2 w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-[var(--color-primary)] text-white rounded-xl px-4 py-3 text-sm font-bold shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:-translate-y-1 hover:scale-105 transition-all duration-300 overflow-hidden"
+            >
+              <!-- Moving shine sweep effect -->
+              <span
+                class="absolute top-0 -left-[100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] group-hover:left-[200%] transition-all duration-700 ease-out"
+              ></span>
+
+              <svg
+                class="h-4 w-4 relative z-10 group-hover:-rotate-12 group-hover:scale-125 transition-transform duration-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2.5"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                ></path>
+              </svg>
+              <span class="relative z-10 tracking-wide">Find Words Now</span>
+
+              <!-- Inner animated border -->
+              <span
+                class="absolute inset-0 rounded-xl border border-white/10 group-hover:border-white/40 transition-all duration-300 opacity-0 group-hover:opacity-100"
+              ></span>
+            </a>
+          </div>
+
+          <!-- Popular Tags -->
+          {
+            tags.length > 0 && (
+              <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5">
+                <h3 class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider mb-3">
+                  Tags
+                </h3>
+                <div class="flex flex-wrap gap-1.5">
+                  {tags.map((tag) => (
+                    <a
+                      href={`/blog/tag/${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                      class="inline-flex items-center rounded-lg bg-[var(--color-bg-alt)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)] transition-colors"
+                    >
+                      {tag}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

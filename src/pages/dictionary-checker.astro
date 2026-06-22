@@ -1,0 +1,360 @@
+---
+import { SITE_URL } from '@lib/config';
+import { TWL_SCORES, ENABLE_SCORES, SOWPODS_SCORES } from '../data/tileScores';
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import DictionaryForm from '../components/ui/DictionaryForm.astro';
+import AdPlaceholder from '../components/ui/AdPlaceholder.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import FAQSection from '../components/ui/FAQSection.astro';
+import SmartScrabbleCoach from '@components/ui/SmartScrabbleCoach.astro';
+
+// Set long CDN cache headers for optimal performance
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=86400');
+
+const title = 'Scrabble Dictionary Checker — Is Your Word Valid?';
+const description =
+  'Check if a word is valid in Scrabble dictionaries (TWL, SOWPODS, ENABLE). See point values and definitions instantly.';
+const canonical = new URL(Astro.url.pathname, SITE_URL).href;
+
+const faqs = [
+  {
+    question: 'Is this Scrabble dictionary checker official?',
+    answer:
+      'Our checker uses official word lists including the North American TWL (official Hasbro list), SOWPODS (international standard), and ENABLE (Words With Friends lexicon) to provide 100% accurate validation.',
+  },
+  {
+    question: 'What happens if a word is invalid in Scrabble?',
+    answer:
+      'In standard tournament play, if you play an invalid word and your opponent challenges it, your turn is forfeited, and you must take your tiles back.',
+  },
+  {
+    question: 'Why do some words work in Words with Friends but not Scrabble?',
+    answer:
+      'Words With Friends uses the ENABLE dictionary, which includes many slang, colloquial, and modern terms that are excluded from the traditional Scrabble dictionaries (TWL and SOWPODS).',
+  },
+];
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} faqs={faqs} />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'Scrabble Dictionary Checker',
+      url: `${SITE_URL}/dictionary-checker`,
+      description,
+      applicationCategory: 'GameApplication',
+      operatingSystem: 'Any',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    }}
+  />
+  <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Dictionary Checker' }]} />
+
+  <!-- Premium Blur Background Accent -->
+  <div
+    class="absolute top-0 left-0 w-full h-[650px] pointer-events-none overflow-hidden -z-10 opacity-75"
+  >
+    <div
+      class="absolute top-[-12%] left-[10%] w-[40%] h-[55%] rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] blur-[100px] opacity-15 dark:opacity-[0.25] animate-pulse"
+      style="animation-duration: 8s;"
+    >
+    </div>
+    <div
+      class="absolute top-[-8%] right-[10%] w-[35%] h-[50%] rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 blur-[110px] opacity-15 dark:opacity-[0.22] animate-pulse"
+      style="animation-duration: 12s; animation-delay: 2s;"
+    >
+    </div>
+    <div
+      class="absolute top-[15%] left-[35%] w-[30%] h-[40%] rounded-full bg-gradient-to-br from-amber-400/20 to-pink-500/10 blur-[120px] opacity-10 dark:opacity-[0.15] animate-pulse"
+      style="animation-duration: 10s; animation-delay: 4s;"
+    >
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="py-12 md:py-16 relative">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="text-center">
+        <h1
+          class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 leading-tight animate-entrance bg-gradient-to-r from-[var(--color-primary)] via-indigo-600 to-purple-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent"
+        >
+          Scrabble Dictionary
+        </h1>
+        <p
+          class="text-base md:text-lg text-[var(--color-text-muted)] mb-8 max-w-2xl mx-auto animate-entrance delay-1"
+        >
+          Check if a word is valid in TWL (US/Canada), SOWPODS (International), or ENABLE (Words
+          With Friends) dictionaries.
+        </p>
+        <div class="max-w-2xl mx-auto text-left animate-entrance delay-2">
+          <DictionaryForm />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results Section -->
+  <section class="py-8 md:py-12">
+    <div class="container mx-auto px-4 max-w-2xl">
+      <div id="check-results" class="min-h-[100px]">
+        <div id="check-empty" class="text-center py-12 text-gray-400">
+          <svg
+            class="w-14 h-14 mx-auto mb-3 opacity-40"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg
+          >
+          <p class="font-medium">Type a word above to check its validity</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container mx-auto px-4 max-w-2xl">
+    <AdPlaceholder slot_id="dict-checker-mid" class="my-8" />
+  </div>
+
+  <section class="py-10 border-t border-b border-[var(--color-border)] bg-[var(--color-bg-alt)]/20">
+    <div class="container mx-auto px-4 max-w-2xl">
+      <SmartScrabbleCoach />
+    </div>
+  </section>
+
+  <!-- SEO Content -->
+  <section class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-3xl prose prose-lg">
+      <h2 class="text-2xl font-bold mb-4">About the Scrabble Dictionary Checker</h2>
+      <p>
+        Our dictionary checker validates words against the three most popular word-game
+        dictionaries:
+      </p>
+      <ul>
+        <li>
+          <strong>TWL (Tournament Word List)</strong> — The official dictionary for North American Scrabble
+          tournaments, maintained by Hasbro. Contains approximately 187,000 words.
+        </li>
+        <li>
+          <strong>SOWPODS</strong> — The combined international Scrabble dictionary used in most countries
+          outside North America. It merges the TWL and OSW dictionaries, containing over 267,000 words.
+        </li>
+        <li>
+          <strong>ENABLE</strong> — The dictionary used by Words With Friends, with its own unique set
+          of accepted words and different letter point values.
+        </li>
+      </ul>
+
+      <h2 class="text-2xl font-bold mt-10 mb-4">How to Use This Tool</h2>
+      <ol>
+        <li>Type any word into the search box above.</li>
+        <li>Click "Check Word" or press Enter.</li>
+        <li>
+          See instantly whether the word is valid in each dictionary, along with its Scrabble score.
+        </li>
+        <li>If the word is found, we'll also show its definition.</li>
+      </ol>
+
+      <h2 class="text-2xl font-bold mt-10 mb-4">Why Check Words?</h2>
+      <p>
+        In competitive Scrabble, playing an invalid word results in the loss of your turn and the
+        removal of your tiles. Using a dictionary checker before your game helps you build
+        confidence in your word choices. During practice sessions, checking words helps expand your
+        vocabulary and learn new high-scoring options.
+      </p>
+      <FAQSection faqs={faqs} />
+    </div>
+  </section>
+</BaseLayout>
+
+<script is:inline define:vars={{ TWL_SCORES, ENABLE_SCORES, SOWPODS_SCORES }}>
+  (function () {
+    'use strict';
+
+    const TILE_SCORES = {
+      TWL: TWL_SCORES,
+      SOWPODS: SOWPODS_SCORES,
+      ENABLE: ENABLE_SCORES,
+    };
+
+    const DICT_LABELS = {
+      TWL: 'TWL (Scrabble NA)',
+      SOWPODS: 'SOWPODS (International)',
+      ENABLE: 'ENABLE (Words With Friends)',
+    };
+
+    function renderTiles(word, dict) {
+      const s = TILE_SCORES[dict] || TILE_SCORES.TWL;
+      return word
+        .toUpperCase()
+        .split('')
+        .map((c) => `<span class="tile">${c}<sub>${s[c] || 0}</sub></span>`)
+        .join('');
+    }
+
+    const resultsContainer = document.getElementById('check-results');
+    const emptyState = document.getElementById('check-empty');
+    const form = document.getElementById('dictionary-form');
+    const wordInput = document.getElementById('check-word');
+
+    async function checkWord() {
+      const word = wordInput?.value?.trim();
+      if (!word) return;
+      if (!/^[a-zA-Z]+$/.test(word)) {
+        resultsContainer.innerHTML = `<div class="text-center py-8 text-red-500"><p class="font-medium">Please enter only letters (A-Z)</p></div>`;
+        return;
+      }
+
+      if (emptyState) emptyState.classList.add('hidden');
+      resultsContainer.innerHTML = `
+      <div class="flex items-center justify-center py-12">
+        <div class="w-8 h-8 border-4 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin"></div>
+      </div>`;
+
+      try {
+        const res = await fetch('/api/check-word', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word }),
+        });
+        if (!res.ok) {
+          let errorMsg = `HTTP ${res.status}`;
+          try {
+            const errData = await res.json();
+            if (errData && errData.error) errorMsg = errData.error;
+          } catch {}
+          throw new Error(errorMsg);
+        }
+        const data = await res.json();
+
+        // API returns: { word, validInTWL, validInSOWPODS, validInENABLE, scores: { twl, sowpods, enable } }
+        const validMap = {
+          TWL: data.validInTWL,
+          SOWPODS: data.validInSOWPODS,
+          ENABLE: data.validInENABLE,
+        };
+        const scoreMap = {
+          TWL: data.scores?.twl || 0,
+          SOWPODS: data.scores?.sowpods || 0,
+          ENABLE: data.scores?.enable || 0,
+        };
+
+        let html = `<div class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] shadow-sm overflow-hidden">`;
+        html += `<div class="p-5 border-b border-[var(--color-border)] bg-[var(--color-bg-alt)]">
+        <div class="flex items-center gap-2 justify-center mb-2">${renderTiles(data.word || word, 'TWL')}</div>
+        <h2 class="text-2xl font-bold uppercase tracking-wide text-center text-[var(--color-text-main)]">${(data.word || word).toUpperCase()}</h2>
+      </div>`;
+
+        // Dictionary results
+        html += `<div class="divide-y">`;
+        for (const dict of ['TWL', 'SOWPODS', 'ENABLE']) {
+          const valid = validMap[dict];
+          const score = scoreMap[dict];
+          html += `
+          <div class="flex items-center justify-between px-5 py-4">
+            <div>
+              <span class="font-medium text-sm">${DICT_LABELS[dict]}</span>
+              ${
+                valid
+                  ? `<span class="ml-2 inline-flex items-center text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">✓ Valid</span>`
+                  : `<span class="ml-2 inline-flex items-center text-xs font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">✗ Invalid</span>`
+              }
+            </div>
+            ${valid ? `<span class="score-badge">${score} pts</span>` : ''}
+          </div>`;
+        }
+        html += `</div>`;
+        html += `</div>`;
+
+        // Definition section
+        html += `<div id="definition-section" class="mt-6"></div>`;
+        resultsContainer.innerHTML = html;
+
+        // Fetch definition
+        fetchDefinition(word);
+      } catch (err) {
+        resultsContainer.innerHTML = `<div class="text-center py-8 text-red-500"><p class="font-medium">Error checking word</p><p class="text-sm mt-1">${err.message}</p></div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function fetchDefinition(word) {
+      const defSection = document.getElementById('definition-section');
+      if (!defSection) return;
+      defSection.innerHTML = `<div class="flex items-center gap-2 text-[var(--color-text-muted)] text-sm"><div class="w-4 h-4 border-2 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin"></div>Loading definition…</div>`;
+
+      try {
+        const res = await fetch(`/api/definition?word=${encodeURIComponent(word.toLowerCase())}`);
+        if (!res.ok) throw new Error('Not found');
+        const data = await res.json();
+
+        if (!data.definitions || data.definitions.length === 0) {
+          throw new Error('No definition available');
+        }
+
+        let html = `<div class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 animate-entrance">`;
+        html += `<h3 class="font-bold text-lg mb-3 text-[var(--color-text-main)]">Definition</h3>`;
+        if (data.source) {
+          html += `<p class="text-xs text-[var(--color-text-muted)] italic mb-4">Definition provided by ${escapeHtml(data.source)}</p>`;
+        }
+
+        data.definitions.forEach((meaning) => {
+          html += `<div class="mb-4"><span class="inline-block text-xs font-semibold uppercase tracking-wide bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] px-2 py-0.5 rounded mb-2">${escapeHtml(meaning.partOfSpeech)}</span>`;
+          html += `<ol class="list-decimal list-inside space-y-1.5 text-sm text-[var(--color-text-main)]">`;
+          meaning.definitions?.slice(0, 3).forEach((def) => {
+            html += `<li>${escapeHtml(def.definition)}`;
+            if (def.example)
+              html += `<p class="text-[var(--color-text-muted)] opacity-80 italic ml-5 mt-0.5">"${escapeHtml(def.example)}"</p>`;
+            html += `</li>`;
+          });
+          html += `</ol></div>`;
+        });
+        html += `</div>`;
+        defSection.innerHTML = html;
+      } catch {
+        defSection.innerHTML = `<p class="text-sm text-[var(--color-text-muted)]">No definition available for this word.</p>`;
+      }
+    }
+
+    if (form)
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        checkWord();
+      });
+    if (wordInput)
+      wordInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          checkWord();
+        }
+      });
+
+    // Prefill word from URL query parameter ?word=
+    const urlParams = new URLSearchParams(window.location.search);
+    const wordParam = urlParams.get('word');
+    if (wordParam && wordInput) {
+      const sanitizedWord = wordParam.toUpperCase().replace(/[^A-Z]/g, '');
+      if (sanitizedWord) {
+        wordInput.value = sanitizedWord;
+        checkWord();
+      }
+    }
+  })();
+</script>

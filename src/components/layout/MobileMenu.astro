@@ -1,0 +1,223 @@
+---
+interface NavLink {
+  label: string;
+  href: string;
+  icon?: string;
+}
+
+const mainLinks: NavLink[] = [
+  { label: 'Word Finder', href: '/', icon: '🔍' },
+  { label: 'Dictionary Checker', href: '/dictionary-checker', icon: '📖' },
+  { label: 'Word Checker', href: '/word-checker', icon: '✅' },
+  { label: 'Word Generator', href: '/word-generator', icon: '⚡' },
+  { label: 'Crossword Solver', href: '/crossword-solver', icon: '🧩' },
+  { label: 'Wordle Solver', href: '/wordle-solver', icon: '🟩' },
+  { label: 'Two Letter Words', href: '/two-letter-scrabble-words', icon: '🔤' },
+  { label: 'Word Lists', href: '/word-lists', icon: '📋' },
+  { label: 'WWF Finder', href: '/words-with-friends-cheat', icon: '🎮' },
+  { label: 'Blog', href: '/blog', icon: '✍️' },
+];
+
+const wordListLinks: NavLink[] = [
+  { label: '2-Letter Words', href: '/two-letter-scrabble-words' },
+  { label: '3-Letter Words', href: '/3-letter-words' },
+  { label: '4-Letter Words', href: '/4-letter-words' },
+  { label: '5-Letter Words', href: '/5-letter-words' },
+  { label: 'Words with Q', href: '/words-containing-q' },
+  { label: 'Words with Z', href: '/words-containing-z' },
+  { label: 'Words with X', href: '/words-containing-x' },
+  { label: 'Words with J', href: '/words-containing-j' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<div
+  id="mobile-menu"
+  class="hidden fixed inset-0 z-50 lg:hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Mobile navigation"
+>
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="mobile-menu-backdrop"></div>
+
+  <!-- Panel -->
+  <div
+    class="absolute inset-y-0 right-0 w-full max-w-sm shadow-2xl overflow-y-auto"
+    style="background-color: var(--color-card); border-left: 1px solid var(--color-border);"
+  >
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
+      <a href="/" class="flex items-center animate-fade-in">
+        <span
+          class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-lg font-bold text-[var(--color-text-main)]"
+        >
+          Scrabble Word Finder
+        </span>
+      </a>
+      <button
+        type="button"
+        id="mobile-menu-close"
+        class="flex items-center justify-center h-10 w-10 rounded-xl text-[var(--color-text-muted)] hover:bg-[var(--color-bg-alt)] transition-colors"
+        aria-label="Close menu"
+      >
+        <svg aria-hidden="true" focusable="false" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Search CTA -->
+    <div class="px-5 py-4">
+      <a
+        href="/#word-finder-form"
+        id="mobile-cta-btn"
+        class="flex items-center justify-center gap-2 w-full btn-primary text-base font-semibold shadow-sm"
+      >
+        <svg aria-hidden="true" focusable="false" class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+        </svg>
+        Find Words Now
+      </a>
+    </div>
+
+    <!-- Main Nav -->
+    <nav class="px-3 pb-4" aria-label="Mobile navigation">
+      <p
+        class="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]"
+      >
+        Tools
+      </p>
+      <ul class="space-y-0.5">
+        {
+          mainLinks.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class:list={[
+                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+                  currentPath === link.href ||
+                  (link.href !== '/' && currentPath.startsWith(link.href))
+                    ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold'
+                    : 'text-[var(--color-text-main)] hover:bg-[var(--color-bg-alt)]',
+                ]}
+              >
+                <span class="text-lg" aria-hidden="true">
+                  {link.icon}
+                </span>
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <!-- Word Lists Section -->
+    <div class="px-3 pb-6 border-t border-[var(--color-border)] pt-4">
+      <p
+        class="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]"
+      >
+        Popular Word Lists
+      </p>
+      <ul class="space-y-0.5">
+        {
+          wordListLinks.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class:list={[
+                  'flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors',
+                  currentPath === link.href
+                    ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-bg-alt)]',
+                ]}
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full bg-[var(--color-border)]"
+                  aria-hidden="true"
+                />
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <!-- Footer Note -->
+    <div class="px-5 py-4 border-t border-[var(--color-border)] bg-[var(--color-bg-alt)]">
+      <p class="text-xs text-[var(--color-text-muted)] leading-relaxed">
+        SCRABBLE ® is a registered trademark. All intellectual property rights in and to the game
+        are owned in the U.S.A. by Hasbro, Inc., in Canada by Hasbro Canada, Inc., and throughout
+        the rest of the world, by J.W. Spear & Sons, PLC of Enfield, Middlesex, England, a
+        subsidiary of Mattel Inc. Mattel & Spear are not affiliated with Hasbro or Hasbro Canada. ©
+        2026 Scopely
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const closeBtn = document.getElementById('mobile-menu-close');
+  const backdrop = document.getElementById('mobile-menu-backdrop');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const hamburgerIcon = document.getElementById('hamburger-icon');
+  const closeIcon = document.getElementById('close-icon');
+
+  function closeMobileMenu() {
+    if (mobileMenu && menuBtn && hamburgerIcon && closeIcon) {
+      mobileMenu.classList.add('hidden');
+      hamburgerIcon.classList.remove('hidden');
+      closeIcon.classList.add('hidden');
+      menuBtn.setAttribute('aria-expanded', 'false');
+
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+  }
+
+  closeBtn?.addEventListener('click', closeMobileMenu);
+  backdrop?.addEventListener('click', closeMobileMenu);
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && mobileMenu && !mobileMenu.classList.contains('hidden')) {
+      closeMobileMenu();
+    }
+  });
+
+  // Smooth scroll and focus on homepage mobile CTA
+  const mobileCta = document.getElementById('mobile-cta-btn');
+  if (mobileCta) {
+    mobileCta.addEventListener('click', (e) => {
+      if (window.location.pathname === '/' || window.location.pathname === '') {
+        e.preventDefault();
+        closeMobileMenu();
+
+        const target = document.getElementById('word-finder-form');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const lettersInput = document.getElementById('letters-input');
+          if (lettersInput) {
+            setTimeout(() => lettersInput.focus(), 400); // Focus after scroll completes
+          }
+        }
+      }
+    });
+  }
+</script>

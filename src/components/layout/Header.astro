@@ -1,0 +1,268 @@
+---
+import { getSetting } from '../../lib/getSetting';
+
+interface NavLink {
+  label: string;
+  href: string;
+}
+
+const defaultNavLinks: NavLink[] = [
+  { label: 'Dictionary Checker', href: '/dictionary-checker' },
+  { label: 'Two Letter Words', href: '/two-letter-scrabble-words' },
+  { label: 'Word Lists', href: '/word-lists' },
+  { label: 'WWF Finder', href: '/words-with-friends-cheat' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'About', href: '/about' },
+];
+
+const navLinksSetting = await getSetting('nav_links', '');
+let navLinks = defaultNavLinks;
+if (navLinksSetting) {
+  try {
+    const parsed = JSON.parse(navLinksSetting);
+    if (Array.isArray(parsed)) {
+      navLinks = parsed;
+    }
+  } catch (e) {
+    console.error('Error parsing nav_links setting:', e);
+  }
+}
+
+const currentPath = Astro.url.pathname;
+
+function isActive(href: string): boolean {
+  if (href === '/') return currentPath === '/';
+  return currentPath.startsWith(href);
+}
+
+const siteName = await getSetting('site_name', 'Scrabble Word Finder');
+---
+
+<header
+  class="sticky top-0 z-40 w-full border-b border-[var(--color-border)] bg-[var(--color-bg)]/80 backdrop-blur-md transition-colors duration-300"
+>
+  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <!-- Logo -->
+    <a href="/" class="flex items-center h-full group" aria-label={`${siteName} Home`}>
+      <span
+        class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-lg font-bold tracking-tight text-[var(--color-text-main)] group-hover:text-[var(--color-primary)] transition-colors leading-none"
+      >
+        <span class="hidden sm:inline">{siteName}</span>
+        <span class="sm:hidden font-bold">{siteName.split(' ')[0]}</span>
+      </span>
+    </a>
+
+    <!-- Desktop Navigation -->
+    <nav class="hidden lg:flex items-center gap-1" aria-label="Main navigation">
+      {
+        navLinks.map((link) => (
+          <a
+            href={link.href}
+            class:list={[
+              'btn-nav',
+              isActive(link.href)
+                ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold'
+                : '',
+            ]}
+            aria-current={isActive(link.href) ? 'page' : undefined}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <!-- Right side: Theme Toggle + CTA + Hamburger -->
+    <div class="flex items-center gap-2">
+      <!-- Theme Toggle Button -->
+      <button
+        type="button"
+        id="theme-toggle"
+        class="flex items-center justify-center h-10 w-10 rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-bg-alt)] transition-all duration-200"
+        aria-label="Toggle dark mode"
+        title="Toggle dark/light mode"
+      >
+        <!-- Sun icon (shown in dark mode) -->
+        <svg aria-hidden="true" focusable="false" id="theme-sun"
+          class="h-5 w-5 hidden"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
+          ></path>
+        </svg>
+        <!-- Moon icon (shown in light mode) -->
+        <svg aria-hidden="true" focusable="false" id="theme-moon"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
+          ></path>
+        </svg>
+      </button>
+
+      <!-- Desktop CTA -->
+      <a
+        href="/#word-finder-form"
+        id="header-cta-btn"
+        class="hidden lg:inline-flex btn-primary !px-4 !py-2 text-sm"
+      >
+        <svg aria-hidden="true" focusable="false" class="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+        </svg>
+        Find Words
+      </a>
+
+      <!-- Mobile Hamburger Button -->
+      <button
+        type="button"
+        id="mobile-menu-btn"
+        class="lg:hidden flex items-center justify-center h-10 w-10 rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-bg-alt)] transition-colors"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
+        <svg aria-hidden="true" focusable="false" id="hamburger-icon"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
+        </svg>
+        <svg aria-hidden="true" focusable="false" id="close-icon"
+          class="h-6 w-6 hidden"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<script>
+  // --- Mobile Menu Toggle ---
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const hamburgerIcon = document.getElementById('hamburger-icon');
+  const closeIcon = document.getElementById('close-icon');
+
+  if (menuBtn && mobileMenu && hamburgerIcon && closeIcon) {
+    menuBtn.addEventListener('click', () => {
+      const isOpening = mobileMenu.classList.contains('hidden');
+      mobileMenu.classList.toggle('hidden');
+      hamburgerIcon.classList.toggle('hidden');
+      closeIcon.classList.toggle('hidden');
+      menuBtn.setAttribute('aria-expanded', String(isOpening));
+      if (isOpening) {
+        const scrollY = window.scrollY;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
+      } else {
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    });
+  }
+
+  // --- Theme Toggle ---
+  const themeToggle = document.getElementById('theme-toggle');
+  const sunIcon = document.getElementById('theme-sun');
+  const moonIcon = document.getElementById('theme-moon');
+
+  function getStoredTheme(): string | null {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem('theme');
+    }
+    return null;
+  }
+
+  function getPreferredTheme(): string {
+    const stored = getStoredTheme();
+    if (stored) return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme: string) {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (sunIcon && moonIcon) {
+      if (theme === 'dark') {
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+      } else {
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+      }
+    }
+  }
+
+  // Apply theme immediately on page load
+  applyTheme(getPreferredTheme());
+
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = current === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      localStorage.setItem('theme', next);
+    });
+  }
+
+  // Listen for system preference changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!getStoredTheme()) {
+      applyTheme(e.matches ? 'dark' : 'light');
+    }
+  });
+
+  // Smooth scroll and auto-focus for homepage CTA
+  const ctaBtn = document.getElementById('header-cta-btn');
+  if (ctaBtn) {
+    ctaBtn.addEventListener('click', (e) => {
+      if (window.location.pathname === '/' || window.location.pathname === '') {
+        e.preventDefault();
+        const target = document.getElementById('word-finder-form');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const lettersInput = document.getElementById('letters-input');
+          if (lettersInput) {
+            setTimeout(() => lettersInput.focus(), 400); // Focus after scroll completes
+          }
+        }
+      }
+    });
+  }
+</script>

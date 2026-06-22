@@ -1,0 +1,327 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '@layouts/BaseLayout.astro';
+import SEO from '@components/seo/SEO.astro';
+import Breadcrumb from '@components/layout/Breadcrumb.astro';
+
+const lastUpdated = 'June 20, 2026';
+const title = 'Privacy Policy — Scrabble Word Finder';
+const description =
+  'Privacy Policy for Scrabble Word Finder. Learn how we collect, use, and protect your data when you use our word finder tool and website.';
+const canonical = new URL(Astro.url.pathname, SITE_URL).href;
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} />
+
+  <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Privacy Policy' }]} />
+
+  <section class="max-w-4xl mx-auto px-4 py-12">
+    <!-- Page Header -->
+    <div class="mb-10">
+      <h1
+        class="text-4xl md:text-5xl font-extrabold text-[var(--color-text-main)] mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif] animate-entrance"
+      >
+        Privacy Policy
+      </h1>
+      <p class="text-sm text-[var(--color-text-muted)] animate-entrance delay-1">
+        Last Updated: {lastUpdated}
+      </p>
+    </div>
+
+    <!-- Policy Content -->
+    <div class="card p-8 md:p-10 animate-entrance delay-2">
+      <div
+        class="prose-content
+        [&>p]:text-base [&>p]:leading-relaxed [&>p]:text-[var(--color-text-main)] [&>p]:mb-5
+        [&>h2]:font-['Plus_Jakarta_Sans',system-ui,sans-serif] [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-[var(--color-text-main)] [&>h2]:mt-8 [&>h2]:mb-3
+        [&>h3]:font-['Plus_Jakarta_Sans',system-ui,sans-serif] [&>h3]:text-lg [&>h3]:font-bold [&>h3]:text-[var(--color-text-main)] [&>h3]:mt-6 [&>h3]:mb-2
+        [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-5 [&>ul]:space-y-1.5 [&>ul]:text-[var(--color-text-main)]
+        [&>a]:text-[var(--color-primary)] [&>a]:underline [&>a]:hover:opacity-80 [&>a]:transition-opacity"
+      >
+        <p>
+          This Privacy Policy describes how ScrabbleWordFinder.com ("we," "us," or "our") collects,
+          uses, and shares information about you when you use our website and services
+          (collectively, the "Service"). By using our Service, you agree to the collection and use
+          of information in accordance with this policy.
+        </p>
+
+        <h2>1. Information We Collect</h2>
+
+        <h3>1.1 Information You Provide</h3>
+        <p>
+          We may collect information that you voluntarily provide when using our Service, including:
+        </p>
+        <ul>
+          <li>
+            Contact information (name, email address) if you reach out to us via our contact form
+          </li>
+          <li>Any feedback, comments, or suggestions you submit</li>
+        </ul>
+
+        <h3>1.2 Information Collected Automatically</h3>
+        <p>
+          When you visit our website, certain information is collected automatically, including:
+        </p>
+        <ul>
+          <li>
+            <strong>Log Data:</strong> Your IP address, browser type and version, the pages you visit,
+            the time and date of your visit, time spent on pages, and other diagnostic data.
+          </li>
+          <li>
+            <strong>Device Information:</strong> Device type, operating system, unique device identifiers,
+            and mobile network information.
+          </li>
+          <li>
+            <strong>Usage Data:</strong> Search queries entered into our word finder tool, filter preferences,
+            and interactions with our website.
+          </li>
+        </ul>
+
+        <h3>1.3 Cookies and Tracking Technologies</h3>
+        <p>
+          We use cookies and similar tracking technologies to track activity on our Service and hold
+          certain information. Cookies are files with a small amount of data that may include an
+          anonymous unique identifier. You can instruct your browser to refuse all cookies or to
+          indicate when a cookie is being sent. However, if you do not accept cookies, some portions
+          of our Service may not function properly.
+        </p>
+        <p>Specific cookies and local storage items we set include:</p>
+        <ul>
+          <li>
+            <strong><code>cookie-consent</code>, <code>consent-analytics</code>, <code>consent-ads</code>:</strong> Stores your cookie consent preferences (Local Storage).
+          </li>
+          <li>
+            <strong><code>dictionary-preference</code>:</strong> Remembers your selected Scrabble dictionary (TWL, SOWPODS, ENABLE) across sessions (Local Storage).
+          </li>
+          <li>
+            <strong><code>word-finder-favorites</code>:</strong> Stores your list of favorited words locally on your device (Local Storage).
+          </li>
+          <li>
+            <strong><code>_ga</code>, <code>_gid</code> (Google Analytics):</strong> If you consent to analytics, these cookies help us understand how you interact with our website.
+          </li>
+          <li>
+            <strong>Google AdSense Cookies:</strong> If you consent to advertising, third-party vendors, including Google, use cookies to serve ads based on your prior visits.
+          </li>
+        </ul>
+
+        <h2>2. How We Use Your Information</h2>
+        <p>We use the information we collect for the following purposes:</p>
+        <ul>
+          <li>To provide, maintain, and improve our Service</li>
+          <li>To respond to your inquiries, comments, or support requests</li>
+          <li>To monitor usage patterns and analyze trends to enhance user experience</li>
+          <li>To detect, prevent, and address technical issues and security threats</li>
+          <li>To display relevant advertisements through third-party ad networks</li>
+          <li>To comply with legal obligations</li>
+        </ul>
+
+        <h2>3. Third-Party Services</h2>
+
+        <h3>3.1 Analytics</h3>
+        <p>
+          We may use third-party analytics services such as Google Analytics to help us understand
+          how our Service is used. Google Analytics collects information such as how often users
+          visit the site, what pages they visit, and what other sites they used prior to coming to
+          our site. We use the information from Google Analytics only to improve our Service. Google
+          Analytics collects the IP address assigned to you on the date you visit our site, rather
+          than your name or other identifying information.
+        </p>
+        <p>
+          You can learn more about how Google uses data at
+          <a
+            href="https://policies.google.com/technologies/partner-sites"
+            target="_blank"
+            rel="noopener noreferrer">google.com/policies/privacy/partners</a
+          >.
+        </p>
+
+        <h3>3.2 Advertising</h3>
+        <p>
+          We may use third-party advertising services, including Google AdSense, to display
+          advertisements on our website. These services may use cookies and similar technologies to
+          serve ads based on your prior visits to our website or other websites. Google's use of
+          advertising cookies enables it and its partners to serve ads based on your visit to our
+          site and/or other sites on the Internet.
+        </p>
+        <p>
+          You may opt out of personalized advertising by visiting
+          <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer"
+            >Google Ads Settings</a
+          > or by visiting
+          <a href="https://optout.aboutads.info/" target="_blank" rel="noopener noreferrer"
+            >aboutads.info</a
+          >.
+        </p>
+
+        <h2>4. Data Sharing and Disclosure</h2>
+        <p>
+          We do not sell, trade, or rent your personal information to third parties. Under
+          applicable privacy regulations, IP addresses and server log data are classified as
+          personal data and are subject to the same protections as unknown other personally identifiable
+          information we collect. We may share aggregated, non-personally identifiable information
+          with third parties for analytics, research, and improvement purposes. We may disclose your
+          information if required to do so by law or in response to valid requests by public
+          authorities (e.g., a court order or government agency).
+        </p>
+
+        <h2>5. Data Security</h2>
+        <p>
+          The security of your information is important to us. We implement commercially reasonable
+          security measures to protect the information we collect. However, no method of
+          transmission over the Internet or method of electronic storage is 100% secure. While we
+          strive to protect your personal information, we cannot guarantee its absolute security.
+        </p>
+
+        <h2>6. Data Retention</h2>
+        <p>We retain different types of data for different periods:</p>
+        <ul>
+          <li>
+            <strong>Contact form submissions:</strong> Email records are retained for up to 2 years to
+            allow us to follow up on inquiries.
+          </li>
+          <li><strong>Server logs:</strong> Automatically deleted after 30 days.</li>
+          <li>
+            <strong>Analytics data:</strong> Google Analytics data is retained for 26 months (Google's
+            default). You can request deletion via the right to erasure process described in Section 8.
+          </li>
+          <li>
+            <strong>Cookie preferences:</strong> Your cookie consent choice is stored in your browser's
+            local storage indefinitely until you clear your browser data. To change your preference, clear
+            your site cookies and reload the page.
+          </li>
+        </ul>
+
+        <h2>7. Children's Privacy</h2>
+        <p>
+          Our Service is not directed to individuals under the age of 13. We do not knowingly
+          collect personal information from children under 13. If we become aware that we have
+          collected personal information from a child under 13, we will take steps to delete that
+          information promptly. If you are a parent or guardian and believe your child has provided
+          us with personal information, please contact us.
+        </p>
+
+        <h2>8. Your Rights</h2>
+        <p>
+          Depending on your location, you may have certain rights regarding your personal
+          information, including:
+        </p>
+        <ul>
+          <li>The right to access the personal information we hold about you</li>
+          <li>The right to request correction of inaccurate personal information</li>
+          <li>The right to request deletion of your personal information</li>
+          <li>The right to object to or restrict processing of your personal information</li>
+          <li>The right to data portability</li>
+        </ul>
+        <p>
+          To exercise any of these rights, please contact us using the information provided below.
+        </p>
+
+        <h2>9. Additional Rights for EU/EEA Residents (GDPR)</h2>
+        <p>
+          If you are located in the European Union or European Economic Area, the General Data
+          Protection Regulation (GDPR) gives you specific rights regarding your personal data. We
+          process your data on the following legal bases:
+        </p>
+        <ul>
+          <li>
+            <strong>Legitimate Interests (Art. 6(1)(f) GDPR):</strong> We process usage data and log data
+            to maintain the security and performance of our Service.
+          </li>
+          <li>
+            <strong>Consent (Art. 6(1)(a) GDPR):</strong> We process analytics and advertising data only
+            after you have given explicit consent via our cookie consent banner.
+          </li>
+          <li>
+            <strong>Legal Obligation (Art. 6(1)(c) GDPR):</strong> We may process data to comply with
+            applicable laws or respond to lawful government requests.
+          </li>
+        </ul>
+        <p>In addition to the rights listed in Section 8, EU/EEA residents also have:</p>
+        <ul>
+          <li>
+            The right to withdraw consent at any time (by clicking "Decline" in our cookie banner or
+            clearing your browser cookies)
+          </li>
+          <li>
+            The right to lodge a complaint with your local data protection supervisory authority
+          </li>
+        </ul>
+        <p>
+          For GDPR-related inquiries, please contact us at <a
+            href="mailto:privacy@scrabblewordfinder.com">privacy@scrabblewordfinder.com</a
+          >. We aim to respond to all requests within 30 days.
+        </p>
+        <p>
+          Please note that data collected through Google Analytics and Google AdSense is transferred
+          to Google's servers, which may be located in the United States. Google participates in the
+          EU-U.S. Data Privacy Framework, providing appropriate safeguards for such transfers.
+        </p>
+
+        <h2>10. Additional Rights for California Residents (CCPA)</h2>
+        <p>
+          If you are a California resident, the California Consumer Privacy Act (CCPA) grants you
+          the following rights:
+        </p>
+        <ul>
+          <li>
+            <strong>Right to Know:</strong> You have the right to request information about the categories
+            and specific pieces of personal information we collect, use, and disclose.
+          </li>
+          <li>
+            <strong>Right to Delete:</strong> You have the right to request deletion of your personal
+            information, subject to certain exceptions.
+          </li>
+          <li>
+            <strong>Right to Opt-Out:</strong> We do not sell your personal information. However, our
+            use of Google AdSense may constitute "sharing" of data under CCPA for cross-context behavioral
+            advertising. You may opt out of this by visiting <a
+              href="https://optout.aboutads.info/"
+              target="_blank"
+              rel="noopener noreferrer">aboutads.info</a
+            > or using the Google Ads Settings link in Section 3.2.
+          </li>
+          <li>
+            <strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising
+            any of your CCPA rights.
+          </li>
+        </ul>
+        <p>
+          To submit a CCPA request, please contact us at <a
+            href="mailto:privacy@scrabblewordfinder.com">privacy@scrabblewordfinder.com</a
+          >.
+        </p>
+
+        <h2>11. Links to Other Websites</h2>
+        <p>
+          Our Service may contain links to third-party websites that are not operated by us. We have
+          no control over and assume no responsibility for the content, privacy policies, or
+          practices of any third-party sites or services. We encourage you to review the privacy
+          policy of every site you visit.
+        </p>
+
+        <h2>12. Changes to This Privacy Policy</h2>
+        <p>
+          We may update this Privacy Policy from time to time. We will notify you of any changes by
+          posting the new Privacy Policy on this page and updating the "Last Updated" date at the
+          top. You are advised to review this Privacy Policy periodically for any changes. Changes
+          to this Privacy Policy are effective when they are posted on this page.
+        </p>
+
+        <h2>13. Contact Us</h2>
+        <p>If you have any questions about this Privacy Policy, please contact us:</p>
+        <ul>
+          <li>
+            By email:
+            <a href="mailto:privacy@scrabblewordfinder.com">privacy@scrabblewordfinder.com</a>
+          </li>
+          <li>
+            By visiting our <a href="/contact">Contact page</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

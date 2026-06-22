@@ -1,0 +1,61 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+
+const title = 'Server Error (500) — Scrabble Word Finder';
+const description =
+  'An unexpected internal server error occurred. Please try again later or return to the homepage.';
+const canonical = `${SITE_URL}/500`;
+
+interface Props {
+  error: unknown;
+}
+
+// In Astro, 500.astro receives the error via Astro.props in SSR mode
+const { error } = Astro.props;
+
+// We log the error securely on the server but NEVER expose it to the client
+if (error) {
+  console.error('[500 Error Page]', error);
+}
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} noindex={true} />
+
+  <section class="max-w-xl mx-auto px-4 py-20 text-center animate-entrance">
+    <div class="mb-8">
+      <div
+        class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-red-100 text-red-600 font-extrabold text-4xl mb-6 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+      >
+        500
+      </div>
+      <h1
+        class="text-3xl md:text-4xl font-extrabold text-[var(--color-text-main)] mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+      >
+        Something went wrong
+      </h1>
+      <p class="text-base text-[var(--color-text-muted)] leading-relaxed mb-8">
+        We're sorry, but our server encountered an unexpected error. Our team has been notified and we are working to fix it.
+      </p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a
+        href="/"
+        class="btn-primary inline-flex items-center justify-center text-sm font-semibold px-6 py-3 rounded-xl shadow-sm"
+      >
+        Return to Homepage
+      </a>
+      <button
+        onclick="window.location.reload()"
+        class="btn-secondary inline-flex items-center justify-center text-sm font-medium px-6 py-3 rounded-xl border border-[var(--color-border)] hover:bg-[var(--color-bg-alt)] transition-colors"
+      >
+        Try Again
+      </button>
+    </div>
+  </section>
+</BaseLayout>

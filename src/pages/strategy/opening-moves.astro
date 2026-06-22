@@ -1,0 +1,31 @@
+---
+import { SITE_URL } from '@lib/config';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEO from '../../components/seo/SEO.astro';
+import Breadcrumb from '../../components/layout/Breadcrumb.astro';
+
+export const prerender = true;
+
+const title = 'Opening Moves — Scrabble Strategy';
+const description = 'Learn the best ways to start a Scrabble game and control the board from the very first play.';
+const canonical = new URL('/strategy/opening-moves', SITE_URL).href;
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} />
+
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <Breadcrumb items={[{ label: 'Strategy Hub', href: '/strategy' }, { label: 'Opening Moves' }]} />
+
+    <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-text-main)] mb-4">
+      {title}
+    </h1>
+    <p class="text-lg text-[var(--color-text-muted)] mb-8">
+      {description}
+    </p>
+
+    <div class="prose max-w-none">
+      <p>Content coming soon. This is a placeholder for the Opening Moves strategy guide.</p>
+    </div>
+  </div>
+</BaseLayout>

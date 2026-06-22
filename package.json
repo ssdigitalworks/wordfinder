@@ -1,0 +1,60 @@
+{
+  "name": "scrabble-word-finder",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run db:push && astro dev",
+    "prebuild": "node precompile-dictionaries.js",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test": "vitest run",
+    "test:e2e": "npm run db:push && playwright test",
+    "check": "astro check && tsc --noEmit",
+    "lint": "eslint src",
+    "format": "prettier --write src",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:migrate-posts": "node scripts/migrate-posts.js",
+    "hash-password": "node scripts/hash-admin-password.js"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/vercel": "^10.0.8",
+    "@aws-sdk/client-s3": "^3.1073.0",
+    "@libsql/client": "^0.17.4",
+    "@tailwindcss/vite": "^4.0.0",
+    "@upstash/redis": "^1.38.0",
+    "astro": "^6.4.8",
+    "canvas-confetti": "^1.9.4",
+    "drizzle-orm": "^0.45.2",
+    "marked": "^18.0.5",
+    "sanitize-html": "^2.17.5",
+    "tailwindcss": "^4.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@playwright/test": "^1.61.0",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^20.0.0",
+    "@types/sanitize-html": "^2.16.1",
+    "@typescript-eslint/eslint-plugin": "^8.61.1",
+    "@typescript-eslint/parser": "^8.61.1",
+    "astro-eslint-parser": "^1.4.0",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^10.5.0",
+    "eslint-plugin-astro": "^1.7.0",
+    "gray-matter": "^4.0.3",
+    "prettier": "^3.8.4",
+    "prettier-plugin-astro": "^0.14.1",
+    "sharp": "^0.35.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
+  },
+  "overrides": {
+    "vite": "^7.0.0"
+  }
+}

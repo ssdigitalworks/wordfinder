@@ -1,0 +1,181 @@
+---
+import { SITE_URL } from '@lib/config';
+import { TWL_SCORES, ENABLE_SCORES, SOWPODS_SCORES } from '../data/tileScores';
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import { loadDictionary } from '../lib/dictionaryLoader';
+import { calculateWordScore } from '../lib/scoreCalculator';
+
+const title = 'Scrabble Z Words Without U — Cheat Sheet';
+const description =
+  'Complete list of valid Scrabble words that contain the letter Z but do not require U. Perfect for scoring high with Z without wasting U vowels.';
+
+const twlAll = Array.from(await loadDictionary('TWL'));
+const twlZNoU = twlAll
+  .filter((w) => w.toUpperCase().includes('Z') && !w.toUpperCase().includes('U'))
+  .map((w) => ({ word: w.toUpperCase(), score: calculateWordScore(w, 'TWL') }))
+  .sort((a, b) => b.score - a.score || a.word.localeCompare(b.word));
+
+const sowpodsAll = Array.from(await loadDictionary('SOWPODS'));
+const sowpodsZNoU = sowpodsAll
+  .filter((w) => w.toUpperCase().includes('Z') && !w.toUpperCase().includes('U'))
+  .map((w) => ({ word: w.toUpperCase(), score: calculateWordScore(w, 'SOWPODS') }))
+  .sort((a, b) => b.score - a.score || a.word.localeCompare(b.word));
+
+const enableAll = Array.from(await loadDictionary('ENABLE'));
+const enableZNoU = enableAll
+  .filter((w) => w.toUpperCase().includes('Z') && !w.toUpperCase().includes('U'))
+  .map((w) => ({ word: w.toUpperCase(), score: calculateWordScore(w, 'ENABLE') }))
+  .sort((a, b) => b.score - a.score || a.word.localeCompare(b.word));
+
+const allDataJson = JSON.stringify({ TWL: twlZNoU, SOWPODS: sowpodsZNoU, ENABLE: enableZNoU });
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical=`${SITE_URL}/z-words-without-u`
+  />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: title,
+      description,
+      url: `${SITE_URL}/z-words-without-u`,
+    }}
+  />
+
+  <Breadcrumb
+    items={[
+      { label: 'Home', href: '/' },
+      { label: 'Word Lists', href: '/word-list' },
+      { label: 'Z Words Without U' },
+    ]}
+  />
+
+  <section class="py-10 md:py-16">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="text-center mb-10">
+        <h1
+          class="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+        >
+          Scrabble Z Words Without U
+        </h1>
+        <p class="text-[var(--color-text-muted)] text-lg max-w-2xl mx-auto">
+          Z is worth a massive 10 points in Scrabble. Memorize these Z words that do not require U
+          to get rid of your high-scoring consonants efficiently.
+        </p>
+      </div>
+
+      <!-- Dictionary Filter -->
+      <div class="flex justify-center gap-2 mb-8">
+        <button
+          class="dict-filter-btn px-4 py-2 text-sm font-semibold rounded-full bg-[var(--color-primary)] text-white"
+          data-dict="TWL">TWL</button
+        >
+        <button
+          class="dict-filter-btn px-4 py-2 text-sm font-semibold rounded-full bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-main)] transition-colors border border-[var(--color-border)]"
+          data-dict="SOWPODS">SOWPODS</button
+        >
+        <button
+          class="dict-filter-btn px-4 py-2 text-sm font-semibold rounded-full bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-main)] transition-colors border border-[var(--color-border)]"
+          data-dict="ENABLE">ENABLE</button
+        >
+      </div>
+
+      <!-- Word Grid Container -->
+      <div
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
+        id="words-grid"
+      >
+        {
+          twlZNoU.slice(0, 250).map(({ word, score }) => (
+            <a
+              href={`/word/${word.toLowerCase()}`}
+              class="word-card bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] hover:border-[var(--color-primary)] p-3 text-center hover:shadow-md transition-all"
+            >
+              <div class="flex items-center justify-center gap-0.5 mb-1.5">
+                {word.split('').map((ch) => (
+                  <span class="tile !w-7 !h-7 !text-xs shadow-sm">
+                    {ch}
+                    <sub class="!text-[0.6rem]">{calculateWordScore(ch, 'TWL')}</sub>
+                  </span>
+                ))}
+              </div>
+              <span class="score-badge text-xs">{score} pts</span>
+            </a>
+          ))
+        }
+      </div>
+
+      <div class="prose max-w-none mt-16 text-[var(--color-text-main)]">
+        <h2 class="text-2xl font-bold mb-4">Core Z Words Without U to Memorize</h2>
+        <p class="leading-relaxed mb-4">
+          Z is a versatile letter and can be placed in short words like <strong>ZA</strong> (pizza) or
+          <strong>ZAX</strong> (a slater's tool).
+        </p>
+
+        <h3 class="text-xl font-semibold mt-6 mb-3">Key Short Z Words:</h3>
+        <ul class="list-disc list-inside space-y-2 mb-4">
+          <li><strong>ZA</strong> — Pizza (2 letters, 11 points)</li>
+          <li><strong>ZAX</strong> — A tool for cutting roof slates (3 letters, 19 points)</li>
+          <li><strong>ZIN</strong> — Zinfindel red wine (3 letters, 12 points)</li>
+          <li><strong>ZAS</strong> — Plural of za (3 letters, 12 points)</li>
+          <li><strong>ZANZA</strong> — An African musical instrument (5 letters)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script is:inline define:vars={{ allDataJson, TWL_SCORES, ENABLE_SCORES, SOWPODS_SCORES }}>
+  (function () {
+    const allData = JSON.parse(allDataJson);
+    const TILE_SCORES = {
+      TWL: TWL_SCORES,
+      SOWPODS: SOWPODS_SCORES,
+      ENABLE: ENABLE_SCORES,
+    };
+
+    const grid = document.getElementById('words-grid');
+
+    function renderCard(word, score, scores) {
+      return `<a href="/word/${word.toLowerCase()}" class="word-card bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] hover:border-[var(--color-primary)] p-3 text-center hover:shadow-md transition-all">
+      <div class="flex items-center justify-center gap-0.5 mb-1.5">${word
+        .split('')
+        .map(
+          (c) =>
+            `<span class="tile !w-7 !h-7 !text-xs shadow-sm">${c}<sub>${scores[c] || 0}</sub></span>`,
+        )
+        .join('')}</div>
+      <span class="score-badge text-xs">${score} pts</span>
+    </a>`;
+    }
+
+    document.querySelectorAll('.dict-filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.dict-filter-btn').forEach((b) => {
+          b.classList.remove('bg-[var(--color-primary)]', 'text-white');
+          b.classList.add('bg-[var(--color-bg-alt)]', 'text-[var(--color-text-muted)]');
+        });
+        btn.classList.add('bg-[var(--color-primary)]', 'text-white');
+        btn.classList.remove('bg-[var(--color-bg-alt)]', 'text-[var(--color-text-muted)]');
+        const dict = btn.dataset.dict;
+        const words = allData[dict] || [];
+        const scores = TILE_SCORES[dict];
+        // Limit client rendering to first 250 words to avoid page lockup on large lists
+        const chunk = words.slice(0, 250);
+        if (grid)
+          grid.innerHTML = chunk.map(({ word, score }) => renderCard(word, score, scores)).join('');
+      });
+    });
+  })();
+</script>

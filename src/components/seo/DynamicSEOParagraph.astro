@@ -1,0 +1,51 @@
+---
+import type { WordListStats } from '../../lib/wordStatsGenerator';
+
+export interface Props {
+  stats: WordListStats | null;
+  type: 'Start' | 'End' | 'Length' | 'Contain' | 'StartEnd';
+  pattern: string;
+  pattern2?: string;
+}
+
+const { stats, type, pattern, pattern2 } = Astro.props;
+
+if (!stats) {
+  return null;
+}
+
+const { totalCount, highestScoringWord, highestScore, shortestWord, longestWord } = stats;
+
+let contextPhrase = '';
+if (type === 'Start') {
+  contextPhrase = `that start with the letter ${pattern.toUpperCase()}`;
+} else if (type === 'End') {
+  contextPhrase = `that end in the letter ${pattern.toUpperCase()}`;
+} else if (type === 'Length') {
+  contextPhrase = `that are exactly ${pattern} letters long`;
+} else if (type === 'Contain') {
+  contextPhrase = `that contain the pattern "${pattern.toUpperCase()}"`;
+} else if (type === 'StartEnd') {
+  contextPhrase = `that start with ${pattern.toUpperCase()} and end with ${pattern2?.toUpperCase()}`;
+}
+
+const isPlural = totalCount !== 1;
+---
+
+<div class="bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 rounded-2xl p-6 sm:p-8 mb-8 shadow-sm">
+  <p class="text-[var(--color-text-main)] text-lg leading-relaxed">
+    There {isPlural ? 'are' : 'is'} currently <strong>{totalCount.toLocaleString()}</strong> valid Scrabble {isPlural ? 'words' : 'word'} {contextPhrase}. 
+    {totalCount > 0 && (
+      <>
+        The highest scoring word is <a href={`/word/${highestScoringWord.toLowerCase()}`} class="font-bold text-[var(--color-primary)] hover:underline">{highestScoringWord.toUpperCase()}</a>, which is worth <strong>{highestScore} points</strong>. 
+        {shortestWord !== longestWord && (
+          <>
+            The shortest playable word is <a href={`/word/${shortestWord.toLowerCase()}`} class="font-semibold text-[var(--color-primary)] hover:underline">{shortestWord.toUpperCase()}</a>, 
+            and the longest is <a href={`/word/${longestWord.toLowerCase()}`} class="font-semibold text-[var(--color-primary)] hover:underline">{longestWord.toUpperCase()}</a>.
+          </>
+        )}
+      </>
+    )}
+    Below is the full list sorted by point value. You can use our Scrabble dictionary to verify definitions and filter by specific lengths.
+  </p>
+</div>

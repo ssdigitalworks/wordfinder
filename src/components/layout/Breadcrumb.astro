@@ -1,0 +1,64 @@
+---
+import { SITE_URL } from '@lib/config';
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  items: BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+
+// Filter out any Home items to prevent duplicates
+const cleanItems = items.filter((item) => item.label.toLowerCase() !== 'home' && item.href !== '/');
+
+// Unified list including Home at the start
+const breadcrumbs = [{ label: 'Home', href: '/' }, ...cleanItems];
+
+// Build JSON-LD BreadcrumbList dynamically
+const siteUrl = SITE_URL;
+const itemListElement = breadcrumbs.map((item, index) => {
+  let itemUrl = item.href;
+  if (!itemUrl) {
+    // If it's the last item and has no href, use current canonical URL
+    itemUrl = new URL(Astro.url.pathname, siteUrl).href;
+  } else if (!itemUrl.startsWith('http')) {
+    itemUrl = `${siteUrl}${itemUrl.startsWith('/') ? '' : '/'}${itemUrl}`;
+  }
+  return {
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.label,
+    item: itemUrl,
+  };
+});
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement,
+};
+---
+
+<nav aria-label="Breadcrumb" class="mb-4 text-sm">
+  <ol class="flex items-center gap-1.5 text-[var(--color-text-muted)] flex-wrap">
+    {
+      breadcrumbs.map((item, i) => (
+        <li class="flex items-center gap-1.5">
+          {i > 0 && <span class="text-[var(--color-border)]">/</span>}
+          {i === breadcrumbs.length - 1 ? (
+            <span class="text-[var(--color-text-main)] font-medium">{item.label}</span>
+          ) : (
+            <a href={item.href} class="hover:text-[var(--color-primary)] transition-colors">
+              {item.label}
+            </a>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />

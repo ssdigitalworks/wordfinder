@@ -1,0 +1,284 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+
+const title = 'Word Lists — Browse Official Scrabble & Word Game Lists';
+const description =
+  'Access comprehensive word lists for Scrabble, Words with Friends, and anagram solvers. Browse lists by word length, starting letter, ending letter, and score value.';
+
+const breadcrumbItems = [{ label: 'Home', href: '/' }, { label: 'Word Lists' }];
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical=`${SITE_URL}/word-lists` />
+
+  <Breadcrumb items={breadcrumbItems} />
+
+  <section class="py-10 md:py-16">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="text-center mb-12">
+        <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mb-3">Word Lists</h1>
+        <p class="text-[var(--color-text-muted)] text-lg max-w-2xl mx-auto">
+          Browse our comprehensive collection of word lists to level up your game. Organized by
+          length, letter, and special categories.
+        </p>
+      </div>
+
+      <!-- By Word Length -->
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <span class="text-3xl">📏</span> Words by Length
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+          {
+            [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((n) => (
+              <a
+                href={
+                  n === 2
+                    ? '/two-letter-scrabble-words'
+                    : n === 3
+                      ? '/3-letter-words'
+                      : `/${n}-letter-words`
+                }
+                class="group block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-6 text-center hover:shadow-lg hover:border-[var(--color-primary)] transition-all"
+              >
+                <span class="block text-4xl font-extrabold text-[var(--color-primary)] group-hover:scale-110 transition-transform">
+                  {n}
+                </span>
+                <span class="text-sm font-medium text-[var(--color-text-muted)] mt-1 block">
+                  {n}-Letter Words
+                </span>
+              </a>
+            ))
+          }
+        </div>
+      </div>
+
+      <!-- Words Starting With -->
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <span class="text-3xl">🔤</span> Words Starting With…
+        </h2>
+        <div class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-6">
+          <div class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-13 gap-2">
+            {
+              alphabet.map((letter) => (
+                <a
+                  href={`/${letter.toLowerCase()}-words`}
+                  class="w-10 h-10 flex items-center justify-center text-sm font-bold rounded-lg bg-[var(--color-bg-alt)] hover:bg-[var(--color-primary)] hover:text-white transition-colors text-[var(--color-text-main)] border border-[var(--color-border)]"
+                >
+                  {letter}
+                </a>
+              ))
+            }
+          </div>
+          <p class="text-xs text-[var(--color-text-muted)] opacity-70 mt-3 text-center">
+            Click a letter to see all words starting with that letter
+          </p>
+        </div>
+      </div>
+
+      <!-- Words Ending With -->
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <span class="text-3xl">🔚</span> Words Ending In…
+        </h2>
+        <div class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-6">
+          <h3
+            class="font-semibold text-sm text-[var(--color-text-muted)] uppercase tracking-wide mb-3"
+          >
+            Single Letter
+          </h3>
+          <div class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-13 gap-2 mb-6">
+            {
+              alphabet.map((letter) => (
+                <a
+                  href={`/words-ending-in/${letter.toLowerCase()}`}
+                  class="w-10 h-10 flex items-center justify-center text-sm font-bold rounded-lg bg-[var(--color-bg-alt)] hover:bg-[var(--color-primary)] hover:text-white transition-colors text-[var(--color-text-main)] border border-[var(--color-border)]"
+                >
+                  {letter}
+                </a>
+              ))
+            }
+          </div>
+          <h3
+            class="font-semibold text-sm text-[var(--color-text-muted)] uppercase tracking-wide mb-3"
+          >
+            Common Endings
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            {
+              [
+                'er',
+                'ed',
+                'ing',
+                'tion',
+                'ly',
+                'ness',
+                'ment',
+                'able',
+                'ful',
+                'less',
+                'ous',
+                'ive',
+                'que',
+                'ize',
+                'ise',
+              ].map((pattern) => (
+                <a
+                  href={`/words-that-end-in/${pattern}`}
+                  class="px-3 py-1.5 text-sm font-medium rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:bg-[var(--color-primary)] hover:text-white hover:border-transparent transition-colors text-[var(--color-text-main)]"
+                >
+                  …{pattern}
+                </a>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Words Containing -->
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <span class="text-3xl">🔍</span> Words Containing Letter…
+        </h2>
+        <div class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-6">
+          <div class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-13 gap-2">
+            {
+              alphabet.map((letter) => (
+                <a
+                  href={`/words-containing-${letter.toLowerCase()}`}
+                  class="w-10 h-10 flex items-center justify-center text-sm font-bold rounded-lg bg-[var(--color-bg-alt)] hover:bg-[var(--color-primary)] hover:text-white transition-colors text-[var(--color-text-main)] border border-[var(--color-border)]"
+                >
+                  {letter}
+                </a>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Special Lists -->
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <span class="text-3xl">⭐</span> Special Word Lists
+        </h2>
+        <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <a
+            href="/words-without-vowels"
+            class="group block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 hover:shadow-lg hover:border-[var(--color-primary)] transition-all"
+          >
+            <span class="text-3xl block mb-2">🚫</span>
+            <h3 class="font-bold text-lg group-hover:text-[var(--color-primary)]">
+              Words Without Vowels
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Consonant-only words like CWM, SHH, TSK
+            </p>
+          </a>
+          <a
+            href="/scrabble-vowel-words"
+            class="group block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 hover:shadow-lg hover:border-[var(--color-primary)] transition-all"
+          >
+            <span class="text-3xl block mb-2">🔤</span>
+            <h3 class="font-bold text-lg group-hover:text-[var(--color-primary)]">
+              Vowel-Heavy Words
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Words with mostly or all vowels
+            </p>
+          </a>
+          <a
+            href="/scrabble-words-with/q/and-no/u"
+            class="group block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 hover:shadow-lg hover:border-[var(--color-primary)] transition-all"
+          >
+            <span class="text-3xl block mb-2">👑</span>
+            <h3 class="font-bold text-lg group-hover:text-[var(--color-primary)]">
+              Q Without U (Sitemap)
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Essential Q words that don't need U
+            </p>
+          </a>
+          <a
+            href="/highest-scoring-scrabble-words"
+            class="group block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 hover:shadow-lg hover:border-[var(--color-primary)] transition-all"
+          >
+            <span class="text-3xl block mb-2">🏆</span>
+            <h3 class="font-bold text-lg group-hover:text-[var(--color-primary)]">
+              Highest Scoring Words
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Top 100 highest-point words in Scrabble
+            </p>
+          </a>
+          <a
+            href="/rare-q-words"
+            class="group block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 hover:shadow-lg hover:border-[var(--color-primary)] transition-all"
+          >
+            <span class="text-3xl block mb-2">⭐</span>
+            <h3 class="font-bold text-lg group-hover:text-[var(--color-primary)]">
+              Rare Q Words Without U
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Complete cheat sheet for Q without U
+            </p>
+          </a>
+          <a
+            href="/z-words-without-u"
+            class="group block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 hover:shadow-lg hover:border-[var(--color-primary)] transition-all"
+          >
+            <span class="text-3xl block mb-2">⚡</span>
+            <h3 class="font-bold text-lg group-hover:text-[var(--color-primary)]">
+              Z Words Without U
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              High scoring Z words that do not need U
+            </p>
+          </a>
+          <a
+            href="/best-opening-scrabble-words"
+            class="group block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 hover:shadow-lg hover:border-[var(--color-primary)] transition-all"
+          >
+            <span class="text-3xl block mb-2">🎬</span>
+            <h3 class="font-bold text-lg group-hover:text-[var(--color-primary)]">
+              Best Opening Words
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Strategic first turn 5-letter plays
+            </p>
+          </a>
+          <a
+            href="/hardest-scrabble-words"
+            class="group block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 hover:shadow-lg hover:border-[var(--color-primary)] transition-all"
+          >
+            <span class="text-3xl block mb-2">🧩</span>
+            <h3 class="font-bold text-lg group-hover:text-[var(--color-primary)]">
+              Hardest Words to Play
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Obscure high-scoring word bailout plays
+            </p>
+          </a>
+          <a
+            href="/2-letter-scrabble-cheat-sheet"
+            class="group block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 hover:shadow-lg hover:border-[var(--color-primary)] transition-all"
+          >
+            <span class="text-3xl block mb-2">📋</span>
+            <h3 class="font-bold text-lg group-hover:text-[var(--color-primary)]">
+              2-Letter Cheat Sheet
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] mt-1">
+              Every valid 2-letter word with definitions
+            </p>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

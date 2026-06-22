@@ -1,0 +1,136 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import { calculateWordScore } from '../lib/scoreCalculator';
+
+const title = 'Best Opening Scrabble Words — First Play Strategy';
+const description =
+  'Strategic guide to the best first-turn opening words in Scrabble. Master rack balance and hook potential with terms like AROSE, ADIEU, and ALINE.';
+
+const OPENING_WORDS = [
+  {
+    word: 'AROSE',
+    tip: 'Contains 3 highly common vowels and 2 common consonants. Unbelievable hook potential.',
+  },
+  {
+    word: 'ADIEU',
+    tip: 'Dumps 4 vowels (A, I, E, U) on your first turn, leaving your rack balanced.',
+  },
+  { word: 'ALINE', tip: 'Solid balance of vowels and letters, setting up a flexible board state.' },
+  { word: 'ORATE', tip: 'Maximizes common vowel usage while retaining flexible rack consonants.' },
+  {
+    word: 'STARE',
+    tip: 'Utilizes high-probability consonants (S, T, R) paired with common vowels.',
+  },
+  { word: 'TEARS', tip: 'An anagram of STARE, highly flexible for extending to longer words.' },
+  {
+    word: 'IRATE',
+    tip: 'Vowel-heavy opening that leaves room for consonant hookups on the edges.',
+  },
+  { word: 'LATER', tip: 'Perfect consonant-vowel blend to begin a parallel play setup.' },
+  { word: 'AUDIO', tip: 'Another excellent 4-vowel dump word that clears a sticky rack.' },
+  { word: 'TALES', tip: 'Utilizes common tiles to start forming lanes on the board.' },
+];
+
+const formattedWords = OPENING_WORDS.map((w) => ({
+  ...w,
+  score: calculateWordScore(w.word, 'TWL'),
+}));
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical=`${SITE_URL}/best-opening-scrabble-words`
+  />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: title,
+      description,
+      url: `${SITE_URL}/best-opening-scrabble-words`,
+    }}
+  />
+
+  <Breadcrumb
+    items={[
+      { label: 'Home', href: '/' },
+      { label: 'Word Lists', href: '/word-list' },
+      { label: 'Best Opening Words' },
+    ]}
+  />
+
+  <section class="py-10 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="text-center mb-10">
+        <h1
+          class="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+        >
+          Best Opening Scrabble Words
+        </h1>
+        <p class="text-[var(--color-text-muted)] text-lg max-w-2xl mx-auto">
+          Starting the game? The opening move sets the layout. Master these 5-letter words to
+          maintain rack balance and score early.
+        </p>
+      </div>
+
+      <div class="space-y-6">
+        {
+          formattedWords.map(({ word, score, tip }) => (
+            <div class="card p-5 border border-[var(--color-border)] bg-[var(--color-card)] flex flex-wrap items-center justify-between gap-4 hover:shadow-md transition-all">
+              <div class="flex items-center gap-4 flex-wrap">
+                <a href={`/word/${word.toLowerCase()}`} class="flex items-center gap-0.5">
+                  {word.split('').map((ch) => (
+                    <span class="tile !w-8 !h-8 !text-sm shadow-sm">
+                      {ch}
+                      <sub class="!text-[0.5rem]">{calculateWordScore(ch, 'TWL')}</sub>
+                    </span>
+                  ))}
+                </a>
+                <div class="max-w-md">
+                  <h3 class="font-bold text-sm text-[var(--color-text-main)] mb-1 uppercase tracking-wider">
+                    {word}
+                  </h3>
+                  <p class="text-xs text-[var(--color-text-muted)] leading-relaxed">{tip}</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="score-badge text-xs">{score} pts</span>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="prose max-w-none mt-16 text-[var(--color-text-main)]">
+        <h2 class="text-2xl font-bold mb-4">First-Turn Scrabble Strategy</h2>
+        <p class="leading-relaxed mb-4">
+          Playing the first word in Scrabble awards double the word score because the center square
+          (star) acts as a Double Word Score. Therefore, a 5-letter word scoring 8 points is
+          instantly worth 16 points.
+        </p>
+
+        <h3 class="text-xl font-semibold mt-6 mb-3">Key Guidelines:</h3>
+        <ul class="list-disc list-inside space-y-2 mb-4">
+          <li>
+            <strong>Avoid Vowel/Consonant Clumping:</strong> Try to play words that leave a balanced ratio
+            of vowels (3) and consonants (4) on your rack for the next turn.
+          </li>
+          <li>
+            <strong>Watch the Double-Double:</strong> Be careful not to play 5-letter words that make
+            it easy for the opponent to hit a Double Word Score on their next play.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

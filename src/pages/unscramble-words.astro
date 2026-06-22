@@ -1,0 +1,217 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import WordFinderForm from '../components/ui/WordFinderForm.astro';
+import AdPlaceholder from '../components/ui/AdPlaceholder.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import SmartScrabbleCoach from '../components/ui/SmartScrabbleCoach.astro';
+import FAQSection from '../components/ui/FAQSection.astro';
+
+// Set long CDN cache headers for optimal performance
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=86400');
+
+const title = 'Word Unscrambler — Unscramble Letters Into Valid Words';
+const description =
+  'Use our free Word Unscrambler to unscramble jumbled letters and find all possible words. Get point scores, sort by length, and beat the competition.';
+const canonical = new URL(Astro.url.pathname, SITE_URL).href;
+
+const faqs = [
+  {
+    question: 'What is a word unscrambler?',
+    answer:
+      'A word unscrambler is a tool that takes a jumble of scrambled letters and finds all valid words that can be made from those letters, matching them against standard dictionary lexicons.',
+  },
+  {
+    question: 'How do you unscramble letters into words?',
+    answer:
+      "Enter your scrambled letters into the input field above. If you have blank tiles, use '?' to represent them. Click search, and our engine will display every valid word you can form.",
+  },
+  {
+    question: 'Is this word unscrambler free?',
+    answer:
+      'Yes, our tool is 100% free and mobile-friendly. You can use it as many times as you want to improve your spelling skills and win your favorite word games.',
+  },
+];
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} type="website" />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'Word Unscrambler',
+      url: `${SITE_URL}/unscramble-words`,
+      description,
+      applicationCategory: 'GameApplication',
+      operatingSystem: 'Any',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      browserRequirements: 'Requires JavaScript',
+    }}
+  />
+
+  <!-- Premium Static Blur Background Accent -->
+  <div
+    class="absolute top-0 left-0 w-full h-[650px] pointer-events-none overflow-hidden -z-10 opacity-75"
+  >
+    <div
+      class="absolute top-[-15%] left-[15%] w-[70%] h-[60%] rounded-full bg-gradient-to-br from-[var(--color-primary)]/15 via-purple-500/10 to-pink-500/5 blur-[120px] dark:opacity-[0.35]"
+    >
+    </div>
+  </div>
+
+  <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Word Unscrambler' }]} />
+
+  <!-- Hero Section -->
+  <section class="pt-8 pb-2 md:pb-4 relative">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="text-center">
+        <h1
+          class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 leading-tight bg-gradient-to-r from-[var(--color-primary)] via-indigo-600 to-purple-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent"
+        >
+          Word Unscrambler
+        </h1>
+        <p class="text-base md:text-lg text-[var(--color-text-muted)] mb-8 max-w-2xl mx-auto">
+          Unscramble jumbled letters into valid words instantly. Perfect for Scrabble, Words with
+          Friends, Wordle, and anagram puzzles.
+        </p>
+
+        <div class="max-w-2xl mx-auto text-left">
+          <WordFinderForm />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results Section -->
+  <section class="pt-2 md:pt-4 pb-8 md:pb-12">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <!-- Loading State (hidden by default) -->
+      <div id="results-loading" class="hidden text-center py-16 scroll-mt-24">
+        <svg
+          class="animate-spin h-10 w-10 mx-auto mb-4 text-[var(--color-primary)]"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        <p class="text-sm text-[var(--color-text-muted)]">Finding words…</p>
+      </div>
+
+      <!-- Error State (hidden by default) -->
+      <div id="results-error" class="hidden text-center py-16 text-red-500 scroll-mt-24">
+        <svg
+          class="w-16 h-16 mx-auto mb-4 opacity-80"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          ></path>
+        </svg>
+        <p class="text-lg font-medium text-[var(--color-text-main)]">
+          Something went wrong. Please try again.
+        </p>
+        <button
+          id="results-retry-btn"
+          type="button"
+          class="mt-4 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer"
+        >
+          Retry
+        </button>
+      </div>
+
+      <div id="results-container" class="min-h-[120px] scroll-mt-24">
+        <!-- Populated by client JS -->
+        <div id="results-empty-state" class="text-center py-16 text-[var(--color-text-muted)]">
+          <svg
+            class="w-16 h-16 mx-auto mb-4 opacity-40"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg
+          >
+          <p id="results-empty-title" class="text-lg font-medium">
+            Enter your scrambled letters above to solve
+          </p>
+          <p id="results-empty-text" class="text-sm mt-1">
+            Use <code
+              class="bg-[var(--color-border)] text-[var(--color-text-muted)] px-1.5 py-0.5 rounded text-xs"
+              >?</code
+            > for blank spaces
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container mx-auto px-4 max-w-4xl">
+    <AdPlaceholder slot_id="unscramble-below-results" class="my-8" />
+  </div>
+
+  <section class="py-10 border-t border-b border-[var(--color-border)] bg-[var(--color-bg-alt)]/20">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <SmartScrabbleCoach />
+    </div>
+  </section>
+
+  <section class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl prose prose-lg">
+      <FAQSection faqs={faqs} />
+    </div>
+  </section>
+
+  <!-- Definition Modal -->
+  <div
+    id="definition-modal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+  >
+    <div
+      class="bg-[var(--color-card)] rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto"
+    >
+      <div class="flex items-center justify-between p-5 border-b">
+        <h3 id="modal-word-title" class="text-xl font-bold uppercase tracking-wide"></h3>
+        <button
+          id="modal-close-btn"
+          class="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] p-1"
+          aria-label="Close"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"></path></svg
+          >
+        </button>
+      </div>
+      <div id="modal-body" class="p-5">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { initWordFinder } from '../lib/wordHelper';
+  initWordFinder({ defaultDict: 'TWL' });
+</script>

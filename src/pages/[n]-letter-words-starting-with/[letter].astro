@@ -1,0 +1,222 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEO from '../../components/seo/SEO.astro';
+import JsonLd from '../../components/seo/JsonLd.astro';
+import Breadcrumb from '../../components/layout/Breadcrumb.astro';
+import { loadDictionary } from '../../lib/dictionaryLoader';
+import { calculateWordScore } from '../../lib/scoreCalculator';
+import { getDynamicSEOStats } from '../../lib/wordStatsGenerator';
+import DynamicSEOParagraph from '../../components/seo/DynamicSEOParagraph.astro';
+
+export async function getStaticPaths() {
+  const lengths = [2, 3, 4, 5, 6, 7, 8];
+  const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  return lengths.flatMap((n) =>
+    letters.map((letter) => ({
+      params: { n: String(n), letter },
+      props: { n, letter: letter.toUpperCase() },
+    })),
+  );
+}
+
+const { n, letter } = Astro.props;
+const dict = await loadDictionary('TWL');
+const words = [...dict]
+  .filter((w) => w.length === n && w.startsWith(letter))
+  .map((w) => ({ word: w, score: calculateWordScore(w, 'TWL') }))
+  .sort((a, b) => b.score - a.score);
+
+const listStats = getDynamicSEOStats(words.map(w => w.word), 'TWL');
+
+const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const title = `${n} Letter Words Starting With ${letter} — Scrabble Word List`;
+const description = `Complete list of ${n}-letter words starting with ${letter} for Scrabble. Find ${words.length} valid words with scores to boost your game.`;
+const canonical = new URL(`/${n}-letter-words-starting-with/${letter.toLowerCase()}`, SITE_URL)
+  .href;
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: title,
+      numberOfItems: words.length,
+      description: description,
+    }}
+  />
+
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <Breadcrumb
+      items={[
+        { label: 'Word Lists', href: '/word-list' },
+        { label: `${n}-Letter Words`, href: `/word-list` },
+        { label: `Starting With ${letter}` },
+      ]}
+    />
+
+    <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-text-main)] mb-2">
+      {n} Letter Words Starting With {letter}
+    </h1>
+    <p class="text-[var(--color-text-muted)] mb-6">
+      Found <strong class="text-[var(--color-primary)]">{words.length}</strong> valid Scrabble words with
+      {n} letters starting with {letter}.
+    </p>
+
+    <DynamicSEOParagraph stats={listStats} type="StartEnd" pattern={letter} />
+
+    <!-- Letter Navigation -->
+    <div class="flex flex-wrap gap-1.5 mb-8">
+      {
+        allLetters.map((l) => (
+          <a
+            href={`/${n}-letter-words-starting-with/${l.toLowerCase()}`}
+            class={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all duration-200 ${
+              l === letter
+                ? 'bg-[var(--color-primary)] text-white shadow-md'
+                : 'bg-[var(--color-card)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
+            }`}
+          >
+            {l}
+          </a>
+        ))
+      }
+    </div>
+
+    <!-- Length Navigation -->
+    <div class="flex flex-wrap gap-2 mb-8">
+      {
+        [2, 3, 4, 5, 6, 7, 8].map((len) => (
+          <a
+            href={`/${len}-letter-words-starting-with/${letter.toLowerCase()}`}
+            class={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+              len === n
+                ? 'bg-[var(--color-primary)] text-white shadow-md'
+                : 'bg-[var(--color-card)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
+            }`}
+          >
+            {len} Letters
+          </a>
+        ))
+      }
+    </div>
+
+    {
+      words.length > 0 ? (
+        <div class="bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)] shadow-sm overflow-hidden">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[var(--color-border)]">
+            {words.map(({ word, score }) => (
+              <a
+                href={`/word/${word.toLowerCase()}`}
+                class="word-result-row px-4 py-3 block hover:bg-[var(--color-bg-alt)] transition-all"
+                style="text-decoration: none;"
+              >
+                <div class="flex items-center gap-1">
+                  {word.split('').map((ch) => (
+                    <span class="tile">
+                      {ch}
+                      <sub>
+                        {{
+                          A: 1,
+                          B: 3,
+                          C: 3,
+                          D: 2,
+                          E: 1,
+                          F: 4,
+                          G: 2,
+                          H: 4,
+                          I: 1,
+                          J: 8,
+                          K: 5,
+                          L: 1,
+                          M: 3,
+                          N: 1,
+                          O: 1,
+                          P: 3,
+                          Q: 10,
+                          R: 1,
+                          S: 1,
+                          T: 1,
+                          U: 1,
+                          V: 4,
+                          W: 4,
+                          X: 8,
+                          Y: 4,
+                          Z: 10,
+                        }[ch] || 0}
+                      </sub>
+                    </span>
+                  ))}
+                </div>
+                <span class="score-badge">{score} pts</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div class="text-center py-12 bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)]">
+          <p class="text-[var(--color-text-muted)] text-lg">
+            No {n}-letter words starting with {letter} found in the dictionary.
+          </p>
+        </div>
+      )
+    }
+
+    <div class="mt-12 prose max-w-none">
+      <h2 class="text-2xl font-bold mb-4">About {n}-Letter Words Starting With {letter}</h2>
+      <p class="text-[var(--color-text-muted)] leading-relaxed">
+        This page lists all valid {n}-letter Scrabble words that begin with the letter {letter}.
+        These words are verified against the TWL (Tournament Word List) dictionary used in official
+        North American Scrabble tournaments. Use these words to improve your Scrabble game and find
+        high-scoring plays. Each word is shown with its base Scrabble score (without board bonuses).
+      </p>
+    </div>
+
+    <!-- Related Word Lists Panel -->
+    <div class="mt-12 pt-8 border-t border-[var(--color-border)]">
+      <h3 class="text-lg font-bold text-[var(--color-text-main)] mb-4">Related Word Lists</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {
+          n > 2 && (
+            <a
+              href={`/${n - 1}-letter-words-starting-with/${letter.toLowerCase()}`}
+              class="text-sm text-[var(--color-primary)] hover:underline"
+            >
+              {n - 1}-Letter Words Starting with {letter}
+            </a>
+          )
+        }
+        {
+          n < 15 && (
+            <a
+              href={`/${n + 1}-letter-words-starting-with/${letter.toLowerCase()}`}
+              class="text-sm text-[var(--color-primary)] hover:underline"
+            >
+              {n + 1}-Letter Words Starting with {letter}
+            </a>
+          )
+        }
+        <a
+          href={`/${n}-letter-words-ending-in/${letter.toLowerCase()}`}
+          class="text-sm text-[var(--color-primary)] hover:underline"
+        >
+          {n}-Letter Words Ending in {letter}
+        </a>
+        <a href={`/${n}-letter-words`} class="text-sm text-[var(--color-primary)] hover:underline">
+          All {n}-Letter Words
+        </a>
+        <a
+          href={`/words-starting-with/${letter.toLowerCase()}`}
+          class="text-sm text-[var(--color-primary)] hover:underline"
+        >
+          All Words Starting with {letter}
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

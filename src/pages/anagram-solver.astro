@@ -1,0 +1,323 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import WordFinderForm from '../components/ui/WordFinderForm.astro';
+import AdPlaceholder from '../components/ui/AdPlaceholder.astro';
+import SmartScrabbleCoach from '../components/ui/SmartScrabbleCoach.astro';
+import FAQSection from '../components/ui/FAQSection.astro';
+
+// Set long CDN cache headers for optimal performance
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=86400');
+
+const title = 'Anagram Solver — Find High Scoring Words Instantly';
+const description =
+  'Use our free Anagram Solver to unscramble letters and find all valid words. Get word scores, sort by points or length, and dominate your next game.';
+const canonical = new URL(Astro.url.pathname, SITE_URL).href;
+
+const faqs = [
+  {
+    question: 'What is an anagram?',
+    answer:
+      "An anagram is a word or phrase formed by rearranging the letters of a different word or phrase, typically using all the original letters exactly once. For example, 'silent' is an anagram of 'listen'.",
+  },
+  {
+    question: 'How does the Anagram Solver work?',
+    answer:
+      "Enter your letters into the search input (use '?' for blank tiles). The solver will instantly search the Scrabble dictionary, rearrange your letters, and display all valid words you can make, sorted by score or length.",
+  },
+  {
+    question: 'Can I use blank tiles in the Anagram Solver?',
+    answer:
+      "Yes, you can use up to 2 blank tiles by typing '?' or space in the input field. The search engine will evaluate all possible letter combinations for those blank tiles.",
+  },
+  {
+    question: 'Which dictionaries does the solver support?',
+    answer:
+      'It supports the North American TWL dictionary (US/Canada Scrabble), SOWPODS (international Scrabble), and ENABLE (Words With Friends).',
+  },
+];
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonical}
+    type="website"
+    faqs={faqs}
+  />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'Anagram Solver',
+      url: SITE_URL,
+      description,
+      applicationCategory: 'GameApplication',
+      operatingSystem: 'Any',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      browserRequirements: 'Requires JavaScript',
+    }}
+  />
+
+  <!-- Premium Blur Background Accent -->
+  <div
+    class="absolute top-0 left-0 w-full h-[650px] pointer-events-none overflow-hidden -z-10 opacity-75"
+  >
+    <div
+      class="absolute top-[-12%] left-[10%] w-[40%] h-[55%] rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] blur-[100px] opacity-15 dark:opacity-[0.25] animate-pulse"
+      style="animation-duration: 8s;"
+    >
+    </div>
+    <div
+      class="absolute top-[-8%] right-[10%] w-[35%] h-[50%] rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 blur-[110px] opacity-15 dark:opacity-[0.22] animate-pulse"
+      style="animation-duration: 12s; animation-delay: 2s;"
+    >
+    </div>
+    <div
+      class="absolute top-[15%] left-[35%] w-[30%] h-[40%] rounded-full bg-gradient-to-br from-amber-400/20 to-pink-500/10 blur-[120px] opacity-10 dark:opacity-[0.15] animate-pulse"
+      style="animation-duration: 10s; animation-delay: 4s;"
+    >
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="py-12 md:py-16 relative">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="text-center">
+        <h1
+          class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 leading-tight animate-entrance bg-gradient-to-r from-[var(--color-primary)] via-indigo-600 to-purple-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent"
+        >
+          Anagram Solver
+        </h1>
+        <p
+          class="text-base md:text-lg text-[var(--color-text-muted)] mb-8 max-w-2xl mx-auto animate-entrance delay-1"
+        >
+          Find all possible anagrams from your letters. Clean, fast, and completely free.
+        </p>
+        <div class="max-w-2xl mx-auto text-left animate-entrance delay-2">
+          <WordFinderForm />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results Section -->
+  <section class="py-8 md:py-12">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div id="results-container" class="min-h-[120px]">
+        <!-- Populated by client JS -->
+        <div id="results-empty-state" class="text-center py-16 text-[var(--color-text-muted)]">
+          <svg
+            class="w-16 h-16 mx-auto mb-4 opacity-40"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg
+          >
+          <p class="text-lg font-medium">Enter your letters above to find words</p>
+          <p class="text-sm mt-1">
+            Use <code
+              class="bg-[var(--color-border)] text-[var(--color-text-muted)] px-1.5 py-0.5 rounded text-xs"
+              >?</code
+            > for blank tiles
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container mx-auto px-4 max-w-4xl">
+    <AdPlaceholder slot_id="home-below-results" class="my-8" />
+  </div>
+
+  <section class="py-10 border-t border-b border-[var(--color-border)] bg-[var(--color-bg-alt)]/20">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <SmartScrabbleCoach />
+    </div>
+  </section>
+
+  <!-- SEO Content Sections -->
+  <section class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl prose prose-lg">
+      <h2 class="text-2xl md:text-3xl font-bold mb-6">How To Use This Word Finder</h2>
+      <ol class="space-y-3">
+        <li>
+          <strong>Enter your letters</strong> — Type the tiles on your rack into the search box. Use <code
+            >?</code
+          > to represent blank tiles.
+        </li>
+        <li>
+          <strong>Choose your dictionary</strong> — Pick TWL (Tournament Word List for North American
+          Scrabble), SOWPODS (international), or ENABLE (Words With Friends).
+        </li>
+        <li>
+          <strong>Set filters</strong> — Use advanced options to filter by word length, starting or ending
+          letters, or letters that must be included.
+        </li>
+        <li>
+          <strong>Review results</strong> — Words appear grouped by length, with Scrabble tile scores.
+          Click any word to see its definition.
+        </li>
+        <li>
+          <strong>Sort as you like</strong> — Sort by highest score, word length, or alphabetically.
+        </li>
+      </ol>
+
+      <h2 class="text-2xl md:text-3xl font-bold mt-12 mb-6">What is Scrabble?</h2>
+      <p>
+        Scrabble is a classic board game in which players use lettered tiles to create words on a
+        15×15 game board. Each tile carries a point value, and the board features premium squares
+        that multiply letter or word scores. The game challenges players to combine vocabulary
+        knowledge with strategic tile placement to outscore opponents. First published in 1948,
+        Scrabble is now played in over 120 countries and 30 languages.
+      </p>
+
+      <h2 class="text-2xl md:text-3xl font-bold mt-12 mb-6">Tips for Scrabble</h2>
+      <div class="grid md:grid-cols-2 gap-6 not-prose">
+        <div
+          class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 shadow-sm"
+        >
+          <h3 class="font-semibold text-lg mb-2">🎯 Learn Two-Letter Words</h3>
+          <p class="text-[var(--color-text-muted)] text-sm">
+            Memorize all valid 2-letter words. They're essential for parallel plays and squeezing
+            into tight board positions. <a
+              href="/two-letter-scrabble-words"
+              class="text-[var(--color-primary)] hover:underline">See the full list →</a
+            >
+          </p>
+        </div>
+        <div
+          class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 shadow-sm"
+        >
+          <h3 class="font-semibold text-lg mb-2">💎 Use High-Value Tiles Wisely</h3>
+          <p class="text-[var(--color-text-muted)] text-sm">
+            Don't waste Q, Z, X, J on low-scoring plays. Aim for premium squares and combine with
+            common letters for massive points.
+          </p>
+        </div>
+        <div
+          class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 shadow-sm"
+        >
+          <h3 class="font-semibold text-lg mb-2">🔗 Hook Words</h3>
+          <p class="text-[var(--color-text-muted)] text-sm">
+            Add a single letter to an existing word (like turning "HEAT" into "CHEAT" or "HEATS") to
+            score points for both words.
+          </p>
+        </div>
+        <div
+          class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 shadow-sm"
+        >
+          <h3 class="font-semibold text-lg mb-2">⭐ Aim for Bingos</h3>
+          <p class="text-[var(--color-text-muted)] text-sm">
+            Using all 7 tiles in a single play earns a 50-point bonus. Keep a balanced rack of
+            vowels and consonants to maximize bingo chances.
+          </p>
+        </div>
+      </div>
+
+      <h2 class="text-2xl md:text-3xl font-bold mt-12 mb-6">Popular Word Lists</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 not-prose">
+        <a
+          href="/two-letter-scrabble-words"
+          class="block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-4 text-center hover:shadow-md hover:border-[var(--color-primary)] transition-all"
+        >
+          <span class="text-2xl font-bold text-[var(--color-primary)]">2</span>
+          <p class="text-sm font-medium mt-1">Letter Words</p>
+        </a>
+        <a
+          href="/3-letter-words"
+          class="block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-4 text-center hover:shadow-md hover:border-[var(--color-primary)] transition-all"
+        >
+          <span class="text-2xl font-bold text-[var(--color-primary)]">3</span>
+          <p class="text-sm font-medium mt-1">Letter Words</p>
+        </a>
+        <a
+          href="/4-letter-words-starting-with/a"
+          class="block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-4 text-center hover:shadow-md hover:border-[var(--color-primary)] transition-all"
+        >
+          <span class="text-2xl font-bold text-[var(--color-primary)]">4+</span>
+          <p class="text-sm font-medium mt-1">Letter Words</p>
+        </a>
+        <a
+          href="/words-without-vowels"
+          class="block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-4 text-center hover:shadow-md hover:border-[var(--color-primary)] transition-all"
+        >
+          <span class="text-2xl">🚫</span>
+          <p class="text-sm font-medium mt-1">No-Vowel Words</p>
+        </a>
+        <a
+          href="/scrabble-vowel-words"
+          class="block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-4 text-center hover:shadow-md hover:border-[var(--color-primary)] transition-all"
+        >
+          <span class="text-2xl">🔤</span>
+          <p class="text-sm font-medium mt-1">Vowel Words</p>
+        </a>
+        <a
+          href="/word-list"
+          class="block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-4 text-center hover:shadow-md hover:border-[var(--color-primary)] transition-all"
+        >
+          <span class="text-2xl">📚</span>
+          <p class="text-sm font-medium mt-1">All Word Lists</p>
+        </a>
+      </div>
+
+      <h2 class="text-2xl md:text-3xl font-bold mt-12 mb-6">Latest Articles</h2>
+      <div id="latest-articles" class="grid md:grid-cols-2 gap-6 not-prose">
+        <a
+          href="/blog"
+          class="block bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 hover:shadow-md transition-shadow"
+        >
+          <p class="text-[var(--color-primary)] font-semibold">Visit our Blog →</p>
+          <p class="text-sm text-gray-500 mt-1">Tips, strategies, and word game guides</p>
+        </a>
+      </div>
+      <FAQSection faqs={faqs} />
+    </div>
+  </section>
+
+  <!-- Definition Modal -->
+  <div
+    id="definition-modal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+  >
+    <div
+      class="bg-[var(--color-card)] rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto"
+    >
+      <div class="flex items-center justify-between p-5 border-b">
+        <h3 id="modal-word-title" class="text-xl font-bold uppercase tracking-wide"></h3>
+        <button
+          id="modal-close-btn"
+          class="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] p-1"
+          aria-label="Close"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"></path></svg
+          >
+        </button>
+      </div>
+      <div id="modal-body" class="p-5">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { initWordFinder } from '../lib/wordHelper';
+  initWordFinder({ defaultDict: 'TWL' });
+</script>

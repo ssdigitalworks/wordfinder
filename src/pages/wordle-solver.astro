@@ -1,0 +1,292 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import AdPlaceholder from '../components/ui/AdPlaceholder.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import FAQSection from '../components/ui/FAQSection.astro';
+import SmartScrabbleCoach from '@components/ui/SmartScrabbleCoach.astro';
+
+const title = 'Wordle Solver — Ultimate Wordle Helper';
+const description =
+  'Free interactive Wordle solver. Filter 5-letter candidate words using green (correct spot), yellow (wrong spot), and gray (excluded) constraints.';
+const canonical = `${SITE_URL}/wordle-solver`;
+
+const faqs = [
+  {
+    question: 'How does the Wordle Solver work?',
+    answer:
+      'Enter letters into the correct spot (Green tiles) if you know their exact position, enter letters in the wrong spot (Yellow tiles) if they are in the word but in a different position, and enter excluded letters (Gray input) if they are not in the word at all. The solver will filter all valid 5-letter candidate words.',
+  },
+  {
+    question: 'What is Wordle?',
+    answer:
+      'Wordle is a popular daily word puzzle game where players have six attempts to guess a secret five-letter word. Feedback is given for each guess in the form of colored tiles: green for correct position, yellow for correct letter in wrong position, and gray for incorrect letter.',
+  },
+  {
+    question: 'How do I type Yellow constraints?',
+    answer:
+      'For yellow tiles, enter the letters that were marked yellow for each slot. You can enter multiple letters per box if you have discovered yellow letters for that position in different attempts.',
+  },
+];
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonical}
+    schemaType="WebApplication"
+    appName="Wordle Solver"
+    appDescription={description}
+    faqs={faqs}
+  />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'Wordle Solver',
+      url: canonical,
+      description: description,
+      applicationCategory: 'GameApplication',
+      operatingSystem: 'Any',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    }}
+  />
+
+  <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Wordle Solver' }]} />
+
+  <!-- Premium Blur Background Accent -->
+  <div
+    class="absolute top-0 left-0 w-full h-[650px] pointer-events-none overflow-hidden -z-10 opacity-75"
+  >
+    <div
+      class="absolute top-[-12%] left-[10%] w-[40%] h-[55%] rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] blur-[100px] opacity-10 dark:opacity-[0.2] animate-pulse"
+      style="animation-duration: 8s;"
+    >
+    </div>
+  </div>
+
+  <section class="py-10 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="text-center mb-10">
+        <h1
+          class="text-3xl md:text-5xl font-extrabold tracking-tight mb-3 font-['Plus_Jakarta_Sans',system-ui,sans-serif] bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent"
+        >
+          Wordle Helper &amp; Solver
+        </h1>
+        <p class="text-[var(--color-text-muted)] text-base md:text-lg max-w-2xl mx-auto">
+          Uncover the Wordle solution! Input green (correct spot), yellow (present but wrong spot),
+          and gray (excluded) letters to find valid 5-letter candidates.
+        </p>
+      </div>
+
+      <!-- Wordle Inputs Board -->
+      <div
+        class="card p-6 md:p-8 border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg mb-8 space-y-6"
+      >
+        <form id="wordle-form" class="space-y-6">
+          <!-- 1. Green: Correct Positions -->
+          <div>
+            <span
+              class="block text-xs uppercase tracking-wider text-green-600 dark:text-green-400 font-bold mb-2"
+              >🟩 Green Letters (Correct Position)</span
+            >
+            <div class="flex gap-2.5 justify-center">
+              {
+                [0, 1, 2, 3, 4].map((idx) => (
+                  <input
+                    type="text"
+                    maxlength="1"
+                    data-green={idx}
+                    class="w-12 h-12 text-center text-xl font-bold uppercase rounded-xl border border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/20 text-green-700 dark:text-green-400 outline-none focus:ring-2 focus:ring-green-500 font-mono"
+                    placeholder=""
+                  />
+                ))
+              }
+            </div>
+          </div>
+
+          <!-- 2. Yellow: Wrong Positions -->
+          <div>
+            <span
+              class="block text-xs uppercase tracking-wider text-yellow-600 dark:text-yellow-400 font-bold mb-2"
+              >🟨 Yellow Letters (Present, Wrong Position)</span
+            >
+            <div class="flex gap-2.5 justify-center">
+              {
+                [0, 1, 2, 3, 4].map((idx) => (
+                  <input
+                    type="text"
+                    maxlength="5"
+                    data-yellow={idx}
+                    class="w-12 h-12 text-center text-sm font-bold uppercase rounded-xl border border-yellow-200 dark:border-yellow-900 bg-yellow-50/50 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 outline-none focus:ring-2 focus:ring-yellow-500 font-mono"
+                    placeholder="Letters"
+                    title="Letters in this position that are yellow"
+                  />
+                ))
+              }
+            </div>
+          </div>
+
+          <!-- 3. Gray: Excluded Letters -->
+          <div>
+            <label
+              for="gray-input"
+              class="block text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold mb-2"
+              >⬛ Gray Letters (Excluded from Word)</label
+            >
+            <input
+              type="text"
+              id="gray-input"
+              placeholder="e.g. A, E, I, O (Separate with commas or type consecutively)"
+              autocomplete="off"
+              autocapitalize="characters"
+              class="air-input uppercase font-mono tracking-widest font-semibold"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="btn-primary w-full py-3.5 font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md"
+          >
+            🟩 Find Wordle Candidates
+          </button>
+        </form>
+      </div>
+
+      <AdPlaceholder slot_id="wordle-above-results" />
+
+      <!-- Results Container -->
+      <div id="wordle-results" class="min-h-[120px] mt-8">
+        <div class="text-center py-16 text-[var(--color-text-muted)]" id="wordle-empty-state">
+          <svg
+            class="w-16 h-16 mx-auto mb-4 opacity-40"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+            ></path></svg
+          >
+          <p class="text-lg font-medium">Input your guesses above</p>
+          <p class="text-sm mt-1">We will compile the possible 5-letter words alphabetically</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-10 border-t border-b border-[var(--color-border)] bg-[var(--color-bg-alt)]/20">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <SmartScrabbleCoach />
+    </div>
+  </section>
+
+  <section class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl prose prose-lg">
+      <FAQSection faqs={faqs} />
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  (function () {
+    const form = document.getElementById('wordle-form');
+    const greenInputs = document.querySelectorAll('[data-green]');
+    const yellowInputs = document.querySelectorAll('[data-yellow]');
+    const grayInput = document.getElementById('gray-input') as HTMLInputElement | null;
+    const resultsContainer = document.getElementById('wordle-results');
+
+    if (!form || !grayInput || !resultsContainer) return;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Extract Green
+      const green: string[] = [];
+      greenInputs.forEach((el) => {
+        const idx = Number((el as HTMLInputElement).dataset.green);
+        green[idx] = (el as HTMLInputElement).value.trim().toUpperCase();
+      });
+
+      // Extract Yellow
+      const yellow: string[][] = [];
+      yellowInputs.forEach((el) => {
+        const idx = Number((el as HTMLInputElement).dataset.yellow);
+        const val = (el as HTMLInputElement).value
+          .trim()
+          .toUpperCase()
+          .replace(/[^A-Z]/g, '');
+        yellow[idx] = val.split('');
+      });
+
+      // Extract Gray
+      const grayStr = grayInput.value.toUpperCase().replace(/[^A-Z]/g, '');
+      const gray = grayStr.split('');
+
+      resultsContainer.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-16">
+          <div class="w-10 h-10 border-4 border-[var(--color-border)] border-t-green-500 rounded-full animate-spin"></div>
+          <p class="mt-4 text-[var(--color-text-muted)] text-sm">Searching candidate list…</p>
+        </div>`;
+
+      try {
+        const res = await fetch('/api/wordle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ green, yellow, gray }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const words = data.results || [];
+
+        if (words.length === 0) {
+          resultsContainer.innerHTML = `
+            <div class="text-center py-16 text-[var(--color-text-muted)]">
+              <svg class="w-16 h-16 mx-auto mb-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg>
+              <p class="text-lg font-medium">No candidate words match these constraints</p>
+              <p class="text-sm mt-1">Please double-check your Wordle tile colors</p>
+            </div>`;
+          return;
+        }
+
+        let html = `
+          <div class="mb-4">
+            <p class="text-sm text-[var(--color-text-muted)]">Found <strong class="text-[var(--color-text-main)]">${words.length}</strong> matching candidate words:</p>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">`;
+
+        words.forEach((w: { word: string; score?: number }) => {
+          html += `
+            <a
+              href="/word/${w.word.toLowerCase()}"
+              class="word-card bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] hover:border-green-500 p-3.5 text-center hover:shadow-md transition-all"
+            >
+              <span class="font-bold text-sm uppercase tracking-wider text-[var(--color-text-main)] block">${w.word}</span>
+            </a>`;
+        });
+        html += `</div>`;
+        resultsContainer.innerHTML = html;
+      } catch (err: unknown) {
+        resultsContainer.innerHTML = `
+          <div class="text-center py-12 text-red-500 font-medium">
+            <p>Error finding Wordle words</p>
+            <p class="text-xs mt-1 text-[var(--color-text-muted)]">${(err as Error).message}</p>
+          </div>`;
+      }
+    });
+  })();
+</script>

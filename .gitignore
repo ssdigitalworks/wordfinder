@@ -1,0 +1,29 @@
+# Node modules
+node_modules/
+
+# Build and local cache output directories
+dist/
+.astro/
+.vercel/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS and system files
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Generated dictionary JSON files
+public/data/*.json
+
+# Local dev databases
+local.db
+
+# Leftover script and scratch files
+scratch_*

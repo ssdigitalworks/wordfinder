@@ -1,0 +1,89 @@
+---
+interface Props {
+  maxTabs?: number;
+}
+
+const { maxTabs: _maxTabs = 10 } = Astro.props;
+---
+
+<div id="word-results" class="tool-panel hidden fade-in" role="region" aria-label="Search results">
+  <!-- Results Header -->
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <h2
+      class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-lg font-bold text-[var(--color-text-main)]"
+    >
+      Results
+      <span id="results-count" class="text-[var(--color-text-muted)] font-normal text-base ml-1" role="status" aria-live="polite"
+      ></span>
+    </h2>
+    <div class="flex items-center gap-2">
+      <!-- Sort Toggle -->
+      <button
+        type="button"
+        id="sort-toggle"
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-primary-light)] transition-all duration-200"
+        aria-label="Toggle sort order"
+      >
+        <svg aria-hidden="true" focusable="false" class="h-3.5 w-3.5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5-4.5L16.5 16.5m0 0L12 12m4.5 4.5V3"></path>
+        </svg>
+        <span id="sort-label">Score ↓</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Word Length Tabs -->
+  <div
+    class="flex items-center gap-0.5 overflow-x-auto pb-2 mb-3 border-b border-[var(--color-border)] scrollbar-hide"
+    role="tablist"
+    aria-label="Filter by word length"
+    id="length-tabs"
+  >
+    <button
+      type="button"
+      role="tab"
+      aria-selected="true"
+      class="tab-btn active shrink-0"
+      data-length="all"
+    >
+      All
+    </button>
+    <!-- JS will populate length tabs dynamically -->
+  </div>
+
+  <!-- Results Container -->
+  <div id="results-container" class="space-y-6" role="status" aria-live="polite">
+    <!-- Results List Container -->
+    <div id="results-list" class="space-y-0.5 max-h-[60vh] overflow-y-auto" role="tabpanel">
+      <!-- JS will populate results here -->
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="results-empty" class="hidden py-12 text-center">
+    <div class="text-4xl mb-3">🤔</div>
+    <h3
+      class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-lg font-bold text-[var(--color-text-main)] mb-1"
+    >
+      No words found
+    </h3>
+    <p class="text-sm text-[var(--color-text-muted)] max-w-sm mx-auto">
+      Try different letters or adjust your filter settings. Remember, you can use <strong>?</strong> for
+      blank tiles.
+    </p>
+  </div>
+
+  <!-- Loading State -->
+  <div id="results-loading" class="hidden py-12 flex flex-col items-center gap-3">
+    <div class="spinner"></div>
+    <p class="text-sm text-[var(--color-text-muted)]">Searching dictionary...</p>
+  </div>
+</div>

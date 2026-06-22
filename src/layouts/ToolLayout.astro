@@ -1,0 +1,61 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import SEO from '../components/seo/SEO.astro';
+
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  ogImage?: string;
+  noindex?: boolean;
+  breadcrumbs?: BreadcrumbItem[];
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '5xl' | '6xl' | '7xl';
+}
+
+const {
+  title,
+  description,
+  canonical,
+  ogImage,
+  noindex = false,
+  breadcrumbs = [],
+  maxWidth = '4xl',
+} = Astro.props;
+
+const maxWidthClasses: Record<string, string> = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '4xl': 'max-w-4xl',
+  '5xl': 'max-w-5xl',
+  '6xl': 'max-w-6xl',
+  '7xl': 'max-w-7xl',
+};
+---
+
+<BaseLayout>
+  <Fragment slot="head">
+    <SEO
+      title={title}
+      description={description}
+      canonical={canonical}
+      ogImage={ogImage}
+      noindex={noindex}
+    />
+    <slot name="head" />
+  </Fragment>
+
+  <div class={`${maxWidthClasses[maxWidth]} mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8`}>
+    {breadcrumbs.length > 0 && <Breadcrumb items={breadcrumbs} />}
+
+    <slot />
+  </div>
+</BaseLayout>

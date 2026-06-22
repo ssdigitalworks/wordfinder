@@ -1,0 +1,619 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = true;
+
+import BaseLayout from '@layouts/BaseLayout.astro';
+import SEO from '@components/seo/SEO.astro';
+import Breadcrumb from '@components/layout/Breadcrumb.astro';
+
+const title = 'Website Sitemap — Scrabble Word Finder';
+const description =
+  'Complete website map for Scrabble Word Finder. Browse all of our solvers, word lists, letter-specific lists, length combinations, and cheat sheets.';
+const canonical = new URL(Astro.url.pathname, SITE_URL).href;
+
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const lengths = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+
+const corePages = [
+  { label: 'Homepage', href: '/' },
+  { label: 'About Us', href: '/about' },
+  { label: 'Contact Us', href: '/contact' },
+  { label: 'Disclaimer', href: '/disclaimer' },
+  { label: 'Privacy Policy', href: '/privacy-policy' },
+  { label: 'Terms of Service', href: '/terms' },
+];
+
+const toolPages = [
+  { label: 'Scrabble Word Finder', href: '/' },
+  { label: 'Anagram Solver', href: '/anagram-solver' },
+  { label: 'Unscramble Words', href: '/unscramble-words' },
+  { label: 'Word Generator', href: '/word-generator' },
+  { label: 'Crossword Solver', href: '/crossword-solver' },
+  { label: 'Wordle Solver', href: '/wordle-solver' },
+  { label: 'Word Checker', href: '/word-checker' },
+  { label: 'Word Statistics', href: '/word-statistics' },
+  { label: 'Word Lists', href: '/word-lists' },
+  { label: 'Dictionary Checker', href: '/dictionary-checker' },
+  { label: 'Words With Friends Cheat', href: '/words-with-friends-cheat' },
+];
+
+const specialLists = [
+  { label: 'Words Without Vowels', href: '/words-without-vowels' },
+  { label: 'Vowel-Heavy Words', href: '/scrabble-vowel-words' },
+  { label: 'Q Without U Words', href: '/scrabble-words-with/q/and-no/u' },
+  { label: 'Highest Scoring Words', href: '/highest-scoring-scrabble-words' },
+  { label: 'Rare Q Words', href: '/rare-q-words' },
+  { label: 'Z Words Without U', href: '/z-words-without-u' },
+  { label: 'Best Opening Words', href: '/best-opening-scrabble-words' },
+  { label: 'Hardest Words to Play', href: '/hardest-scrabble-words' },
+  { label: '2-Letter Cheat Sheet', href: '/2-letter-scrabble-cheat-sheet' },
+];
+
+// Programmatic Patterns
+const containings = [
+  'th',
+  'he',
+  'an',
+  'in',
+  'er',
+  're',
+  'on',
+  'at',
+  'es',
+  'ea',
+  'st',
+  'ou',
+  'ow',
+  'ch',
+  'sh',
+  'ph',
+  'gh',
+  'oo',
+  'ee',
+  'ai',
+  'ay',
+  'ab',
+  'ing',
+  'tion',
+  'ly',
+  'ness',
+];
+const prefixes = [
+  'un',
+  're',
+  'in',
+  'dis',
+  'de',
+  'sub',
+  'pre',
+  'pro',
+  'con',
+  'ad',
+  'ex',
+  'over',
+  'mis',
+  'non',
+  'anti',
+  'mono',
+  'multi',
+  'semi',
+  'inter',
+  'trans',
+  'super',
+  'under',
+];
+const suffixes = [
+  'er',
+  'ed',
+  'ing',
+  'tion',
+  'ly',
+  'ness',
+  'ment',
+  'able',
+  'ful',
+  'less',
+  'ous',
+  'ive',
+  'que',
+  'ize',
+  'ise',
+  'ism',
+  'ist',
+  'al',
+  'ic',
+  'ity',
+  'logy',
+  'ship',
+  'hood',
+];
+
+// High scoring letter combos
+const highValue = ['q', 'z', 'x', 'j', 'k'];
+const comboLinks: { label: string; href: string }[] = [];
+highValue.forEach((l1) => {
+  alphabet.forEach((l2) => {
+    const letter2 = l2.toLowerCase();
+    if (l1 !== letter2) {
+      comboLinks.push({
+        label: `Scrabble Words with ${l1.toUpperCase()} and ${l2}`,
+        href: `/scrabble-words-with/${l1}/and/${letter2}`,
+      });
+      comboLinks.push({
+        label: `Scrabble Words with ${l1.toUpperCase()} and no ${l2}`,
+        href: `/scrabble-words-with/${l1}/and-no/${letter2}`,
+      });
+    }
+  });
+});
+
+// Length combinators (2..8)
+const lengthCombos = [2, 3, 4, 5, 6, 7, 8];
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} />
+
+  <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Sitemap' }]} />
+
+  <section class="max-w-4xl mx-auto px-4 py-12">
+    <!-- Page Header -->
+    <div class="text-center mb-12">
+      <h1
+        class="text-4xl md:text-5xl font-extrabold text-[var(--color-text-main)] mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif] animate-entrance"
+      >
+        Sitemap
+      </h1>
+      <p
+        class="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto leading-relaxed animate-entrance delay-1"
+      >
+        Browse all tools, word lists, resources, and legal pages on Scrabble Word Finder.
+      </p>
+    </div>
+
+    <!-- Core Pages & Solvers -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+      <!-- Main Site Pages Card -->
+      <div class="card p-8 animate-entrance delay-2">
+        <h2
+          class="text-xl font-bold text-[var(--color-text-main)] mb-5 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2"
+        >
+          <span>📄</span> Core Pages
+        </h2>
+        <ul class="space-y-3">
+          {
+            corePages.map((page) => (
+              <li>
+                <a
+                  href={page.href}
+                  class="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] font-medium transition-colors"
+                >
+                  {page.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <!-- Word Game Tools Card -->
+      <div class="card p-8 animate-entrance delay-2">
+        <h2
+          class="text-xl font-bold text-[var(--color-text-main)] mb-5 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2"
+        >
+          <span>⚙️</span> Solvers &amp; Tools
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {
+            toolPages.map((tool) => (
+              <a
+                href={tool.href}
+                class="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] font-medium transition-colors text-sm"
+              >
+                • {tool.label}
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Accordion listings for all programmatic SEO routes -->
+    <div class="space-y-4">
+      <!-- Word Length Categories Card -->
+      <div class="card p-6 animate-entrance delay-3">
+        <h2
+          class="text-lg font-bold text-[var(--color-text-main)] mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2"
+        >
+          <span>📏</span> Words By Length
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
+          {
+            lengths.map((len) => (
+              <a
+                href={
+                  len === 2
+                    ? '/two-letter-scrabble-words'
+                    : len === 3
+                      ? '/3-letter-words'
+                      : `/${len}-letter-words`
+                }
+                class="text-center py-2 px-3 rounded-xl border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-all bg-[var(--color-card)]"
+              >
+                {len} Letters
+              </a>
+            ))
+          }
+        </div>
+      </div>
+
+      <!-- Words Starting With [Letter] Accordion -->
+      <details
+        class="group card p-6 [&_summary::-webkit-details-marker]:hidden animate-entrance delay-3"
+      >
+        <summary
+          class="font-bold text-lg text-[var(--color-text-main)] flex items-center justify-between list-none cursor-pointer"
+        >
+          <span class="flex items-center gap-2"><span>🔤</span> Words Starting With...</span>
+          <span class="flex items-center gap-2">
+            <span class="text-xs text-[var(--color-text-muted)] font-normal">Show 26 links</span>
+            <svg
+              class="w-5 h-5 transition-transform duration-200 group-open:rotate-180 text-[var(--color-text-muted)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </span>
+        </summary>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-5 border-t border-[var(--color-border)] pt-5"
+        >
+          {
+            alphabet.map((l) => (
+              <a
+                href={`/words-starting-with/${l.toLowerCase()}`}
+                class="py-2.5 px-4 rounded-xl border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-all bg-[var(--color-card)]"
+              >
+                Words Starting With {l}
+              </a>
+            ))
+          }
+        </div>
+      </details>
+
+      <!-- Words Ending In [Letter] Accordion -->
+      <details
+        class="group card p-6 [&_summary::-webkit-details-marker]:hidden animate-entrance delay-3"
+      >
+        <summary
+          class="font-bold text-lg text-[var(--color-text-main)] flex items-center justify-between list-none cursor-pointer"
+        >
+          <span class="flex items-center gap-2"><span>🔚</span> Words Ending In...</span>
+          <span class="flex items-center gap-2">
+            <span class="text-xs text-[var(--color-text-muted)] font-normal">Show 26 links</span>
+            <svg
+              class="w-5 h-5 transition-transform duration-200 group-open:rotate-180 text-[var(--color-text-muted)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </span>
+        </summary>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-5 border-t border-[var(--color-border)] pt-5"
+        >
+          {
+            alphabet.map((l) => (
+              <a
+                href={`/words-ending-in/${l.toLowerCase()}`}
+                class="py-2.5 px-4 rounded-xl border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-all bg-[var(--color-card)]"
+              >
+                Words Ending In {l}
+              </a>
+            ))
+          }
+        </div>
+      </details>
+
+      <!-- Words Containing [Letter] Accordion -->
+      <details
+        class="group card p-6 [&_summary::-webkit-details-marker]:hidden animate-entrance delay-3"
+      >
+        <summary
+          class="font-bold text-lg text-[var(--color-text-main)] flex items-center justify-between list-none cursor-pointer"
+        >
+          <span class="flex items-center gap-2"><span>🔍</span> Words Containing Letter...</span>
+          <span class="flex items-center gap-2">
+            <span class="text-xs text-[var(--color-text-muted)] font-normal">Show 26 links</span>
+            <svg
+              class="w-5 h-5 transition-transform duration-200 group-open:rotate-180 text-[var(--color-text-muted)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </span>
+        </summary>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-5 border-t border-[var(--color-border)] pt-5"
+        >
+          {
+            alphabet.map((l) => (
+              <a
+                href={`/words-containing-${l.toLowerCase()}`}
+                class="py-2.5 px-4 rounded-xl border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-all bg-[var(--color-card)]"
+              >
+                Words Containing {l}
+              </a>
+            ))
+          }
+        </div>
+      </details>
+
+      <!-- Words with Prefix/Suffix/Contain Patterns Accordion -->
+      <details
+        class="group card p-6 [&_summary::-webkit-details-marker]:hidden animate-entrance delay-4"
+      >
+        <summary
+          class="font-bold text-lg text-[var(--color-text-main)] flex items-center justify-between list-none cursor-pointer"
+        >
+          <span class="flex items-center gap-2"
+            ><span>🧩</span> Prefix, Suffix &amp; Substring Patterns</span
+          >
+          <span class="flex items-center gap-2">
+            <span class="text-xs text-[var(--color-text-muted)] font-normal">Show 91 links</span>
+            <svg
+              class="w-5 h-5 transition-transform duration-200 group-open:rotate-180 text-[var(--color-text-muted)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </span>
+        </summary>
+        <div class="space-y-6 mt-5 border-t border-[var(--color-border)] pt-5">
+          <div>
+            <h4
+              class="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2.5"
+            >
+              Prefixes (Starting with)
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              {
+                prefixes.map((p) => (
+                  <a
+                    href={`/words-starting-with/${p}`}
+                    class="py-2 px-3 rounded-lg border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] bg-[var(--color-card)] transition-colors"
+                  >
+                    Words Starting With {p.toUpperCase()}
+                  </a>
+                ))
+              }
+            </div>
+          </div>
+          <div>
+            <h4
+              class="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2.5"
+            >
+              Suffixes (Ending in)
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              {
+                suffixes.map((p) => (
+                  <a
+                    href={`/words-ending-in/${p}`}
+                    class="py-2 px-3 rounded-lg border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] bg-[var(--color-card)] transition-colors"
+                  >
+                    Words Ending In {p.toUpperCase()}
+                  </a>
+                ))
+              }
+            </div>
+          </div>
+          <div>
+            <h4
+              class="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2.5"
+            >
+              Containings (Containing substring)
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              {
+                containings.map((p) => (
+                  <a
+                    href={`/words-containing-${p}`}
+                    class="py-2 px-3 rounded-lg border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] bg-[var(--color-card)] transition-colors"
+                  >
+                    Words Containing {p.toUpperCase()}
+                  </a>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- Words By Length and Starting Letter Accordion -->
+      <details
+        class="group card p-6 [&_summary::-webkit-details-marker]:hidden animate-entrance delay-4"
+      >
+        <summary
+          class="font-bold text-lg text-[var(--color-text-main)] flex items-center justify-between list-none cursor-pointer"
+        >
+          <span class="flex items-center gap-2"
+            ><span>📈</span> Words By Length &amp; Starting Letter</span
+          >
+          <span class="flex items-center gap-2">
+            <span class="text-xs text-[var(--color-text-muted)] font-normal">Show 182 links</span>
+            <svg
+              class="w-5 h-5 transition-transform duration-200 group-open:rotate-180 text-[var(--color-text-muted)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </span>
+        </summary>
+        <div class="space-y-6 mt-5 border-t border-[var(--color-border)] pt-5">
+          {
+            lengthCombos.map((n) => (
+              <div>
+                <h4 class="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2.5">
+                  {n}-Letter Words
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                  {alphabet.map((letter) => (
+                    <a
+                      href={`/${n}-letter-words-starting-with/${letter.toLowerCase()}`}
+                      class="py-2 px-3 rounded-lg border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] bg-[var(--color-card)] transition-colors"
+                    >
+                      {n}-Letter Words Starting With {letter}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </details>
+
+      <!-- Words By Length and Ending Letter Accordion -->
+      <details
+        class="group card p-6 [&_summary::-webkit-details-marker]:hidden animate-entrance delay-4"
+      >
+        <summary
+          class="font-bold text-lg text-[var(--color-text-main)] flex items-center justify-between list-none cursor-pointer"
+        >
+          <span class="flex items-center gap-2"
+            ><span>📉</span> Words By Length &amp; Ending Letter</span
+          >
+          <span class="flex items-center gap-2">
+            <span class="text-xs text-[var(--color-text-muted)] font-normal">Show 182 links</span>
+            <svg
+              class="w-5 h-5 transition-transform duration-200 group-open:rotate-180 text-[var(--color-text-muted)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </span>
+        </summary>
+        <div class="space-y-6 mt-5 border-t border-[var(--color-border)] pt-5">
+          {
+            lengthCombos.map((n) => (
+              <div>
+                <h4 class="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2.5">
+                  {n}-Letter Words
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                  {alphabet.map((letter) => (
+                    <a
+                      href={`/${n}-letter-words-ending-in/${letter.toLowerCase()}`}
+                      class="py-2 px-3 rounded-lg border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] bg-[var(--color-card)] transition-colors"
+                    >
+                      {n}-Letter Words Ending In {letter}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </details>
+
+      <!-- Scrabble Letter Combinators Accordion -->
+      <details
+        class="group card p-6 [&_summary::-webkit-details-marker]:hidden animate-entrance delay-5"
+      >
+        <summary
+          class="font-bold text-lg text-[var(--color-text-main)] flex items-center justify-between list-none cursor-pointer"
+        >
+          <span class="flex items-center gap-2"
+            ><span>👑</span> High-Value Scrabble Combinations</span
+          >
+          <span class="flex items-center gap-2">
+            <span class="text-xs text-[var(--color-text-muted)] font-normal">Show 250 links</span>
+            <svg
+              class="w-5 h-5 transition-transform duration-200 group-open:rotate-180 text-[var(--color-text-muted)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </span>
+        </summary>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-5 border-t border-[var(--color-border)] pt-5"
+        >
+          {
+            comboLinks.map((combo) => (
+              <a
+                href={combo.href}
+                class="py-2.5 px-4 rounded-xl border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-all bg-[var(--color-card)]"
+              >
+                {combo.label}
+              </a>
+            ))
+          }
+        </div>
+      </details>
+
+      <!-- Special lists Card -->
+      <div class="card p-6 animate-entrance delay-5">
+        <h2
+          class="text-lg font-bold text-[var(--color-text-main)] mb-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif] flex items-center gap-2"
+        >
+          <span>⭐</span> High-Value &amp; Cheat Sheets
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {
+            specialLists.map((list) => (
+              <a
+                href={list.href}
+                class="p-3.5 rounded-xl border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-all bg-[var(--color-card)] block"
+              >
+                {list.label}
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

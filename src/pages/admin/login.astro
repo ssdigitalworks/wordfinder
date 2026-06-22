@@ -1,0 +1,198 @@
+---
+import '../../styles/global.css';
+import { generateCsrfToken, getSessionSecret } from '../../lib/adminAuth';
+
+export const prerender = false;
+
+const secret = getSessionSecret();
+const csrfToken = generateCsrfToken(secret);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#FAF9F6" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="robots" content="noindex,nofollow" />
+
+    <title>Admin Login | Scrabble Word Finder</title>
+
+    <!-- Self-hosted font preloading -->
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link
+      rel="preload"
+      href="/fonts/plus-jakarta-sans-700.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Theme: Apply immediately to prevent flash -->
+    <script is:inline>
+      (function () {
+        const stored = localStorage.getItem('theme');
+        const theme =
+          stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body
+    class="bg-[var(--color-bg)] text-[var(--color-text-main)] min-h-screen flex items-center justify-center p-4 font-[var(--font-control)]"
+  >
+    <div class="w-full max-w-md">
+      <!-- Logo / Heading -->
+      <div class="text-center mb-8">
+        <h1
+          class="text-3xl font-extrabold text-[var(--color-primary)] font-['Plus_Jakarta_Sans',system-ui,sans-serif] tracking-tight"
+        >
+          WordFinder Admin
+        </h1>
+        <p class="text-sm text-[var(--color-text-muted)] mt-2">
+          Sign in to manage posts and settings
+        </p>
+      </div>
+
+      <!-- Login Card -->
+      <div
+        class="card p-8 border border-[var(--color-border)] shadow-xl relative overflow-hidden bg-[var(--color-card)] rounded-2xl"
+      >
+        <!-- Top accent line -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-[var(--color-primary)]"></div>
+
+        <form id="login-form" class="space-y-6">
+          <input type="hidden" name="csrfToken" value={csrfToken} />
+
+          <div>
+            <label
+              for="email"
+              class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+            >
+              Email Address
+            </label>
+            <div class="relative mb-4">
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                placeholder="admin@example.com"
+                class="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all placeholder-[var(--color-text-muted)]/50"
+              />
+            </div>
+            
+            <label
+              for="password"
+              class="block text-sm font-semibold text-[var(--color-text-main)] mb-2"
+            >
+              Password
+            </label>
+            <div class="relative">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                placeholder="Enter password"
+                class="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-alt)] text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all placeholder-[var(--color-text-muted)]/50"
+              />
+            </div>
+          </div>
+
+          <!-- Error message container -->
+          <div
+            id="error-alert"
+            class="hidden p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm font-medium"
+          >
+          </div>
+
+          <!-- Rate Limit status warning -->
+          <div
+            id="rate-limit-alert"
+            class="hidden p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-medium"
+          >
+          </div>
+
+          <button
+            type="submit"
+            id="submit-btn"
+            class="w-full btn-primary py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer"
+          >
+            Sign In
+          </button>
+        </form>
+      </div>
+
+      <!-- Footer Info -->
+      <p class="text-center text-xs text-[var(--color-text-muted)] mt-6">
+        &copy; {new Date().getFullYear()} Scrabble Word Finder. All rights reserved.
+      </p>
+    </div>
+
+    <script>
+      const form = document.getElementById('login-form') as HTMLFormElement;
+      const errorAlert = document.getElementById('error-alert') as HTMLDivElement;
+      const rateLimitAlert = document.getElementById('rate-limit-alert') as HTMLDivElement;
+      const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Clear previous state
+        errorAlert.classList.add('hidden');
+        errorAlert.innerText = '';
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Verifying...';
+
+        const formData = new FormData(form);
+        const email = formData.get('email');
+        const password = formData.get('password');
+        const csrfToken = formData.get('csrfToken');
+
+        try {
+          const res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password, csrfToken }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            window.location.href = data.redirect || '/admin';
+          } else {
+            errorAlert.innerText = data.error || 'Authentication failed.';
+            errorAlert.classList.remove('hidden');
+
+            // Check for rate limits or attempts remaining
+            if (data.rateLimit) {
+              const { remaining, resetTime } = data.rateLimit;
+              if (remaining === 0) {
+                const minutesLeft = Math.ceil((new Date(resetTime).getTime() - Date.now()) / 60000);
+                rateLimitAlert.innerText = `Too many failed attempts. Locked out for ${minutesLeft} minute(s).`;
+                rateLimitAlert.classList.remove('hidden');
+              } else {
+                rateLimitAlert.innerText = `${remaining} attempt(s) remaining before lock.`;
+                rateLimitAlert.classList.remove('hidden');
+              }
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Sign In';
+          }
+        } catch (err) {
+          console.error('Login error:', err);
+          errorAlert.innerText = 'A network error occurred. Please try again.';
+          errorAlert.classList.remove('hidden');
+          submitBtn.disabled = false;
+          submitBtn.innerText = 'Sign In';
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,288 @@
+---
+import { SITE_URL } from '@lib/config';
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/seo/SEO.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import WordFinderForm from '../components/ui/WordFinderForm.astro';
+import AdPlaceholder from '../components/ui/AdPlaceholder.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import SmartScrabbleCoach from '../components/ui/SmartScrabbleCoach.astro';
+import FAQSection from '../components/ui/FAQSection.astro';
+
+// Set long CDN cache headers for optimal performance
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=86400');
+
+const title = 'Words With Friends Cheat — Word Finder & Unscrambler';
+const description =
+  'Free Words With Friends cheat tool. Unscramble your letters, find the highest-scoring words, and win every game with our ENABLE dictionary word finder.';
+const canonical = new URL(Astro.url.pathname, SITE_URL).href;
+
+const faqs = [
+  {
+    question: 'Is this Words With Friends cheat free to use?',
+    answer:
+      'Yes, our helper is completely free, runs instantly in your browser, and requires no registration or software installation.',
+  },
+  {
+    question: 'What dictionary does Words With Friends use?',
+    answer:
+      'Words With Friends uses the ENABLE dictionary (Enhanced North American Benchmark Labeled Lexicon), which includes a wider variety of modern terms than standard Scrabble.',
+  },
+  {
+    question: 'How do point values differ between Scrabble and Words With Friends?',
+    answer:
+      'Several letters have different values. For example, J is 10 points in WWF but 8 points in Scrabble. The WWF board also features a different distribution of Double/Triple Word and Letter squares.',
+  },
+];
+---
+
+<BaseLayout>
+  <SEO slot="head" title={title} description={description} canonical={canonical} faqs={faqs} />
+  <JsonLd
+    slot="head"
+    schema={{
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'Words With Friends Cheat',
+      url: `${SITE_URL}/words-with-friends-cheat`,
+      description,
+      applicationCategory: 'GameApplication',
+      operatingSystem: 'Any',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    }}
+  />
+
+  <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Words With Friends Cheat' }]} />
+
+  <!-- Premium Blur Background Accent -->
+  <div
+    class="absolute top-0 left-0 w-full h-[650px] pointer-events-none overflow-hidden -z-10 opacity-75"
+  >
+    <div
+      class="absolute top-[-12%] left-[10%] w-[40%] h-[55%] rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] blur-[100px] opacity-15 dark:opacity-[0.25] animate-pulse"
+      style="animation-duration: 8s;"
+    >
+    </div>
+    <div
+      class="absolute top-[-8%] right-[10%] w-[35%] h-[50%] rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 blur-[110px] opacity-15 dark:opacity-[0.22] animate-pulse"
+      style="animation-duration: 12s; animation-delay: 2s;"
+    >
+    </div>
+    <div
+      class="absolute top-[15%] left-[35%] w-[30%] h-[40%] rounded-full bg-gradient-to-br from-amber-400/20 to-pink-500/10 blur-[120px] opacity-10 dark:opacity-[0.15] animate-pulse"
+      style="animation-duration: 10s; animation-delay: 4s;"
+    >
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="py-12 md:py-16 relative">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="text-center">
+        <h1
+          class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 leading-tight animate-entrance bg-gradient-to-r from-[var(--color-primary)] via-indigo-600 to-purple-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent"
+        >
+          Words With Friends Cheat
+        </h1>
+        <p
+          class="text-base md:text-lg text-[var(--color-text-muted)] mb-8 max-w-2xl mx-auto animate-entrance delay-1"
+        >
+          Unscramble your tiles and find every valid word using the ENABLE dictionary — built for
+          Words With Friends.
+        </p>
+        <div class="max-w-2xl mx-auto text-left animate-entrance delay-2">
+          <WordFinderForm defaultDict="enable" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results Section -->
+  <section class="py-8 md:py-12">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div id="results-container" class="min-h-[120px]">
+        <div id="results-empty-state" class="text-center py-16 text-[var(--color-text-muted)]">
+          <svg
+            class="w-16 h-16 mx-auto mb-4 opacity-40"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg
+          >
+          <p class="text-lg font-medium">Enter your letters above to find words</p>
+          <p class="text-sm mt-1">
+            Use <code
+              class="bg-[var(--color-border)] text-[var(--color-text-muted)] px-1.5 py-0.5 rounded text-xs"
+              >?</code
+            > for blank tiles
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container mx-auto px-4 max-w-4xl">
+    <AdPlaceholder slot_id="wwf-below-results" class="my-8" />
+  </div>
+
+  <section class="py-10 border-t border-b border-[var(--color-border)] bg-[var(--color-bg-alt)]/20">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <SmartScrabbleCoach />
+    </div>
+  </section>
+
+  <!-- SEO Content -->
+  <section class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl prose prose-lg">
+      <h2 class="text-2xl md:text-3xl font-bold mb-6">How To Use This Words With Friends Cheat</h2>
+      <ol class="space-y-3">
+        <li>
+          <strong>Enter your rack tiles</strong> — Type the letters shown on your Words With Friends rack.
+          Use <code>?</code> for blank/wildcard tiles.
+        </li>
+        <li>
+          <strong>Dictionary is pre-set</strong> — This tool automatically uses the ENABLE dictionary,
+          which matches Words With Friends' accepted word list.
+        </li>
+        <li>
+          <strong>Apply filters</strong> — Use advanced options to filter by length, starting letters,
+          ending letters, or required letters to match board opportunities.
+        </li>
+        <li>
+          <strong>Find the best play</strong> — Results are sorted by highest score first. Tile point
+          values match WWF scoring.
+        </li>
+      </ol>
+
+      <h2 class="text-2xl md:text-3xl font-bold mt-12 mb-6">Words With Friends vs. Scrabble</h2>
+      <p>
+        While Words With Friends and Scrabble are similar word games, they differ in important ways:
+      </p>
+      <div class="not-prose overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="bg-[var(--color-surface)]">
+              <th class="px-4 py-3 text-left font-semibold border border-[var(--color-border)]"
+                >Feature</th
+              >
+              <th class="px-4 py-3 text-left font-semibold border border-[var(--color-border)]"
+                >Scrabble</th
+              >
+              <th class="px-4 py-3 text-left font-semibold border border-[var(--color-border)]"
+                >Words With Friends</th
+              >
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              ><td class="px-4 py-2 border border-[var(--color-border)]">Dictionary</td><td
+                class="px-4 py-2 border border-[var(--color-border)]">TWL / SOWPODS</td
+              ><td class="px-4 py-2 border border-[var(--color-border)]">ENABLE</td></tr
+            >
+            <tr class="bg-[var(--color-surface)]"
+              ><td class="px-4 py-2 border border-[var(--color-border)]">Board Size</td><td
+                class="px-4 py-2 border border-[var(--color-border)]">15×15</td
+              ><td class="px-4 py-2 border border-[var(--color-border)]">15×15</td></tr
+            >
+            <tr
+              ><td class="px-4 py-2 border border-[var(--color-border)]">Tile Values</td><td
+                class="px-4 py-2 border border-[var(--color-border)]">Fixed classic values</td
+              ><td class="px-4 py-2 border border-[var(--color-border)]">Different point values</td
+              ></tr
+            >
+            <tr class="bg-[var(--color-surface)]"
+              ><td class="px-4 py-2 border border-[var(--color-border)]">Premium Layout</td><td
+                class="px-4 py-2 border border-[var(--color-border)]">Standard symmetric</td
+              ><td class="px-4 py-2 border border-[var(--color-border)]">Different layout</td></tr
+            >
+            <tr
+              ><td class="px-4 py-2 border border-[var(--color-border)]">Blank Tiles</td><td
+                class="px-4 py-2 border border-[var(--color-border)]">2</td
+              ><td class="px-4 py-2 border border-[var(--color-border)]">2</td></tr
+            >
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="text-2xl md:text-3xl font-bold mt-12 mb-6">Top Tips for Words With Friends</h2>
+      <div class="grid md:grid-cols-2 gap-6 not-prose">
+        <div
+          class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 shadow-sm"
+        >
+          <h3 class="font-semibold text-lg mb-2">🎯 Know the Tile Values</h3>
+          <p class="text-[var(--color-text-muted)] text-sm">
+            WWF has different tile scores than Scrabble. J is worth 10 points (vs 8), and many
+            letters have different values. Our tool uses accurate WWF scoring.
+          </p>
+        </div>
+        <div
+          class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 shadow-sm"
+        >
+          <h3 class="font-semibold text-lg mb-2">🗺️ Use the Board Layout</h3>
+          <p class="text-[var(--color-text-muted)] text-sm">
+            The premium square layout is different from Scrabble. Learn where the Triple Word
+            squares are and plan your plays to hit them.
+          </p>
+        </div>
+        <div
+          class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 shadow-sm"
+        >
+          <h3 class="font-semibold text-lg mb-2">🔀 Swap Wisely</h3>
+          <p class="text-[var(--color-text-muted)] text-sm">
+            If your rack is full of vowels or consonants, don't hesitate to swap tiles. A balanced
+            rack leads to more scoring opportunities.
+          </p>
+        </div>
+        <div
+          class="bg-[var(--color-card)] rounded-xl border border-[var(--color-border)] p-5 shadow-sm"
+        >
+          <h3 class="font-semibold text-lg mb-2">📖 Learn ENABLE-Only Words</h3>
+          <p class="text-[var(--color-text-muted)] text-sm">
+            Some words are valid in WWF but not in Scrabble, and vice versa. Knowing
+            ENABLE-exclusive words gives you an edge.
+          </p>
+        </div>
+      </div>
+      <FAQSection faqs={faqs} />
+    </div>
+  </section>
+
+  <!-- Definition Modal -->
+  <div
+    id="definition-modal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+  >
+    <div
+      class="bg-[var(--color-card)] rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto"
+    >
+      <div class="flex items-center justify-between p-5 border-b border-[var(--color-border)]">
+        <h3 id="modal-word-title" class="text-xl font-bold uppercase tracking-wide"></h3>
+        <button
+          id="modal-close-btn"
+          class="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] p-1"
+          aria-label="Close"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"></path></svg
+          >
+        </button>
+      </div>
+      <div id="modal-body" class="p-5"></div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { initWordFinder } from '../lib/wordHelper';
+  initWordFinder({ defaultDict: 'ENABLE' });
+</script>

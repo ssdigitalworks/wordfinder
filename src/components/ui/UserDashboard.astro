@@ -1,0 +1,412 @@
+---
+
+---
+
+<!-- Floating Account/Lobby Button -->
+<button
+  type="button"
+  id="lobby-drawer-toggle"
+  class="fixed fab-safe z-40 w-14 h-14 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex flex-col items-center justify-center shadow-xl hover:scale-105 transition-all cursor-pointer border-2 border-white dark:border-zinc-800"
+  title="My Dashboard & Stats"
+>
+  <span class="text-xl leading-none">👤</span>
+  <span
+    class="text-[8px] font-extrabold uppercase tracking-widest leading-none mt-1 text-indigo-100"
+    >Stats</span
+  >
+  <!-- Active notifications dot if favorites exist -->
+  <span
+    id="lobby-notify-dot"
+    class="absolute top-1.5 right-1.5 w-3 h-3 rounded-full bg-pink-500 border border-white dark:border-zinc-800 hidden animate-pulse"
+  ></span>
+</button>
+
+<!-- Drawer Sidebar Backing Overlay -->
+<div
+  id="lobby-drawer-overlay"
+  class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0"
+>
+</div>
+
+<!-- Drawer Panel -->
+<div
+  id="lobby-drawer"
+  class="fixed top-0 right-0 z-50 h-full w-full sm:w-[380px] bg-gradient-to-b from-[var(--color-card)] to-[var(--color-bg-alt)] border-l border-[var(--color-border)] shadow-2xl translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto flex flex-col justify-between"
+>
+  <div>
+    <!-- Drawer Header -->
+    <div class="p-5 border-b border-[var(--color-border)] flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🏆</span>
+        <h2
+          class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] font-bold text-base text-[var(--color-text-main)]"
+        >
+          My Word Player Hub
+        </h2>
+      </div>
+      <button
+        type="button"
+        id="lobby-drawer-close"
+        class="w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-[var(--color-bg-alt)] text-[var(--color-text-muted)] cursor-pointer"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- User Profile Card -->
+    <div class="p-5">
+      <div
+        class="bg-gradient-to-br from-indigo-600/5 to-purple-600/5 border border-indigo-100 dark:border-indigo-900/30 rounded-2xl p-4 relative overflow-hidden"
+      >
+        <div class="flex items-center gap-3 mb-3">
+          <div
+            class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl text-white font-bold"
+          >
+            W
+          </div>
+          <div>
+            <input
+              type="text"
+              id="lobby-username-input"
+              value="Word Player"
+              class="bg-transparent border-b border-transparent hover:border-indigo-400 focus:border-indigo-600 font-bold font-['Plus_Jakarta_Sans',system-ui,sans-serif] text-sm text-[var(--color-text-main)] outline-none py-0.5"
+              title="Click to edit username"
+            />
+            <div
+              id="lobby-user-rank"
+              class="text-[10px] uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-bold mt-0.5"
+            >
+              Scrabble Novice
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="grid grid-cols-2 gap-2 pt-2 border-t border-indigo-100/50 dark:border-indigo-900/10"
+        >
+          <div class="text-center md:text-left">
+            <span class="block text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider"
+              >Challenge Streak</span
+            >
+            <span
+              id="lobby-user-streak"
+              class="text-lg font-extrabold text-[var(--color-text-main)]">0 days</span
+            >
+          </div>
+          <div class="text-center md:text-left">
+            <span class="block text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider"
+              >Level Rating</span
+            >
+            <span id="lobby-user-score" class="text-lg font-extrabold text-[var(--color-text-main)]"
+              >Lv. 1</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Favorite Words Section -->
+    <div class="px-5 py-2">
+      <h3
+        class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] font-bold text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-3 flex items-center justify-between"
+      >
+        <span>Favorite Words</span>
+        <span
+          id="lobby-favorites-count"
+          class="bg-[var(--color-bg-alt)] text-[var(--color-text-main)] px-2 py-0.5 rounded text-[10px]"
+          >0</span
+        >
+      </h3>
+      <div
+        id="lobby-favorites-list"
+        class="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-1"
+      >
+        <p class="text-xs text-[var(--color-text-muted)] italic">No favorited words yet.</p>
+      </div>
+    </div>
+
+    <!-- Recent Searches -->
+    <div class="px-5 py-4 border-t border-[var(--color-border)] mt-4">
+      <h3
+        class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] font-bold text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-3 flex items-center justify-between"
+      >
+        <span>Recent Racks</span>
+        <button
+          type="button"
+          id="lobby-clear-recents"
+          class="text-[10px] text-red-500 hover:underline cursor-pointer">Clear</button
+        >
+      </h3>
+      <div id="lobby-recents-list" class="flex flex-wrap gap-1.5">
+        <p class="text-xs text-[var(--color-text-muted)] italic">Search history is empty.</p>
+      </div>
+    </div>
+
+    <!-- Saved Racks Section -->
+    <div class="px-5 py-2 border-t border-[var(--color-border)]">
+      <h3
+        class="font-['Plus_Jakarta_Sans',system-ui,sans-serif] font-bold text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-3"
+      >
+        Saved Racks
+      </h3>
+      <div class="flex gap-2 mb-3">
+        <input
+          type="text"
+          id="lobby-save-rack-input"
+          placeholder="e.g. AEIRST?"
+          maxlength="15"
+          class="air-input uppercase tracking-wider text-xs font-semibold !py-1.5"
+        />
+        <button type="button" id="lobby-save-rack-btn" class="btn-primary !px-3 !py-1 text-xs">
+          Save
+        </button>
+      </div>
+      <div id="lobby-saved-racks-list" class="flex flex-wrap gap-1.5">
+        <p class="text-xs text-[var(--color-text-muted)] italic">No saved racks yet.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Tip -->
+  <div class="p-5 border-t border-[var(--color-border)] bg-[var(--color-bg-alt)]/50">
+    <p class="text-[10px] text-[var(--color-text-muted)] leading-relaxed text-center">
+      All player profiles and favorites are saved locally on your device in LocalStorage. Zero
+      trackers or cloud storage required.
+    </p>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const toggle = document.getElementById('lobby-drawer-toggle');
+    const close = document.getElementById('lobby-drawer-close');
+    const overlay = document.getElementById('lobby-drawer-overlay');
+    const drawer = document.getElementById('lobby-drawer');
+    const dot = document.getElementById('lobby-notify-dot');
+
+    const usernameInput = document.getElementById('lobby-username-input') as HTMLInputElement;
+    const rankEl = document.getElementById('lobby-user-rank');
+    const streakEl = document.getElementById('lobby-user-streak');
+    const scoreEl = document.getElementById('lobby-user-score');
+
+    const favsList = document.getElementById('lobby-favorites-list');
+    const favsCount = document.getElementById('lobby-favorites-count');
+    const recentsList = document.getElementById('lobby-recents-list');
+    const clearRecents = document.getElementById('lobby-clear-recents');
+
+    const saveRackInput = document.getElementById('lobby-save-rack-input') as HTMLInputElement;
+    const saveRackBtn = document.getElementById('lobby-save-rack-btn');
+    const savedRacksList = document.getElementById('lobby-saved-racks-list');
+
+    if (!toggle || !close || !overlay || !drawer) return;
+
+    // Toggle Drawer visibility
+    function openDrawer() {
+      if (!overlay || !drawer) return;
+      overlay.classList.remove('hidden');
+      setTimeout(() => {
+        if (overlay && drawer) {
+          overlay.classList.add('opacity-100');
+          drawer.classList.remove('translate-x-full');
+        }
+      }, 50);
+    }
+
+    function closeDrawer() {
+      if (!drawer || !overlay) return;
+      drawer.classList.add('translate-x-full');
+      overlay.classList.remove('opacity-100');
+      setTimeout(() => {
+        if (overlay) {
+          overlay.classList.add('hidden');
+        }
+      }, 300);
+    }
+
+    toggle.addEventListener('click', openDrawer);
+    close.addEventListener('click', closeDrawer);
+    overlay.addEventListener('click', closeDrawer);
+
+    // Profile Init
+    if (usernameInput) {
+      usernameInput.value = localStorage.getItem('scrabble_username') || 'Word Player';
+      usernameInput.addEventListener('change', () => {
+        localStorage.setItem('scrabble_username', usernameInput.value.trim() || 'Word Player');
+      });
+    }
+
+    // Load Stats
+    function loadProfileStats() {
+      let streak = Number(localStorage.getItem('scrabble_streak') || '0');
+      const score = Number(localStorage.getItem('scrabble_level') || '1');
+
+      const lastSolvedStr = localStorage.getItem('scrabble_challenge_solved_date');
+      if (lastSolvedStr) {
+        const lastSolved = new Date(lastSolvedStr);
+        const today = new Date();
+        lastSolved.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+        const diffTime = today.getTime() - lastSolved.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 1) {
+          streak = 0;
+          localStorage.setItem('scrabble_streak', '0');
+        }
+      } else {
+        streak = 0;
+        localStorage.setItem('scrabble_streak', '0');
+      }
+
+      if (streakEl) streakEl.textContent = `${streak} day${streak === 1 ? '' : 's'}`;
+      if (scoreEl) scoreEl.textContent = `Lv. ${score}`;
+
+      let rank = 'Scrabble Novice';
+      if (score > 15) rank = 'Word Grandmaster';
+      else if (score > 8) rank = 'Scrabble Expert';
+      else if (score > 3) rank = 'Active Word Solver';
+      if (rankEl) rankEl.textContent = rank;
+    }
+
+    // Load Favorites
+    function loadFavorites() {
+      if (!favsList || !favsCount) return;
+      const favorites: string[] = JSON.parse(localStorage.getItem('scrabble_favorites') || '[]');
+      favsCount.textContent = String(favorites.length);
+
+      if (dot) {
+        if (favorites.length > 0) dot.classList.remove('hidden');
+        else dot.classList.add('hidden');
+      }
+
+      if (favorites.length === 0) {
+        favsList.innerHTML = `<p class="text-xs text-[var(--color-text-muted)] italic">No favorited words yet.</p>`;
+        return;
+      }
+
+      favsList.innerHTML = favorites
+        .map((w) => {
+          return `<a href="/word/${w.toLowerCase()}" class="text-xs px-2.5 py-1 rounded-full bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-main)] transition-colors">${w}</a>`;
+        })
+        .join('');
+    }
+
+    // Load Recent Searches
+    function loadRecents() {
+      if (!recentsList) return;
+      const recents: string[] = JSON.parse(
+        localStorage.getItem('scrabble_recent_searches') || '[]',
+      );
+
+      if (recents.length === 0) {
+        recentsList.innerHTML = `<p class="text-xs text-[var(--color-text-muted)] italic">Search history is empty.</p>`;
+        return;
+      }
+
+      recentsList.innerHTML = recents
+        .map((r) => {
+          return `<a href="/?letters=${r.toLowerCase()}" class="text-xs px-2.5 py-1 rounded bg-[var(--color-bg-alt)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-muted)] transition-colors uppercase font-mono tracking-wider font-semibold">${r}</a>`;
+        })
+        .join('');
+    }
+
+    if (clearRecents) {
+      clearRecents.addEventListener('click', () => {
+        localStorage.removeItem('scrabble_recent_searches');
+        loadRecents();
+      });
+    }
+
+    // Load Saved Racks
+    function loadSavedRacks() {
+      if (!savedRacksList) return;
+      const saved: string[] = JSON.parse(localStorage.getItem('scrabble_saved_racks') || '[]');
+
+      if (saved.length === 0) {
+        savedRacksList.innerHTML = `<p class="text-xs text-[var(--color-text-muted)] italic">No saved racks yet.</p>`;
+        return;
+      }
+
+      savedRacksList.innerHTML = saved
+        .map((r) => {
+          return `<div class="flex items-center gap-1.5 bg-[var(--color-bg-alt)] px-2.5 py-1 rounded border border-[var(--color-border)] text-xs text-[var(--color-text-main)]">
+          <a href="/?letters=${r.toLowerCase()}" class="uppercase font-mono font-semibold tracking-wider hover:text-[var(--color-primary)]">${r}</a>
+          <button type="button" class="text-[10px] text-red-500 hover:text-red-700 ml-1 cursor-pointer delete-saved-rack-btn" data-rack="${r}">✕</button>
+        </div>`;
+        })
+        .join('');
+
+      // Add delete listeners
+      document.querySelectorAll('.delete-saved-rack-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const target = e.currentTarget as HTMLButtonElement;
+          const rack = target.dataset.rack;
+          if (!rack) return;
+          const current: string[] = JSON.parse(
+            localStorage.getItem('scrabble_saved_racks') || '[]',
+          );
+          const idx = current.indexOf(rack);
+          if (idx !== -1) {
+            current.splice(idx, 1);
+            localStorage.setItem('scrabble_saved_racks', JSON.stringify(current));
+            loadSavedRacks();
+          }
+        });
+      });
+    }
+
+    if (saveRackBtn && saveRackInput) {
+      saveRackBtn.addEventListener('click', () => {
+        const val = saveRackInput.value
+          .trim()
+          .toUpperCase()
+          .replace(/[^A-Z?]/g, '');
+        if (val.length < 2) return;
+        const current: string[] = JSON.parse(localStorage.getItem('scrabble_saved_racks') || '[]');
+        if (!current.includes(val)) {
+          current.push(val);
+          localStorage.setItem('scrabble_saved_racks', JSON.stringify(current));
+          saveRackInput.value = '';
+          loadSavedRacks();
+        }
+      });
+    }
+
+    // Listen to changes globally
+    window.addEventListener('scrabble_favorites_changed', loadFavorites);
+    window.addEventListener('scrabble_recent_searches_changed', loadRecents);
+    window.addEventListener('scrabble_challenge_solved', (e) => {
+      const prevSolvedDate = (e as any).detail?.prevSolvedDate;
+      let currentStreak = Number(localStorage.getItem('scrabble_streak') || '0');
+
+      if (!prevSolvedDate) {
+        currentStreak = 1;
+      } else {
+        const lastSolved = new Date(prevSolvedDate);
+        const today = new Date();
+        lastSolved.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+        const diffTime = today.getTime() - lastSolved.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+          currentStreak += 1;
+        } else {
+          currentStreak = 1;
+        }
+      }
+
+      const currentLevel = Number(localStorage.getItem('scrabble_level') || '1') + 1;
+      localStorage.setItem('scrabble_streak', String(currentStreak));
+      localStorage.setItem('scrabble_level', String(currentLevel));
+      loadProfileStats();
+    });
+
+    // Initial Load
+    loadProfileStats();
+    loadFavorites();
+    loadRecents();
+    loadSavedRacks();
+  })();
+</script>
