@@ -27,6 +27,7 @@
     "@libsql/client": "^0.17.4",
     "@tailwindcss/vite": "^4.0.0",
     "@upstash/redis": "^1.38.0",
+    "@vercel/speed-insights": "^2.0.0",
     "astro": "^6.4.8",
     "canvas-confetti": "^1.9.4",
     "drizzle-orm": "^0.45.2",
