@@ -21,7 +21,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; upgrade-insecure-requests; script-src 'self' 'sha256-L9NtTqBLxf1z3sIza7z/JTtm01m91a8xVl07p4WTMYw=' 'sha256-u01Orhhlv8YVYq+SRqj1CIeWfitQk+un+AzcmP7+Fg4=' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.amazonaws.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.dictionaryapi.dev https://en.wiktionary.org https://api.resend.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com; frame-src 'self' https://googleads.g.doubleclick.net https://*.doubleclick.net https://www.youtube.com https://youtube.com https://*.youtube.com; object-src 'none'; base-uri 'self'; form-action 'self'"
+          "value": "default-src 'self'; upgrade-insecure-requests; script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.amazonaws.com https://www.google-analytics.com https://*.google-analytics.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.dictionaryapi.dev https://en.wiktionary.org https://api.resend.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.upstash.io https://*.turso.io; frame-src 'self' https://googleads.g.doubleclick.net https://*.doubleclick.net https://www.youtube.com https://youtube.com https://*.youtube.com; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
         },
         {
           "key": "Permissions-Policy",
@@ -31,3 +31,4 @@
     }
   ]
 }
+

@@ -209,78 +209,79 @@ const siteFavicon = settingsObj.site_favicon_url;
 
     <!-- SEO slot - components inject <title>, meta tags, JSON-LD here -->
     <slot name="head" />
-
-    <!-- Error Monitoring/Capturing -->
-  </head><div
-    id="error-config"
-    data-url={import.meta.env.PUBLIC_ERROR_REPORTING_URL || '/api/log-error'}
-    class="hidden"
-  >
-  </div>
-  <script>
-    const errorEl = document.getElementById('error-config');
-    const reportingUrl = errorEl ? errorEl.getAttribute('data-url') : '/api/log-error';
-
-    window.addEventListener('error', function (event) {
-      console.error('Captured runtime error:', event.error || event.message);
-      if (reportingUrl) {
-        fetch(reportingUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: event.message,
-            filename: event.filename,
-            lineno: event.lineno,
-            colno: event.colno,
-            stack: event.error ? event.error.stack : null,
-            url: window.location.href,
-            timestamp: new Date().toISOString(),
-          }),
-        }).catch((err) => console.warn('Failed to send error report:', err));
-      }
-    });
-
-    window.addEventListener('unhandledrejection', function (event) {
-      console.error('Captured unhandled promise rejection:', event.reason);
-      if (reportingUrl) {
-        const reason = event.reason;
-        const stack =
-          reason && typeof reason === 'object' && 'stack' in reason ? reason.stack : null;
-        fetch(reportingUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: String(reason),
-            stack: stack,
-            url: window.location.href,
-            type: 'unhandledrejection',
-            timestamp: new Date().toISOString(),
-          }),
-        }).catch((err) => console.warn('Failed to send error report:', err));
-      }
-    });
-  </script>
-  <script>
-    // Global Keyboard Shortcuts
-    document.addEventListener('keydown', (e) => {
-      // Don't trigger if user is typing in an input/textarea
-      const activeElement = document.activeElement as HTMLElement | null;
-      const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
-
-      if (e.key === '?' && !isInputFocused) {
-        // If a help modal existed, we would show it here.
-        // For now, we focus the main input if available.
-        const mainInput = document.getElementById('letters-input');
-        if (mainInput) {
-          e.preventDefault();
-          mainInput.focus();
-        }
-      }
-    });
-  </script>
-  <Fragment set:html={headerScripts} />
+  </head>
 
   <body class="flex flex-col min-h-screen">
+    <!-- Error Monitoring/Capturing -->
+    <div
+      id="error-config"
+      data-url={import.meta.env.PUBLIC_ERROR_REPORTING_URL || '/api/log-error'}
+      class="hidden"
+    >
+    </div>
+    <script>
+      const errorEl = document.getElementById('error-config');
+      const reportingUrl = errorEl ? errorEl.getAttribute('data-url') : '/api/log-error';
+
+      window.addEventListener('error', function (event) {
+        console.error('Captured runtime error:', event.error || event.message);
+        if (reportingUrl) {
+          fetch(reportingUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: event.message,
+              filename: event.filename,
+              lineno: event.lineno,
+              colno: event.colno,
+              stack: event.error ? event.error.stack : null,
+              url: window.location.href,
+              timestamp: new Date().toISOString(),
+            }),
+          }).catch((err) => console.warn('Failed to send error report:', err));
+        }
+      });
+
+      window.addEventListener('unhandledrejection', function (event) {
+        console.error('Captured unhandled promise rejection:', event.reason);
+        if (reportingUrl) {
+          const reason = event.reason;
+          const stack =
+            reason && typeof reason === 'object' && 'stack' in reason ? reason.stack : null;
+          fetch(reportingUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: String(reason),
+              stack: stack,
+              url: window.location.href,
+              type: 'unhandledrejection',
+              timestamp: new Date().toISOString(),
+            }),
+          }).catch((err) => console.warn('Failed to send error report:', err));
+        }
+      });
+    </script>
+    <script>
+      // Global Keyboard Shortcuts
+      document.addEventListener('keydown', (e) => {
+        // Don't trigger if user is typing in an input/textarea
+        const activeElement = document.activeElement as HTMLElement | null;
+        const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
+        if (e.key === '?' && !isInputFocused) {
+          // If a help modal existed, we would show it here.
+          // For now, we focus the main input if available.
+          const mainInput = document.getElementById('letters-input');
+          if (mainInput) {
+            e.preventDefault();
+            mainInput.focus();
+          }
+        }
+      });
+    </script>
+    <Fragment set:html={headerScripts} />
+
     <!-- Skip to main content (WCAG 2.4.1) -->
     <a
       href="#main-content"
@@ -290,6 +291,7 @@ const siteFavicon = settingsObj.site_favicon_url;
     </a>
     <Header />
     <MobileMenu />
+
 
     {
       shouldShowAdsGlobal && headerAdEnabled && (headerAdType === 'html' || headerAdSlot) && (

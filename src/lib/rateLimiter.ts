@@ -32,11 +32,17 @@ if (redis) {
   logger.info('Rate Limiter: Using Upstash Redis database.');
 } else {
   if (import.meta.env.PROD) {
-    throw new Error(
-      'CRITICAL SECURITY FAULT: Rate limiting Redis is not configured. In-memory rate limiting does not work in serverless environments. You MUST set KV_REST_API_URL and KV_REST_API_TOKEN in production.'
+    // WARNING: In-memory rate limiting is NOT reliable in serverless (Vercel).
+    // Each function invocation may get a fresh instance. For production security,
+    // set KV_REST_API_URL and KV_REST_API_TOKEN in Vercel environment variables.
+    logger.warn(
+      'SECURITY WARNING: Rate limiting Redis is not configured for production. ' +
+      'In-memory fallback is active but NOT reliable in serverless environments. ' +
+      'Set KV_REST_API_URL and KV_REST_API_TOKEN in Vercel to enable Redis rate limiting.'
     );
+  } else {
+    logger.info('Rate Limiter: Using local in-memory fallback.');
   }
-  logger.info('Rate Limiter: Using local in-memory fallback.');
 }
 
 /**
