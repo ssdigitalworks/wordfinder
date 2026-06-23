@@ -6,7 +6,11 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://scrabblewordfinder.com',
   output: 'server',
-  adapter: vercel(),
+  adapter: vercel({
+    webAnalytics: {
+      enabled: true
+    }
+  }),
   // NOTE: Do NOT also enable `security: { csp: true }` here.
   // Astro's built-in CSP injects a second, conflicting <meta http-equiv="Content-Security-Policy">
   // tag per page with its own auto-computed script hashes and NO host allow-list. Browsers enforce
