@@ -71,11 +71,12 @@ export const POST: APIRoute = async (context) => {
 
   let user;
   try {
-    user = await db.select().from(users).where(eq(users.email, email)).get();
+    const userResults = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    user = userResults[0] || null;
 
     // Seeding flow: If no users exist in the system, and they match the ENV password, create the owner
     if (!user) {
-      const allUsers = await db.select().from(users).limit(1).all();
+      const allUsers = await db.select().from(users).limit(1);
       if (allUsers.length === 0) {
         const allowBootstrap = import.meta.env.ALLOW_ADMIN_BOOTSTRAP === 'true' || process.env.ALLOW_ADMIN_BOOTSTRAP === 'true';
         if (!allowBootstrap) {
