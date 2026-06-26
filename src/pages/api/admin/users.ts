@@ -49,7 +49,10 @@ export const POST: APIRoute = async (context) => {
   const { email, password, role } = parsed.data;
 
   try {
-    const existing = await db.select().from(users).where(eq(users.email, email)).get();
+    // PostgreSQL: use limit(1) and take first result
+    const existingResults = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const existing = existingResults[0] || null;
+    
     if (existing) {
       return new Response(JSON.stringify({ error: 'User with this email already exists' }), {
         status: 409,
@@ -57,7 +60,7 @@ export const POST: APIRoute = async (context) => {
       });
     }
 
-    const [newUser] = await db
+    const newUserResults = await db
       .insert(users)
       .values({
         email,
@@ -65,6 +68,8 @@ export const POST: APIRoute = async (context) => {
         role,
       })
       .returning();
+    
+    const newUser = newUserResults[0];
 
     const currentUserId = getUserIdFromPayload(userPayload);
     await db.insert(auditLogs).values({
@@ -72,7 +77,7 @@ export const POST: APIRoute = async (context) => {
       action: 'create_admin',
       targetId: newUser.id.toString(),
       details: JSON.stringify({ email: newUser.email }),
-    }).run();
+    });
 
     return new Response(JSON.stringify({ success: true, user: { id: newUser.id, email: newUser.email, role: newUser.role } }), {
       status: 201,
