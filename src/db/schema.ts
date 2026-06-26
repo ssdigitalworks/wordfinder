@@ -1,11 +1,11 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, boolean, bigint, timestamp, index, bigserial } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 // --------------------------------------------------------------------------
 // Posts table — mirrors the content.config.ts schema 1:1
 // --------------------------------------------------------------------------
-export const posts = sqliteTable('posts', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const posts = pgTable('posts', {
+  id: bigserial('id', { mode: 'bigint' }).primaryKey(),
   title: text('title').notNull(),
   slug: text('slug').notNull().unique(),
   description: text('description').notNull().default(''),
@@ -13,19 +13,19 @@ export const posts = sqliteTable('posts', {
   image: text('image'),
   tags: text('tags').notNull().default('[]'), // stored as JSON string
   author: text('author').notNull().default('Editorial Team'),
-  published: integer('published', { mode: 'boolean' }).notNull().default(false),
+  published: boolean('published').notNull().default(false),
   pubDate: text('pub_date').notNull(),
   publishedDate: text('published_date'),
   updatedDate: text('updated_date'),
   seoTitle: text('seo_title'),
   seoDescription: text('seo_description'),
   canonicalUrl: text('canonical_url'),
-  createdAt: text('created_at')
+  createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
-    .default(sql`(datetime('now'))`),
-  updatedAt: text('updated_at')
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return {
     publishedIdx: index('posts_published_idx').on(table.published),
@@ -35,54 +35,54 @@ export const posts = sqliteTable('posts', {
 // --------------------------------------------------------------------------
 // Settings table — generic key/value store for site configuration
 // --------------------------------------------------------------------------
-export const settings = sqliteTable('settings', {
+export const settings = pgTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull().default(''),
-  updatedAt: text('updated_at')
+  updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`CURRENT_TIMESTAMP`),
 });
 
 // --------------------------------------------------------------------------
 // Messages table — stores contact form submissions
 // --------------------------------------------------------------------------
-export const messages = sqliteTable('messages', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const messages = pgTable('messages', {
+  id: bigserial('id', { mode: 'bigint' }).primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull(),
   subject: text('subject').notNull(),
   message: text('message').notNull(),
-  createdAt: text('created_at')
+  createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
-    .default(sql`(datetime('now'))`),
-  read: integer('read', { mode: 'boolean' }).notNull().default(false),
+    .default(sql`CURRENT_TIMESTAMP`),
+  read: boolean('read').notNull().default(false),
 });
 
 // --------------------------------------------------------------------------
 // Users table — Role-Based Access Control (RBAC)
 // --------------------------------------------------------------------------
-export const users = sqliteTable('users', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const users = pgTable('users', {
+  id: bigserial('id', { mode: 'bigint' }).primaryKey(),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: text('role').notNull().default('viewer'), // owner, editor, moderator, viewer
   twoFactorSecret: text('two_factor_secret'),
   lastLogin: text('last_login'),
-  createdAt: text('created_at')
+  createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`CURRENT_TIMESTAMP`),
 });
 
 // --------------------------------------------------------------------------
 // Password Reset Tokens
 // --------------------------------------------------------------------------
-export const passwordResetTokens = sqliteTable('password_reset_tokens', {
+export const passwordResetTokens = pgTable('password_reset_tokens', {
   tokenHash: text('token_hash').primaryKey(),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-  createdAt: text('created_at')
+  userId: bigint('user_id', { mode: 'bigint' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return {
     userIdx: index('password_reset_tokens_user_idx').on(table.userId),
@@ -92,14 +92,14 @@ export const passwordResetTokens = sqliteTable('password_reset_tokens', {
 // --------------------------------------------------------------------------
 // Audit Logs table — Tracks important admin actions
 // --------------------------------------------------------------------------
-export const auditLogs = sqliteTable('audit_logs', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id'),
+export const auditLogs = pgTable('audit_logs', {
+  id: bigserial('id', { mode: 'bigint' }).primaryKey(),
+  userId: bigint('user_id', { mode: 'bigint' }),
   action: text('action').notNull(),
   targetId: text('target_id'),
   ipAddress: text('ip_address'),
   details: text('details'),
-  timestamp: text('timestamp')
+  timestamp: timestamp('timestamp', { withTimezone: true })
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`CURRENT_TIMESTAMP`),
 });
