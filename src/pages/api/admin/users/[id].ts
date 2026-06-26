@@ -49,7 +49,10 @@ export const DELETE: APIRoute = async (context) => {
   }
 
   try {
-    const targetUser = await db.select().from(users).where(eq(users.id, targetId)).get();
+    // PostgreSQL: use limit(1) and take first result
+    const targetUserResults = await db.select().from(users).where(eq(users.id, targetId as any)).limit(1);
+    const targetUser = targetUserResults[0] || null;
+    
     if (!targetUser) {
       return new Response(JSON.stringify({ error: 'User not found' }), {
         status: 404,
@@ -57,7 +60,8 @@ export const DELETE: APIRoute = async (context) => {
       });
     }
 
-    await db.delete(users).where(eq(users.id, targetId)).run();
+    // PostgreSQL: delete statement returns undefined, just await it
+    await db.delete(users).where(eq(users.id, targetId as any));
 
     await db.insert(auditLogs).values({
       userId: currentUserId || null,
@@ -65,7 +69,7 @@ export const DELETE: APIRoute = async (context) => {
       targetId: targetId.toString(),
       // Store only email, not password hash or any sensitive data
       details: JSON.stringify({ deletedEmail: targetUser.email }),
-    }).run();
+    });
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
